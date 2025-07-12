@@ -7,6 +7,9 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Import utilities
+const logger = require('./utils/logger');
+
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -18,6 +21,7 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const healthRoutes = require('./routes/healthRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -42,6 +46,7 @@ app.use('/api/', limiter);
 app.use(compression());
 
 // Logging
+app.use(logger.requestLogger());
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
@@ -61,21 +66,17 @@ app.use(cors(corsOptions));
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eshop')
   .then(() => {
-    console.log('Connected to MongoDB');
+    logger.info('Connected to MongoDB', {
+      uri: process.env.MONGODB_URI ? '[REDACTED]' : 'mongodb://localhost:27017/eshop'
+    });
   })
   .catch((error) => {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', { error: error.message });
     process.exit(1);
   });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Server is running',
-    timestamp: new Date().toISOString()
-  });
-});
+// Routes
+app.use('/api/health', healthRoutes);
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -90,13 +91,18 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/payments', paymentRoutes);
 
 // Error handling middleware
+app.use(logger.errorLogger());
 app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`, {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    nodeVersion: process.version
+  });
 });
 
 module.exports = app;
