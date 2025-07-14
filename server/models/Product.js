@@ -44,11 +44,12 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  brand: {
-    type: String,
-    required: [true, 'Please provide brand name'],
-    trim: true,
-  },
+  // In productSchema.js
+brand: {
+  type: mongoose.Schema.Types.ObjectId,  // Change from String
+  ref: 'Brand',                         // Add reference
+  required: [true, 'Please select a brand']
+},
   sku: {
     type: String,
     unique: true,

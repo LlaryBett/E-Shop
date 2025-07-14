@@ -1,139 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Search, Filter, Grid, List, Star, Heart, ShoppingCart, ChevronDown, X } from 'lucide-react';
-import { mockProducts, categories, brands } from '../data/mockData';
-import { useCart } from '../contexts/CartContext';
-import { useWishlist } from '../contexts/WishlistContext';
-import toast from 'react-hot-toast';
 
-const Shop = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts] = useState(mockProducts);
-  const [filteredProducts, setFilteredProducts] = useState(mockProducts);
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [viewMode, setViewMode] = useState('grid');
-  const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState({ field: 'createdAt', direction: 'desc' });
-  const [filters, setFilters] = useState({
-    categories: [],
-    brands: [],
-    priceRange: [0, 2000],
-    rating: 0,
-    inStock: false,
-    onSale: false,
-  });
-
-  const { addToCart } = useCart();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-
-  useEffect(() => {
-    applyFilters();
-  }, [filters, sortBy, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const applyFilters = () => {
-    let filtered = [...products];
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    // Category filter
-    if (filters.categories && filters.categories.length > 0) {
-      filtered = filtered.filter(product =>
-        filters.categories.includes(product.category)
-      );
-    }
-
-    // Brand filter
-    if (filters.brands && filters.brands.length > 0) {
-      filtered = filtered.filter(product =>
-        filters.brands.includes(product.brand)
-      );
-    }
-
-    // Price range filter
-    if (filters.priceRange) {
-      filtered = filtered.filter(product => {
-        const price = product.salePrice || product.price;
-        return price >= filters.priceRange[0] && price <= filters.priceRange[1];
-      });
-    }
-
-    // Rating filter
-    if (filters.rating && filters.rating > 0) {
-      filtered = filtered.filter(product => product.rating >= filters.rating);
-    }
-
-    // In stock filter
-    if (filters.inStock) {
-      filtered = filtered.filter(product => product.stock > 0);
-    }
-
-    // On sale filter
-    if (filters.onSale) {
-      filtered = filtered.filter(product => !!product.salePrice);
-    }
-
-    // Sort products
-    filtered.sort((a, b) => {
-      const { field, direction } = sortBy;
-      let aValue, bValue;
-
-      switch (field) {
-        case 'price':
-          aValue = a.salePrice || a.price;
-          bValue = b.salePrice || b.price;
-          break;
-        case 'rating':
-          aValue = a.rating;
-          bValue = b.rating;
-          break;
-        case 'title':
-          aValue = a.title;
-          bValue = b.title;
-          break;
-        case 'createdAt':
-          aValue = a.createdAt;
-          bValue = b.createdAt;
-          break;
-        default:
-          return 0;
-      }
-
-      if (direction === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    setFilteredProducts(filtered);
-  };
-
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleCategoryFilter = (category) => {
-    const currentCategories = filters.categories || [];
-    const newCategories = currentCategories.includes(category)
-      ? currentCategories.filter(c => c !== category)
-      : [...currentCategories, category];
-    handleFilterChange('categories', newCategories);
-  };
-
-  const handleBrandFilter = (brand) => {
-    const currentBrands = filters.brands || [];
-    const newBrands = currentBrands.includes(brand)
-      ? currentBrands.filter(b => b !== brand)
-      : [...currentBrands, brand];
-    handleFilterChange('brands', newBrands);
-  };
 
   const handleAddToCart = (product) => {
     addToCart(product);
@@ -141,8 +6,8 @@ const Shop = () => {
   };
 
   const handleWishlistToggle = (product) => {
-    if (isInWishlist(product.id)) {
-      removeFromWishlist(product.id);
+    if (isInWishlist(product._id)) {
+      removeFromWishlist(product._id);
       toast.success('Removed from wishlist');
     } else {
       addToWishlist(product);
@@ -162,6 +27,22 @@ const Shop = () => {
     setSearchQuery('');
     setSearchParams({});
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500 text-lg">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -355,7 +236,7 @@ const Shop = () => {
           <div className="flex-1">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-gray-600 dark:text-gray-400">
-                Showing {filteredProducts.length} of {products.length} products
+                Showing {filteredProducts.length} products
               </p>
             </div>
 
@@ -376,15 +257,15 @@ const Shop = () => {
               }>
                 {filteredProducts.map(product => (
                   <div
-                    key={product.id}
+                    key={product._id}
                     className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow ${
                       viewMode === 'list' ? 'flex' : ''
                     }`}
                   >
-                    <Link to={`/product/${product.id}`} className={viewMode === 'list' ? 'flex-shrink-0' : ''}>
+                    <Link to={`/product/${product._id}`} className={viewMode === 'list' ? 'flex-shrink-0' : ''}>
                       <div className={`${viewMode === 'list' ? 'w-48 h-32' : 'aspect-square'} overflow-hidden`}>
                         <img
-                          src={product.images[0]}
+                          src={product.images[0]?.url || 'https://via.placeholder.com/300'}
                           alt={product.title}
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
@@ -393,7 +274,7 @@ const Shop = () => {
                     
                     <div className={`p-4 ${viewMode === 'list' ? 'flex-1 flex flex-col justify-between' : ''}`}>
                       <div>
-                        <Link to={`/product/${product.id}`}>
+                        <Link to={`/product/${product._id}`}>
                           <h3 className="font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 transition-colors line-clamp-2">
                             {product.title}
                           </h3>
@@ -403,11 +284,11 @@ const Shop = () => {
                           <div className="flex items-center">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
-                              {product.rating}
+                              {product.rating || 0}
                             </span>
                           </div>
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            ({product.reviewCount})
+                            ({product.reviewCount || 0})
                           </span>
                         </div>
 
@@ -434,12 +315,12 @@ const Shop = () => {
                         <button
                           onClick={() => handleWishlistToggle(product)}
                           className={`p-2 rounded-lg border transition-colors ${
-                            isInWishlist(product.id)
+                            isInWishlist(product._id)
                               ? 'bg-red-50 border-red-200 text-red-600'
                               : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                           }`}
                         >
-                          <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
+                          <Heart className={`h-4 w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
                         </button>
                       </div>
                     </div>

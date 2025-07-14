@@ -1,11 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Truck, Shield, Headphones, Award } from 'lucide-react';
-import { mockProducts } from '../data/mockData';
+import ProductService from '../services/productService';
 
 const Home = () => {
-  const featuredProducts = mockProducts.slice(0, 8);
-  const trendingProducts = mockProducts.slice(8, 12);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [trendingProducts, setTrendingProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch both in parallel
+      const [featured, trending] = await Promise.all([
+        ProductService.getFeaturedProducts(),
+        ProductService.getTrendingProducts()
+      ]);
+
+      // Handle direct array response
+      setFeaturedProducts(Array.isArray(featured) ? featured : []);
+      setTrendingProducts(Array.isArray(trending) ? trending : []);
+      
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Failed to load products. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProducts();
+}, []);
+
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500 text-lg">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -47,43 +94,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-white dark:bg-gray-900">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto">
-                <Truck className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Free Shipping</h3>
-              <p className="text-gray-600 dark:text-gray-300">Free delivery on orders over $50</p>
-            </div>
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto">
-                <Shield className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Secure Payment</h3>
-              <p className="text-gray-600 dark:text-gray-300">100% secure transactions</p>
-            </div>
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto">
-                <Headphones className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">24/7 Support</h3>
-              <p className="text-gray-600 dark:text-gray-300">Round-the-clock customer service</p>
-            </div>
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto">
-                <Award className="h-8 w-8 text-yellow-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Quality Guarantee</h3>
-              <p className="text-gray-600 dark:text-gray-300">Premium quality products</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
+     {/* Featured Products */}
       <section className="py-16 bg-gray-50 dark:bg-gray-800">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -92,11 +103,11 @@ const Home = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
-              <div key={product.id} className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                <Link to={`/product/${product.id}`}>
+              <div key={product._id} className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <Link to={`/product/${product._id}`}>
                   <div className="aspect-square overflow-hidden">
                     <img
-                      src={product.images[0]}
+                      src={product.images[0]?.url || 'https://via.placeholder.com/300'}
                       alt={product.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -109,11 +120,11 @@ const Home = () => {
                       <div className="flex items-center">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
-                          {product.rating}
+                          {product.rating || 0}
                         </span>
                       </div>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        ({product.reviewCount})
+                        ({product.reviewCount || 0})
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -152,11 +163,11 @@ const Home = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {trendingProducts.map((product) => (
-              <div key={product.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                <Link to={`/product/${product.id}`}>
+              <div key={product._id} className="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <Link to={`/product/${product._id}`}>
                   <div className="aspect-square overflow-hidden">
                     <img
-                      src={product.images[0]}
+                      src={product.images[0]?.url || 'https://via.placeholder.com/300'}
                       alt={product.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -169,11 +180,11 @@ const Home = () => {
                       <div className="flex items-center">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
-                          {product.rating}
+                          {product.rating || 0}
                         </span>
                       </div>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        ({product.reviewCount})
+                        ({product.reviewCount || 0})
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">

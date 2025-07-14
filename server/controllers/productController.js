@@ -15,61 +15,39 @@ export const getProducts = async (req, res, next) => {
 
     let query = { isActive: true };
 
-    if (req.query.search) {
-      query.$text = { $search: req.query.search };
-    }
-
+    // Apply filters
+    if (req.query.search) query.$text = { $search: req.query.search };
     if (req.query.categories) {
-      const categories = req.query.categories.split(',');
-      query.category = { $in: categories };
+      query.category = { $in: req.query.categories.split(',').map(id => new mongoose.Types.ObjectId(id)) };
     }
-
     if (req.query.brands) {
-      const brands = req.query.brands.split(',');
-      query.brand = { $in: brands };
+      query.brand = { $in: req.query.brands.split(',').map(id => new mongoose.Types.ObjectId(id)) };
     }
-
     if (req.query.minPrice || req.query.maxPrice) {
       query.price = {};
       if (req.query.minPrice) query.price.$gte = parseFloat(req.query.minPrice);
       if (req.query.maxPrice) query.price.$lte = parseFloat(req.query.maxPrice);
     }
+    if (req.query.rating) query.rating = { $gte: parseFloat(req.query.rating) };
+    if (req.query.inStock === 'true') query.stock = { $gt: 0 };
+    if (req.query.onSale === 'true') query.salePrice = { $exists: true, $ne: null };
 
-    if (req.query.rating) {
-      query.rating = { $gte: parseFloat(req.query.rating) };
-    }
-
-    if (req.query.inStock === 'true') {
-      query.stock = { $gt: 0 };
-    }
-
-    if (req.query.onSale === 'true') {
-      query.salePrice = { $exists: true, $ne: null };
-    }
-
-    if (req.query.featured === 'true') {
-      query.featured = true;
-    }
-
-    if (req.query.trending === 'true') {
-      query.trending = true;
-    }
-
-    let sort = {};
-    if (req.query.sortBy) {
-      const sortField = req.query.sortBy;
-      const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
-      sort[sortField] = sortOrder;
-    } else {
-      sort.createdAt = -1;
-    }
-
+    // Fetch products with populated brand & category
     const products = await Product.find(query)
-      .populate('category', 'name slug')
-      .populate('brand', 'name')
-      .sort(sort)
+      .populate({
+        path: 'brand',
+        select: 'name logo',
+        model: 'Brand'
+      })
+      .populate({
+        path: 'category',
+        select: 'name slug',
+        model: 'Category'
+      })
+      .sort(req.query.sortBy ? { [req.query.sortBy]: req.query.sortOrder === 'asc' ? 1 : -1 } : { createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     const total = await Product.countDocuments(query);
     const pages = Math.ceil(total / limit);
@@ -77,12 +55,7 @@ export const getProducts = async (req, res, next) => {
     res.status(200).json({
       success: true,
       products,
-      pagination: {
-        page,
-        pages,
-        total,
-        limit,
-      },
+      pagination: { page, pages, total, limit },
     });
   } catch (error) {
     next(error);
@@ -95,9 +68,21 @@ export const getProducts = async (req, res, next) => {
 export const getProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('category', 'name slug')
-      .populate('brand', 'name')
-      .populate('createdBy', 'name');
+      .populate({
+        path: 'category',
+        select: 'name slug',
+        model: 'Category'
+      })
+      .populate({
+        path: 'brand',
+        select: 'name logo',
+        model: 'Brand'
+      })
+      .populate({
+        path: 'createdBy',
+        select: 'name',
+        model: 'User'
+      });
 
     if (!product) {
       return res.status(404).json({
@@ -118,9 +103,6 @@ export const getProduct = async (req, res, next) => {
 // @desc    Create product
 // @route   POST /api/products
 // @access  Private/Admin
-// @desc    Create product
-// @route   POST /api/products
-// @access  Private/Admin
 export const createProduct = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -131,9 +113,6 @@ export const createProduct = async (req, res, next) => {
         errors: errors.array(),
       });
     }
-
-    // 🔍 Log the full request body
-    console.log('📦 Incoming product payload:', req.body);
 
     const {
       title,
@@ -153,13 +132,17 @@ export const createProduct = async (req, res, next) => {
       trending,
       createdAt,
       updatedAt,
-      sku, // explicitly include for clarity
+      sku,
     } = req.body;
 
-    // Log specifically the SKU value
-    console.log('🔑 SKU:', sku);
-
-    const categoryDoc = await Category.findOne({ name: category.trim() });
+    // Find category by name or ID
+    const categoryDoc = await Category.findOne({
+      $or: [
+        { _id: category },
+        { name: category.trim() }
+      ]
+    });
+    
     if (!categoryDoc) {
       return res.status(400).json({
         success: false,
@@ -167,7 +150,14 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
-    const brandDoc = await Brand.findOne({ name: brand.trim() });
+    // Find brand by name or ID
+    const brandDoc = await Brand.findOne({
+      $or: [
+        { _id: brand },
+        { name: brand.trim() }
+      ]
+    });
+    
     if (!brandDoc) {
       return res.status(400).json({
         success: false,
@@ -197,18 +187,20 @@ export const createProduct = async (req, res, next) => {
       createdBy: req.user.id
     });
 
-    console.log('✅ Product to be saved:', product);
+    // Populate the brand and category in the response
+    const populatedProduct = await Product.findById(product._id)
+      .populate('brand', 'name logo')
+      .populate('category', 'name slug');
 
     res.status(201).json({
       success: true,
-      product,
+      product: populatedProduct,
     });
   } catch (error) {
-    console.error('❌ Product creation failed:', error);
+    console.error('Product creation failed:', error);
     next(error);
   }
 };
-
 
 // @desc    Update product
 // @route   PUT /api/products/:id
@@ -232,9 +224,15 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
-    // Convert category/brand if provided as name
+    // Handle category update
     if (req.body.category) {
-      const categoryDoc = await Category.findOne({ name: req.body.category.trim() });
+      const categoryDoc = await Category.findOne({
+        $or: [
+          { _id: req.body.category },
+          { name: req.body.category.trim() }
+        ]
+      });
+      
       if (!categoryDoc) {
         return res.status(400).json({
           success: false,
@@ -244,8 +242,15 @@ export const updateProduct = async (req, res, next) => {
       req.body.category = categoryDoc._id;
     }
 
+    // Handle brand update
     if (req.body.brand) {
-      const brandDoc = await Brand.findOne({ name: req.body.brand.trim() });
+      const brandDoc = await Brand.findOne({
+        $or: [
+          { _id: req.body.brand },
+          { name: req.body.brand.trim() }
+        ]
+      });
+      
       if (!brandDoc) {
         return res.status(400).json({
           success: false,
@@ -255,10 +260,16 @@ export const updateProduct = async (req, res, next) => {
       req.body.brand = brandDoc._id;
     }
 
-    product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    product = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+      .populate('brand', 'name logo')
+      .populate('category', 'name slug');
 
     res.status(200).json({
       success: true,
@@ -313,6 +324,7 @@ export const searchProducts = async (req, res, next) => {
       isActive: true,
     })
       .populate('category', 'name slug')
+      .populate('brand', 'name logo')
       .limit(20)
       .sort({ score: { $meta: 'textScore' } });
 
