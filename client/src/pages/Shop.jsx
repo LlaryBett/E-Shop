@@ -1,4 +1,104 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Search, Filter, Grid, List, Star, Heart, ShoppingCart } from 'lucide-react';
+import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
+import toast from 'react-hot-toast';
+import ProductService from '../services/productService';
 
+const Shop = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [viewMode, setViewMode] = useState('grid');
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState({ field: 'createdAt', direction: 'desc' });
+  const [filters, setFilters] = useState({
+    categories: [],
+    brands: [],
+    priceRange: [0, 2000],
+    rating: 0,
+    inStock: false,
+    onSale: false,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState({}); // Changed to object for brand mapping
+
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await ProductService.getProducts(
+          1,
+          100,
+          filters,
+          sortBy,
+          searchQuery
+        );
+        
+        if (!response.success) {
+          throw new Error('Failed to fetch products');
+        }
+
+        setProducts(response.products);
+        setFilteredProducts(response.products);
+        
+        // Extract unique categories
+        const uniqueCategories = [...new Set(
+          response.products
+            .map(p => p.category?.name)
+            .filter(Boolean)
+        )];
+        
+        // Create brand mapping {id: name}
+        const brandMap = response.products.reduce((acc, product) => {
+          if (product.brand?._id) {
+            acc[product.brand._id] = product.brand.name;
+          }
+          return acc;
+        }, {});
+
+        setCategories(uniqueCategories);
+        setBrands(brandMap);
+        
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError(err.message || 'Failed to load products. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [filters, sortBy, searchQuery]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleCategoryFilter = (category) => {
+    const currentCategories = filters.categories || [];
+    const newCategories = currentCategories.includes(category)
+      ? currentCategories.filter(c => c !== category)
+      : [...currentCategories, category];
+    handleFilterChange('categories', newCategories);
+  };
+
+  const handleBrandFilter = (brandId) => {
+    const currentBrands = filters.brands || [];
+    const newBrands = currentBrands.includes(brandId)
+      ? currentBrands.filter(b => b !== brandId)
+      : [...currentBrands, brandId];
+    handleFilterChange('brands', newBrands);
+  };
 
   const handleAddToCart = (product) => {
     addToCart(product);
@@ -47,11 +147,9 @@
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Shop</h1>
           
-          {/* Search and Controls */}
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
               <div className="relative">
@@ -67,12 +165,11 @@
             </div>
 
             <div className="flex items-center space-x-4">
-              {/* Sort */}
               <select
                 value={`${sortBy.field}-${sortBy.direction}`}
                 onChange={(e) => {
                   const [field, direction] = e.target.value.split('-');
-                  setSortBy({ field: field, direction: direction });
+                  setSortBy({ field, direction });
                 }}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
               >
@@ -84,7 +181,6 @@
                 <option value="title-asc">Name: A to Z</option>
               </select>
 
-              {/* View Mode */}
               <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setViewMode('grid')}
@@ -100,7 +196,6 @@
                 </button>
               </div>
 
-              {/* Filter Toggle */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="lg:hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -113,7 +208,6 @@
         </div>
 
         <div className="flex gap-8">
-          {/* Filters Sidebar */}
           <div className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-64 space-y-6`}>
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
               <div className="flex items-center justify-between mb-4">
@@ -126,7 +220,6 @@
                 </button>
               </div>
 
-              {/* Categories */}
               <div className="mb-6">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-3">Categories</h4>
                 <div className="space-y-2">
@@ -144,25 +237,23 @@
                 </div>
               </div>
 
-              {/* Brands */}
               <div className="mb-6">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-3">Brands</h4>
                 <div className="space-y-2">
-                  {brands.map(brand => (
-                    <label key={brand} className="flex items-center">
+                  {Object.entries(brands).map(([brandId, brandName]) => (
+                    <label key={brandId} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={filters.brands?.includes(brand) || false}
-                        onChange={() => handleBrandFilter(brand)}
+                        checked={filters.brands?.includes(brandId) || false}
+                        onChange={() => handleBrandFilter(brandId)}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{brand}</span>
+                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{brandName}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              {/* Price Range */}
               <div className="mb-6">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-3">Price Range</h4>
                 <div className="space-y-2">
@@ -181,7 +272,6 @@
                 </div>
               </div>
 
-              {/* Rating */}
               <div className="mb-6">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-3">Minimum Rating</h4>
                 <div className="space-y-2">
@@ -208,7 +298,6 @@
                 </div>
               </div>
 
-              {/* Other Filters */}
               <div className="space-y-3">
                 <label className="flex items-center">
                   <input
@@ -232,7 +321,6 @@
             </div>
           </div>
 
-          {/* Products Grid */}
           <div className="flex-1">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-gray-600 dark:text-gray-400">
