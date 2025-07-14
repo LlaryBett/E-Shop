@@ -7,11 +7,11 @@ import {
   updateBrand,
   deleteBrand,
 } from '../controllers/brandController.js';
-import { protect, authorize } from '../middleware/auth.js'; // ✅ Uses your full middleware
+import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// ✅ Validation rules for brands
+// ✅ Updated validation rules for accepting category name
 const brandValidation = [
   body('name')
     .trim()
@@ -22,8 +22,10 @@ const brandValidation = [
     .isLength({ max: 300 })
     .withMessage('Description cannot exceed 300 characters'),
   body('category')
-    .isMongoId()
-    .withMessage('A valid category ID is required'),
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage('Category name is required'),
   body('logo')
     .optional()
     .isURL()

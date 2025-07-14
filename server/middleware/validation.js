@@ -1,6 +1,9 @@
 const { body, param, query, validationResult } = require('express-validator');
+const mongoose = require('mongoose');
+const Category = require('../models/Category');
+const Brand = require('../models/Brand');
 
-// Handle validation errors
+// Enhanced error handler
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -65,36 +68,91 @@ const validateUserUpdate = [
   handleValidationErrors
 ];
 
-// Product validation rules
+// Product validation rules - updated for flexible category/brand matching
 const validateProduct = [
   body('title')
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Title must be between 2 and 100 characters'),
+
   body('description')
     .trim()
     .isLength({ min: 10, max: 2000 })
     .withMessage('Description must be between 10 and 2000 characters'),
+
   body('price')
     .isFloat({ min: 0 })
     .withMessage('Price must be a positive number'),
+
   body('salePrice')
     .optional()
     .isFloat({ min: 0 })
-    .withMessage('Sale price must be a positive number'),
+    .withMessage('Sale price must be a positive number')
+    .custom((value, { req }) => {
+      if (value && value >= req.body.price) {
+        throw new Error('Sale price must be less than regular price');
+      }
+      return true;
+    }),
+
   body('category')
-    .isMongoId()
-    .withMessage('Invalid category ID'),
+    .notEmpty()
+    .withMessage('Category is required')
+    .custom(async (value) => {
+      if (mongoose.Types.ObjectId.isValid(value)) {
+        const exists = await Category.exists({ _id: value });
+        if (!exists) throw new Error('Category ID not found');
+        return true;
+      }
+      
+      if (typeof value !== 'string') {
+        throw new Error('Category must be a valid name or ID');
+      }
+      
+      const trimmedName = value.trim();
+      if (!trimmedName) throw new Error('Category name cannot be empty');
+      
+      const category = await Category.findOne({ 
+        name: { $regex: new RegExp(`^${trimmedName}$`, 'i') } 
+      });
+      
+      if (!category) throw new Error(`Category '${value}' not found. Available categories: ${(await Category.find({})).map(c => c.name).join(', ')}`);
+      return true;
+    }),
+
   body('brand')
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Brand must be between 1 and 50 characters'),
+    .notEmpty()
+    .withMessage('Brand is required')
+    .custom(async (value) => {
+      if (mongoose.Types.ObjectId.isValid(value)) {
+        const exists = await Brand.exists({ _id: value });
+        if (!exists) throw new Error('Brand ID not found');
+        return true;
+      }
+      
+      if (typeof value !== 'string') {
+        throw new Error('Brand must be a valid name or ID');
+      }
+      
+      const trimmedName = value.trim();
+      if (!trimmedName) throw new Error('Brand name cannot be empty');
+      
+      const brand = await Brand.findOne({ 
+        name: { $regex: new RegExp(`^${trimmedName}$`, 'i') } 
+      });
+      
+      if (!brand) throw new Error(`Brand '${value}' not found`);
+      return true;
+    }),
+
   body('stock')
     .isInt({ min: 0 })
     .withMessage('Stock must be a non-negative integer'),
+
   body('images')
     .isArray({ min: 1 })
     .withMessage('At least one image is required'),
+
   handleValidationErrors
 ];
 
@@ -201,23 +259,6 @@ const validatePagination = [
     .withMessage('Limit must be between 1 and 100'),
   handleValidationErrors
 ];
-const validateRequest = (schema, type = 'body') => {
-  return (req, res, next) => {
-    const result = schema.validate(req[type], { abortEarly: false });
-    if (result.error) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        details: result.error.details.map(d => d.message)
-      });
-    }
-    req[type] = result.value; // Replace with sanitized input
-    next();
-  };
-};
-
-
-// Export all validation functions
 
 module.exports = {
   validateUserRegistration,
@@ -229,6 +270,5 @@ module.exports = {
   validateCategory,
   validateObjectId,
   validatePagination,
-  validateRequest,
   handleValidationErrors
 };

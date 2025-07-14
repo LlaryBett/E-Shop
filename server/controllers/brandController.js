@@ -8,19 +8,28 @@ export const createBrand = async (req, res) => {
   try {
     const { name, category, description, logo } = req.body;
 
-    const existing = await Brand.findOne({ name: name.trim(), category });
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'Brand already exists in this category' });
+    // 🧠 Find category by name
+    const categoryDoc = await Category.findOne({ name: category.trim() });
+    if (!categoryDoc) {
+      return res.status(404).json({ success: false, message: `Category "${category}" not found` });
     }
 
-    const categoryExists = await Category.findById(category);
-    if (!categoryExists) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
+    // 🔍 Check for existing brand in the same category
+    const existing = await Brand.findOne({
+      name: name.trim(),
+      category: categoryDoc._id
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'Brand already exists in this category'
+      });
     }
 
     const brand = await Brand.create({
       name: name.trim(),
-      category,
+      category: categoryDoc._id,
       description,
       logo,
       createdBy: req.user._id,
@@ -76,14 +85,32 @@ export const updateBrand = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Brand not found' });
     }
 
-    // Prevent duplicate brand name in same category
-    const duplicate = await Brand.findOne({ name: name.trim(), category, _id: { $ne: brand._id } });
+    // ✅ Resolve category name to ObjectId if provided
+    let categoryId = brand.category;
+    if (category) {
+      const categoryDoc = await Category.findOne({ name: category.trim() });
+      if (!categoryDoc) {
+        return res.status(404).json({ success: false, message: `Category "${category}" not found` });
+      }
+      categoryId = categoryDoc._id;
+    }
+
+    // 🔍 Prevent duplicates in new category
+    const duplicate = await Brand.findOne({
+      name: name?.trim() || brand.name,
+      category: categoryId,
+      _id: { $ne: brand._id }
+    });
+
     if (duplicate) {
-      return res.status(400).json({ success: false, message: 'Another brand with the same name exists in this category' });
+      return res.status(400).json({
+        success: false,
+        message: 'Another brand with the same name exists in this category'
+      });
     }
 
     if (name) brand.name = name.trim();
-    if (category) brand.category = category;
+    if (category) brand.category = categoryId;
     if (description) brand.description = description;
     if (logo) brand.logo = logo;
 

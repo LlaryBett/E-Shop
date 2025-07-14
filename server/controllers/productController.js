@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
+import Brand from '../models/Brand.js';
 import mongoose from 'mongoose';
 
 // @desc    Get all products
@@ -65,6 +66,7 @@ export const getProducts = async (req, res, next) => {
 
     const products = await Product.find(query)
       .populate('category', 'name slug')
+      .populate('brand', 'name')
       .sort(sort)
       .skip(skip)
       .limit(limit);
@@ -94,6 +96,7 @@ export const getProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate('category', 'name slug')
+      .populate('brand', 'name')
       .populate('createdBy', 'name');
 
     if (!product) {
@@ -115,6 +118,9 @@ export const getProduct = async (req, res, next) => {
 // @desc    Create product
 // @route   POST /api/products
 // @access  Private/Admin
+// @desc    Create product
+// @route   POST /api/products
+// @access  Private/Admin
 export const createProduct = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -126,19 +132,83 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
-    req.body.createdBy = req.user.id;
+    // 🔍 Log the full request body
+    console.log('📦 Incoming product payload:', req.body);
 
-    // Images are expected as URLs or objects in req.body.images
-    const product = await Product.create(req.body);
+    const {
+      title,
+      description,
+      price,
+      salePrice,
+      images,
+      category,
+      subcategory,
+      brand,
+      rating,
+      reviewCount,
+      stock,
+      tags,
+      variants,
+      featured,
+      trending,
+      createdAt,
+      updatedAt,
+      sku, // explicitly include for clarity
+    } = req.body;
+
+    // Log specifically the SKU value
+    console.log('🔑 SKU:', sku);
+
+    const categoryDoc = await Category.findOne({ name: category.trim() });
+    if (!categoryDoc) {
+      return res.status(400).json({
+        success: false,
+        message: `Category '${category}' not found`,
+      });
+    }
+
+    const brandDoc = await Brand.findOne({ name: brand.trim() });
+    if (!brandDoc) {
+      return res.status(400).json({
+        success: false,
+        message: `Brand '${brand}' not found`,
+      });
+    }
+
+    const product = await Product.create({
+      title,
+      description,
+      price,
+      salePrice,
+      images,
+      category: categoryDoc._id,
+      subcategory,
+      brand: brandDoc._id,
+      rating,
+      reviewCount,
+      stock,
+      tags,
+      variants,
+      featured,
+      trending,
+      createdAt,
+      updatedAt,
+      sku,
+      createdBy: req.user.id
+    });
+
+    console.log('✅ Product to be saved:', product);
 
     res.status(201).json({
       success: true,
       product,
     });
   } catch (error) {
+    console.error('❌ Product creation failed:', error);
     next(error);
   }
 };
+
 
 // @desc    Update product
 // @route   PUT /api/products/:id
@@ -155,7 +225,6 @@ export const updateProduct = async (req, res, next) => {
     }
 
     let product = await Product.findById(req.params.id);
-
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -163,7 +232,29 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
-    // Updated images should be in req.body.images (array of URLs or objects)
+    // Convert category/brand if provided as name
+    if (req.body.category) {
+      const categoryDoc = await Category.findOne({ name: req.body.category.trim() });
+      if (!categoryDoc) {
+        return res.status(400).json({
+          success: false,
+          message: `Category '${req.body.category}' not found`,
+        });
+      }
+      req.body.category = categoryDoc._id;
+    }
+
+    if (req.body.brand) {
+      const brandDoc = await Brand.findOne({ name: req.body.brand.trim() });
+      if (!brandDoc) {
+        return res.status(400).json({
+          success: false,
+          message: `Brand '${req.body.brand}' not found`,
+        });
+      }
+      req.body.brand = brandDoc._id;
+    }
+
     product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
