@@ -61,10 +61,16 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      await register(formData.name, formData.email, formData.password);
-      toast.success('Account created successfully!');
-      navigate('/');
-    } catch {
+      const res = await register(formData.name, formData.email, formData.password);
+      console.log('Register response:', res);
+      if (res.user && res.user.isEmailVerified === false) {
+        localStorage.setItem('token', res.token);
+        navigate('/verify-email-prompt', { state: { email: formData.email } });
+      } else {
+        toast.success('Account created successfully!');
+        navigate('/');
+      }
+    } catch (error) {
       toast.error('Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);

@@ -1,108 +1,65 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
+// Create logs directory if it doesn't exist
+const logsDir = path.join(process.cwd(), 'logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir);
+}
+
+// Log levels
+const LOG_LEVELS = {
+  ERROR: 'ERROR',
+  WARN: 'WARN',
+  INFO: 'INFO',
+  DEBUG: 'DEBUG',
+};
+
+// Logger class
 class Logger {
   constructor() {
-    this.logsDir = path.join(__dirname, '..', 'logs');
-    this.ensureLogsDirectory();
-  }
-
-  ensureLogsDirectory() {
-    if (!fs.existsSync(this.logsDir)) {
-      fs.mkdirSync(this.logsDir, { recursive: true });
-    }
-  }
-
-  getTimestamp() {
-    return new Date().toISOString();
+    this.logFile = path.join(logsDir, `app-${new Date().toISOString().split('T')[0]}.log`);
   }
 
   formatMessage(level, message, meta = {}) {
-    return JSON.stringify({
-      timestamp: this.getTimestamp(),
-      level,
-      message,
-      ...meta
-    });
+    const timestamp = new Date().toISOString();
+    const metaString = Object.keys(meta).length > 0 ? ` | ${JSON.stringify(meta)}` : '';
+    return `[${timestamp}] ${level}: ${message}${metaString}\n`;
   }
 
-  writeToFile(filename, content) {
-    const filePath = path.join(this.logsDir, filename);
-    fs.appendFileSync(filePath, content + '\n');
+  writeToFile(formattedMessage) {
+    fs.appendFileSync(this.logFile, formattedMessage);
   }
 
   log(level, message, meta = {}) {
     const formattedMessage = this.formatMessage(level, message, meta);
     
-    // Write to console
-    console.log(formattedMessage);
-    
     // Write to file
-    this.writeToFile('app.log', formattedMessage);
+    this.writeToFile(formattedMessage);
     
-    // Write to level-specific file
-    if (level === 'error') {
-      this.writeToFile('error.log', formattedMessage);
+    // Console output in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(formattedMessage.trim());
     }
   }
 
-  info(message, meta = {}) {
-    this.log('info', message, meta);
+  error(message, meta = {}) {
+    this.log(LOG_LEVELS.ERROR, message, meta);
   }
 
   warn(message, meta = {}) {
-    this.log('warn', message, meta);
+    this.log(LOG_LEVELS.WARN, message, meta);
   }
 
-  error(message, meta = {}) {
-    this.log('error', message, meta);
+  info(message, meta = {}) {
+    this.log(LOG_LEVELS.INFO, message, meta);
   }
 
   debug(message, meta = {}) {
     if (process.env.NODE_ENV === 'development') {
-      this.log('debug', message, meta);
+      this.log(LOG_LEVELS.DEBUG, message, meta);
     }
-  }
-
-  // HTTP request logger middleware
-  requestLogger() {
-    return (req, res, next) => {
-      const start = Date.now();
-      
-      res.on('finish', () => {
-        const duration = Date.now() - start;
-        const meta = {
-          method: req.method,
-          url: req.originalUrl,
-          statusCode: res.statusCode,
-          duration: `${duration}ms`,
-          userAgent: req.get('User-Agent'),
-          ip: req.ip
-        };
-
-        const level = res.statusCode >= 400 ? 'warn' : 'info';
-        this.log(level, `${req.method} ${req.originalUrl} ${res.statusCode}`, meta);
-      });
-
-      next();
-    };
-  }
-
-  // Error logger middleware
-  errorLogger() {
-    return (err, req, res, next) => {
-      const meta = {
-        method: req.method,
-        url: req.originalUrl,
-        stack: err.stack,
-        userAgent: req.get('User-Agent'),
-        ip: req.ip
-      };
-
-      this.error(err.message, meta);
-      next(err);
-    };
   }
 }
 
-module.exports = new Logger();
+export default new Logger();

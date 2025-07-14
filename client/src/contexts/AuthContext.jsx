@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.register({ name, email, password });
       setUser(response.user);
+      return response; // <-- return the response so Register.jsx gets it
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
       throw error;

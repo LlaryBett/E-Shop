@@ -1,17 +1,18 @@
 import axios from 'axios';
 
-// Create axios instance with base configuration
+// Create an Axios instance
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' 
-    ? 'https://your-api-domain.com/api' 
-    : 'http://localhost:5000/api',
+  baseURL:
+    import.meta.env.MODE === 'production'
+      ? import.meta.env.VITE_API_URL
+      : 'http://localhost:5000/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
+// Add request interceptor to include token if available
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -20,19 +21,19 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle errors
+// Add response interceptor to handle 401 unauthorized
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

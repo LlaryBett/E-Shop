@@ -26,6 +26,8 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Blog from './pages/Blog';
 import FAQ from './pages/FAQ';
+import VerifyEmailPrompt from './pages/VerifyEmailPrompt';
+import VerifyEmail from './pages/VerifyEmail';
 
 function App() {
   return (
@@ -54,6 +56,8 @@ function App() {
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/faq" element={<FAQ />} />
+                    <Route path="/verify-email-prompt" element={<VerifyEmailPrompt />} />
+                    <Route path="/verify-email/:token" element={<VerifyEmail />} />
                   </Routes>
                 </main>
                 <Footer />

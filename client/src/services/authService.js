@@ -22,9 +22,13 @@ class AuthService {
   async logout() {
     try {
       await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error.response?.data || error.message);
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      // Optional: redirect after logout
+      window.location.href = '/login';
     }
   }
 
@@ -34,16 +38,25 @@ class AuthService {
   }
 
   async forgotPassword(email) {
-    await api.post('/auth/forgot-password', { email });
+    return api.post('/auth/forgot-password', { email });
   }
 
   async resetPassword(token, password) {
-    await api.put(`/auth/reset-password/${token}`, { password });
+    return api.put(`/auth/reset-password/${token}`, { password });
   }
 
   async updatePassword(currentPassword, newPassword) {
-    await api.put('/auth/update-password', { currentPassword, newPassword });
+    return api.put('/auth/update-password', { currentPassword, newPassword });
   }
+
+  async resendVerificationEmail() {
+    return api.post('/auth/resend-verification');
+  }
+
+  // Add this inside your AuthService class
+ async verifyEmail(token) {
+  return api.get(`/auth/verify-email/${token}`);
+ }
 
   getCurrentUser() {
     const user = localStorage.getItem('user');

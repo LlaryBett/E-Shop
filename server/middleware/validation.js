@@ -201,6 +201,23 @@ const validatePagination = [
     .withMessage('Limit must be between 1 and 100'),
   handleValidationErrors
 ];
+const validateRequest = (schema, type = 'body') => {
+  return (req, res, next) => {
+    const result = schema.validate(req[type], { abortEarly: false });
+    if (result.error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        details: result.error.details.map(d => d.message)
+      });
+    }
+    req[type] = result.value; // Replace with sanitized input
+    next();
+  };
+};
+
+
+// Export all validation functions
 
 module.exports = {
   validateUserRegistration,
@@ -212,5 +229,6 @@ module.exports = {
   validateCategory,
   validateObjectId,
   validatePagination,
+  validateRequest,
   handleValidationErrors
 };
