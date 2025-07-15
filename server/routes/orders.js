@@ -1,5 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
+import mongoose from 'mongoose'; // Don't forget this import
 import {
   createOrder,
   getOrders,
@@ -11,10 +12,18 @@ import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Validation rules
+// Enhanced validation rules
 const orderValidation = [
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
-  body('items.*.product').isMongoId().withMessage('Valid product ID is required'),
+  body('items.*.product').custom((value) => {
+    try {
+      // Handle both string ID and full product object cases
+      const productId = typeof value === 'string' ? value : value?._id;
+      return mongoose.Types.ObjectId.isValid(productId);
+    } catch (error) {
+      return false;
+    }
+  }).withMessage('Valid product ID or object is required'),
   body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
   body('shippingAddress.firstName').trim().notEmpty().withMessage('First name is required'),
   body('shippingAddress.lastName').trim().notEmpty().withMessage('Last name is required'),
@@ -24,7 +33,7 @@ const orderValidation = [
   body('shippingAddress.state').trim().notEmpty().withMessage('State is required'),
   body('shippingAddress.zipCode').trim().notEmpty().withMessage('ZIP code is required'),
   body('shippingAddress.country').trim().notEmpty().withMessage('Country is required'),
-  body('paymentMethod').isIn(['stripe', 'paypal', 'cash_on_delivery']).withMessage('Valid payment method is required'),
+  body('paymentMethod').isIn(['stripe', 'paypal', 'cash_on_delivery', 'card']).withMessage('Valid payment method is required'),
   body('shippingMethod').isIn(['standard', 'express', 'overnight']).withMessage('Valid shipping method is required'),
 ];
 

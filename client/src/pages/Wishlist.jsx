@@ -76,94 +76,97 @@ const Wishlist = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {items.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group"
-            >
-              <div className="relative">
-                <Link to={`/product/${product.id}`}>
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={product.images[0]}
-                      alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                </Link>
-                
-                {product.salePrice && (
-                  <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
-                    -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
-                  </div>
-                )}
-
-                <button
-                  onClick={() => handleRemoveFromWishlist(product.id)}
-                  className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
-                >
-                  <Heart className="h-4 w-4 text-red-500 fill-current" />
-                </button>
-              </div>
-
-              <div className="p-4">
-                <Link to={`/product/${product.id}`}>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 transition-colors line-clamp-2">
-                    {product.title}
-                  </h3>
-                </Link>
-
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Brand: {product.brand}
-                </p>
-
-                <div className="flex items-center space-x-2 mb-3">
-                  <div className="flex items-center">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
-                      {product.rating}
-                    </span>
-                  </div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    ({product.reviewCount})
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-2 mb-4">
-                  {product.salePrice ? (
-                    <>
-                      <span className="text-lg font-bold text-red-600">${product.salePrice}</span>
-                      <span className="text-gray-500 line-through">${product.price}</span>
-                    </>
-                  ) : (
-                    <span className="text-lg font-bold text-gray-900 dark:text-white">${product.price}</span>
+          {items.map((item) => {
+            const product = item.product;
+            return (
+              <div
+                key={product.id}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group"
+              >
+                <div className="relative">
+                  <Link to={`/product/${product.id}`}>
+                    <div className="aspect-square overflow-hidden">
+                      <img
+                        src={product.images[0]?.url}
+                        alt={product.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  </Link>
+                  
+                  {product.salePrice && (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
+                      -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                    </div>
                   )}
-                </div>
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleAddToCart(product)}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>Add to Cart</span>
-                  </button>
-                  <button
-                    onClick={() => handleShare(product)}
-                    className="p-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </button>
                   <button
                     onClick={() => handleRemoveFromWishlist(product.id)}
-                    className="p-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Heart className="h-4 w-4 text-red-500 fill-current" />
                   </button>
                 </div>
+
+                <div className="p-4">
+                  <Link to={`/product/${product.id}`}>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 transition-colors line-clamp-2">
+                      {product.title}
+                    </h3>
+                  </Link>
+
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    Brand: {product.brand}
+                  </p>
+
+                  <div className="flex items-center space-x-2 mb-3">
+                    <div className="flex items-center">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
+                        {product.rating}
+                      </span>
+                    </div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      ({product.reviewCount})
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2 mb-4">
+                    {product.salePrice ? (
+                      <>
+                        <span className="text-lg font-bold text-red-600">${product.salePrice}</span>
+                        <span className="text-gray-500 line-through">${product.price}</span>
+                      </>
+                    ) : (
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">${product.price}</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleAddToCart(product)}
+                      className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      <span>Add to Cart</span>
+                    </button>
+                    <button
+                      onClick={() => handleShare(product)}
+                      className="p-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleRemoveFromWishlist(product.id)}
+                      className="p-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Wishlist Actions */}
@@ -172,7 +175,7 @@ const Wishlist = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => {
-                items.forEach(product => addToCart(product));
+                items.forEach(item => addToCart(item.product));
                 toast.success('All items added to cart!');
               }}
               className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"

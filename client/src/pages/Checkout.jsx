@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CreditCard, Truck, MapPin, User, Mail, Phone, Lock } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import OrderService from '../services/orderService';
 import toast from 'react-hot-toast';
 
 const Checkout = () => {
@@ -119,28 +120,33 @@ const Checkout = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handlePlaceOrder = async () => {
-    if (!validateStep(3)) {
-      toast.error('Please complete all required fields');
-      return;
-    }
+ const handlePlaceOrder = async () => {
+  if (!validateStep(3)) {
+    toast.error('Please complete all required fields');
+    return;
+  }
 
-    setIsProcessing(true);
+  setIsProcessing(true);
+  
+  try {
+    const orderData = {
+      items,
+      shippingAddress,
+      paymentMethod,
+      shippingMethod,
+      totalAmount: total
+    };
     
-    try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Clear cart and redirect to success page
-      clearCart();
-      toast.success('Order placed successfully!');
-      navigate('/orders');
-    } catch {
-      toast.error('Failed to place order. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+    await OrderService.createOrder(orderData);
+    clearCart();
+    toast.success('Order placed successfully!');
+    navigate('/orders');
+  } catch (err) {
+    toast.error(err.message || 'Failed to place order. Please try again.');
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   if (items.length === 0) {
     navigate('/cart');

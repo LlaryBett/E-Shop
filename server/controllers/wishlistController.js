@@ -1,4 +1,3 @@
-// server/controllers/wishlistController.js
 import Wishlist from '../models/Wishlist.js';
 import Product from '../models/Product.js';
 
@@ -7,7 +6,7 @@ import Product from '../models/Product.js';
 // @access  Private
 export const getWishlist = async (req, res) => {
   try {
-    const wishlist = await Wishlist.findOne({ user: req.user.id }).populate('items');
+    const wishlist = await Wishlist.findOne({ user: req.user.id }).populate('items.product');
     res.status(200).json({
       success: true,
       items: wishlist?.items || [],
@@ -33,7 +32,7 @@ export const addToWishlist = async (req, res) => {
     let wishlist = await Wishlist.findOne({ user: userId });
 
     if (!wishlist) {
-      wishlist = await Wishlist.create({
+      wishlist = new Wishlist({
         user: userId,
         items: [{ product: productId }],
       });
@@ -44,11 +43,12 @@ export const addToWishlist = async (req, res) => {
 
       if (!alreadyExists) {
         wishlist.items.push({ product: productId });
-        await wishlist.save();
       }
     }
 
+    await wishlist.save();
     await wishlist.populate('items.product');
+
     res.status(200).json({ success: true, items: wishlist.items });
   } catch (err) {
     console.error('Add to Wishlist Error:', err);
@@ -62,15 +62,20 @@ export const addToWishlist = async (req, res) => {
 export const removeFromWishlist = async (req, res) => {
   try {
     const { productId } = req.params;
-
     const wishlist = await Wishlist.findOne({ user: req.user.id });
-    if (!wishlist) return res.status(404).json({ success: false, message: 'Wishlist not found' });
 
-    wishlist.items = wishlist.items.filter(item => item.toString() !== productId);
+    if (!wishlist) {
+      return res.status(404).json({ success: false, message: 'Wishlist not found' });
+    }
+
+    wishlist.items = wishlist.items.filter(
+      (item) => item.product.toString() !== productId
+    );
+
     await wishlist.save();
+    await wishlist.populate('items.product');
 
-    const updated = await wishlist.populate('items');
-    res.status(200).json({ success: true, items: updated.items });
+    res.status(200).json({ success: true, items: wishlist.items });
   } catch (err) {
     console.error('Remove from Wishlist Error:', err);
     res.status(500).json({ success: false, message: 'Server Error' });

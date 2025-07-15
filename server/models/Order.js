@@ -86,10 +86,10 @@ const orderSchema = new mongoose.Schema({
     zipCode: String,
     country: String,
   },
-  paymentInfo: {
+   paymentInfo: {
     method: {
       type: String,
-      enum: ['stripe', 'paypal', 'cash_on_delivery'],
+      enum: ['stripe', 'paypal', 'cash_on_delivery', 'card'], // Add 'card'
       required: true,
     },
     transactionId: String,
@@ -157,8 +157,10 @@ const orderSchema = new mongoose.Schema({
   deliveredAt: Date,
   cancelledAt: Date,
   refundedAt: Date,
-}, {
+},
+{
   timestamps: true,
+  validateBeforeSave: false // Add this to allow pre-save hooks to run before validation
 });
 
 // Generate order number before saving

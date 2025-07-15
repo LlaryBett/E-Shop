@@ -24,19 +24,23 @@ export const createOrder = async (req, res, next) => {
       billingAddress,
       paymentMethod,
       shippingMethod,
+      totalAmount,
     } = req.body;
 
     // Validate products and calculate totals
     let subtotal = 0;
     const orderItems = [];
+    const productsToUpdate = [];
 
     for (const item of items) {
-      const product = await Product.findById(item.product);
+      // Handle both string ID and full product object
+      const productId = typeof item.product === 'string' ? item.product : item.product?._id;
+      const product = await Product.findById(productId);
       
       if (!product) {
         return res.status(404).json({
           success: false,
-          message: `Product not found: ${item.product}`,
+          message: `Product not found: ${productId}`,
         });
       }
 
@@ -60,18 +64,28 @@ export const createOrder = async (req, res, next) => {
         sku: product.sku,
       });
 
-      // Update product stock
-      product.stock -= item.quantity;
-      await product.save();
+      // Track products for stock update
+      productsToUpdate.push({
+        product,
+        quantity: item.quantity
+      });
     }
 
     // Calculate shipping and tax
     const shippingCost = calculateShipping(shippingMethod, subtotal);
     const tax = calculateTax(subtotal, shippingAddress.state);
-    const total = subtotal + shippingCost + tax;
+    const calculatedTotal = subtotal + shippingCost + tax;
+
+    // Validate total amount matches calculated total
+    if (Math.abs(calculatedTotal - totalAmount) > 0.01) {
+      return res.status(400).json({
+        success: false,
+        message: 'Total amount mismatch',
+      });
+    }
 
     // Create order
-    const order = await Order.create({
+    const order = new Order({
       user: req.user.id,
       items: orderItems,
       shippingAddress,
@@ -84,7 +98,7 @@ export const createOrder = async (req, res, next) => {
         subtotal,
         tax,
         shipping: shippingCost,
-        total,
+        total: totalAmount,
       },
       shippingInfo: {
         method: shippingMethod,
@@ -93,34 +107,70 @@ export const createOrder = async (req, res, next) => {
       },
     });
 
-    // Process payment
-    if (paymentMethod === 'stripe') {
-      try {
-        const paymentResult = await processPayment({
-          amount: total * 100, // Convert to cents
-          currency: 'usd',
-          orderId: order._id,
-          customerEmail: req.user.email,
-        });
+    // Save order to generate order number
+    await order.save();
 
-        order.paymentInfo.transactionId = paymentResult.id;
-        order.paymentInfo.status = 'paid';
-        order.paymentInfo.paidAt = new Date();
-        await order.save();
-      } catch (paymentError) {
-        // Restore product stock if payment fails
-        for (const item of orderItems) {
-          const product = await Product.findById(item.product);
-          product.stock += item.quantity;
-          await product.save();
-        }
+    // Update product stocks only after order is successfully created
+    for (const { product, quantity } of productsToUpdate) {
+      product.stock -= quantity;
+      await product.save({ validateBeforeSave: false });
+    }
 
-        return res.status(400).json({
-          success: false,
-          message: 'Payment failed',
-          error: paymentError.message,
-        });
+    // Process payment based on method
+    try {
+      switch (paymentMethod) {
+        case 'stripe':
+          const paymentResult = await processStripePayment({
+            amount: totalAmount * 100, // Convert to cents
+            currency: 'usd',
+            orderId: order._id,
+            customerEmail: req.user.email,
+          });
+          order.paymentInfo.transactionId = paymentResult.id;
+          order.paymentInfo.status = 'paid';
+          order.paymentInfo.paidAt = new Date();
+          break;
+
+        case 'card':
+          // Handle generic card payment (could be your own processor)
+          const cardPaymentResult = await processCardPayment({
+            amount: totalAmount,
+            orderId: order._id,
+            user: req.user
+          });
+          order.paymentInfo.transactionId = cardPaymentResult.transactionId;
+          order.paymentInfo.status = cardPaymentResult.success ? 'paid' : 'failed';
+          if (cardPaymentResult.success) {
+            order.paymentInfo.paidAt = new Date();
+          }
+          break;
+
+        case 'paypal':
+          // Handle PayPal payment
+          const paypalResult = await createPayPalPayment(order);
+          order.paymentInfo.transactionId = paypalResult.id;
+          // PayPal payments might be pending until completed
+          break;
+
+        case 'cash_on_delivery':
+          // No immediate payment processing needed
+          order.paymentInfo.status = 'pending';
+          break;
       }
+
+      await order.save();
+    } catch (paymentError) {
+      // Restore product stock if payment fails
+      for (const { product, quantity } of productsToUpdate) {
+        product.stock += quantity;
+        await product.save({ validateBeforeSave: false });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: 'Payment processing failed',
+        error: paymentError.message,
+      });
     }
 
     // Send order confirmation email
@@ -128,6 +178,7 @@ export const createOrder = async (req, res, next) => {
       await sendOrderConfirmationEmail(order, req.user);
     } catch (emailError) {
       console.error('Failed to send order confirmation email:', emailError);
+      // Don't fail the order just because email failed
     }
 
     res.status(201).json({
@@ -138,6 +189,56 @@ export const createOrder = async (req, res, next) => {
     next(error);
   }
 };
+
+// Helper functions (would be in separate files)
+async function processStripePayment({ amount, currency, orderId, customerEmail }) {
+  // Implement Stripe payment logic
+}
+
+async function processCardPayment({ amount, orderId, user }) {
+  // Implement your card payment processing logic
+  // This would be your custom payment processor
+  return {
+    success: true,
+    transactionId: `card_${Date.now()}`,
+  };
+}
+
+async function createPayPalPayment(order) {
+  // Implement PayPal payment creation
+}
+
+function calculateShipping(method, subtotal) {
+  // Implement shipping calculation logic
+  const rates = {
+    standard: subtotal > 50 ? 0 : 5.99,
+    express: 12.99,
+    overnight: 24.99,
+  };
+  return rates[method] || 0;
+}
+
+function calculateTax(subtotal, state) {
+  // Implement tax calculation logic
+  const taxRates = {
+    'CA': 0.0725,
+    'NY': 0.08875,
+    // Add other states as needed
+  };
+  return subtotal * (taxRates[state] || 0);
+}
+
+function calculateDeliveryDate(method) {
+  // Implement delivery date estimation
+  const days = {
+    standard: 5,
+    express: 2,
+    overnight: 1,
+  };
+  const date = new Date();
+  date.setDate(date.getDate() + (days[method] || 7));
+  return date;
+}
 
 // @desc    Get user orders
 // @route   GET /api/orders
@@ -317,50 +418,10 @@ export const cancelOrder = async (req, res, next) => {
   }
 };
 
-// Helper functions
-const calculateShipping = (method, subtotal) => {
-  if (subtotal >= 50) return 0; // Free shipping over $50
-  
-  switch (method) {
-    case 'express':
-      return 15.99;
-    case 'overnight':
-      return 29.99;
-    default:
-      return 9.99;
-  }
-};
 
-const calculateTax = (subtotal, state) => {
-  // Simple tax calculation - in real app, use tax service
-  const taxRates = {
-    'CA': 0.0875,
-    'NY': 0.08,
-    'TX': 0.0625,
-    'FL': 0.06,
-  };
-  
-  const rate = taxRates[state] || 0.08;
-  return subtotal * rate;
-};
 
-const calculateDeliveryDate = (method) => {
-  const now = new Date();
-  let days;
-  
-  switch (method) {
-    case 'overnight':
-      days = 1;
-      break;
-    case 'express':
-      days = 3;
-      break;
-    default:
-      days = 7;
-  }
-  
-  return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-};
+
+
 
 const sendOrderConfirmationEmail = async (order, user) => {
   const message = `

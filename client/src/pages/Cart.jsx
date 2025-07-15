@@ -79,7 +79,7 @@ const Cart = () => {
               >
                 <Link to={`/product/${item.product.id}`} className="flex-shrink-0">
                   <img
-                    src={item.product.images[0]}
+                    src={item.product.images[0]?.url}
                     alt={item.product.title}
                     className="w-24 h-24 object-cover rounded-lg"
                   />

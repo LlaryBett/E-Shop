@@ -1,98 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Truck, CheckCircle, XCircle, Clock, Eye, Download, Search, Filter } from 'lucide-react';
+import OrderService from '../services/orderService';
 
 const Orders = () => {
-  const [orders] = useState([
-    {
-      id: '1',
-      orderNumber: 'ORD-2024-001',
-      date: new Date('2024-01-15'),
-      status: 'delivered',
-      total: 299.99,
-      items: [
-        {
-          id: '1',
-          title: 'Wireless Bluetooth Headphones',
-          image: 'https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg?auto=compress&cs=tinysrgb&w=300',
-          quantity: 1,
-          price: 199.99
-        },
-        {
-          id: '2',
-          title: 'Wireless Charging Pad',
-          image: 'https://images.pexels.com/photos/4068314/pexels-photo-4068314.jpeg?auto=compress&cs=tinysrgb&w=300',
-          quantity: 2,
-          price: 49.99
-        }
-      ],
-      shippingAddress: {
-        name: 'John Doe',
-        address: '123 Main St',
-        city: 'New York',
-        state: 'NY',
-        zipCode: '10001'
-      },
-      trackingNumber: 'TRK123456789'
-    },
-    {
-      id: '2',
-      orderNumber: 'ORD-2024-002',
-      date: new Date('2024-01-20'),
-      status: 'shipped',
-      total: 399.99,
-      items: [
-        {
-          id: '3',
-          title: 'Smart Fitness Watch',
-          image: 'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=300',
-          quantity: 1,
-          price: 399.99
-        }
-      ],
-      shippingAddress: {
-        name: 'John Doe',
-        address: '123 Main St',
-        city: 'New York',
-        state: 'NY',
-        zipCode: '10001'
-      },
-      trackingNumber: 'TRK987654321'
-    },
-    {
-      id: '3',
-      orderNumber: 'ORD-2024-003',
-      date: new Date('2024-01-25'),
-      status: 'processing',
-      total: 79.99,
-      items: [
-        {
-          id: '4',
-          title: 'Organic Cotton T-Shirt',
-          image: 'https://images.pexels.com/photos/1021693/pexels-photo-1021693.jpeg?auto=compress&cs=tinysrgb&w=300',
-          quantity: 2,
-          price: 19.99
-        },
-        {
-          id: '5',
-          title: 'Stainless Steel Water Bottle',
-          image: 'https://images.pexels.com/photos/1000084/pexels-photo-1000084.jpeg?auto=compress&cs=tinysrgb&w=300',
-          quantity: 1,
-          price: 34.99
-        }
-      ],
-      shippingAddress: {
-        name: 'John Doe',
-        address: '123 Main St',
-        city: 'New York',
-        state: 'NY',
-        zipCode: '10001'
-      }
-    }
-  ]);
-
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0
+  });
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await OrderService.getOrders(pagination.page, pagination.limit, statusFilter !== 'all' ? statusFilter : undefined);
+        setOrders(response.orders);
+        setPagination(prev => ({
+          ...prev,
+          total: response.total
+        }));
+      } catch (err) {
+        setError(err.message || 'Failed to fetch orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [pagination.page, pagination.limit, statusFilter]);
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({
+      ...prev,
+      page: newPage
+    }));
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -129,11 +77,49 @@ const Orders = () => {
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesSearch = order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          order.items.some(item => item.title.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesStatus && matchesSearch;
+    return matchesSearch;
   });
+
+  const handleCancelOrder = async (orderId) => {
+    try {
+      await OrderService.cancelOrder(orderId);
+      // Refresh orders after cancellation
+      const response = await OrderService.getOrders(pagination.page, pagination.limit, statusFilter !== 'all' ? statusFilter : undefined);
+      setOrders(response.orders);
+    } catch (err) {
+      setError(err.message || 'Failed to cancel order');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Package className="h-12 w-12 text-blue-500 animate-bounce mx-auto" />
+          <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">Loading your orders...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <XCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -194,7 +180,7 @@ const Orders = () => {
         ) : (
           <div className="space-y-6">
             {filteredOrders.map((order) => (
-              <div key={order.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+              <div key={order._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
                 {/* Order Header */}
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex flex-col md:flex-row md:items-center justify-between">
@@ -204,7 +190,7 @@ const Orders = () => {
                           Order {order.orderNumber}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Placed on {order.date.toLocaleDateString()}
+                          Placed on {new Date(order.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -217,7 +203,7 @@ const Orders = () => {
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          ${order.total.toFixed(2)}
+                          ${order.totalAmount.toFixed(2)}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {order.items.length} item{order.items.length !== 1 ? 's' : ''}
@@ -239,14 +225,14 @@ const Orders = () => {
                 <div className="p-6">
                   <div className="space-y-4">
                     {order.items.map((item) => (
-                      <div key={item.id} className="flex items-center space-x-4">
+                      <div key={item._id} className="flex items-center space-x-4">
                         <img
-                          src={item.image}
-                          alt={item.title}
+                          src={item.product.image || 'https://via.placeholder.com/150'}
+                          alt={item.product.name}
                           className="w-16 h-16 object-cover rounded-lg"
                         />
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900 dark:text-white">{item.title}</h4>
+                          <h4 className="font-medium text-gray-900 dark:text-white">{item.product.name}</h4>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             Quantity: {item.quantity}
                           </p>
@@ -283,7 +269,7 @@ const Orders = () => {
                     <h5 className="font-medium text-gray-900 dark:text-white mb-2">Shipping Address</h5>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       <p>{order.shippingAddress.name}</p>
-                      <p>{order.shippingAddress.address}</p>
+                      <p>{order.shippingAddress.street}</p>
                       <p>
                         {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
                       </p>
@@ -303,7 +289,10 @@ const Orders = () => {
                       </>
                     )}
                     {order.status === 'pending' && (
-                      <button className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                      <button 
+                        onClick={() => handleCancelOrder(order._id)}
+                        className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
                         Cancel Order
                       </button>
                     )}
@@ -317,6 +306,31 @@ const Orders = () => {
                 </div>
               </div>
             ))}
+
+            {/* Pagination */}
+            {pagination.total > pagination.limit && (
+              <div className="flex justify-center mt-8">
+                <nav className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-3 py-1">
+                    Page {pagination.page} of {Math.ceil(pagination.total / pagination.limit)}
+                  </span>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page * pagination.limit >= pagination.total}
+                    className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            )}
           </div>
         )}
       </div>
