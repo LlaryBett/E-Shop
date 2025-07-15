@@ -518,22 +518,22 @@ const taxRates = {
                 <div className="space-y-4 mb-6">
                   {items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4 py-4 border-b border-gray-200 dark:border-gray-700">
-                      <img
-                        src={item.product.images[0]}
-                        alt={item.product.title}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white">{item.product.title}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Qty: {item.quantity}</p>
-                        {item.selectedVariant && (
-                          <p className="text-sm text-gray-500">{item.selectedVariant}</p>
-                        )}
-                      </div>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        ${((item.product.salePrice || item.product.price) * item.quantity).toFixed(2)}
-                      </span>
-                    </div>
+    <img
+      src={item.product.images[0]?.url}
+      alt={item.product.title}
+      className="w-16 h-16 object-cover rounded-lg"
+    />
+    <div className="flex-1">
+      <h3 className="font-medium text-gray-900 dark:text-white">{item.product.title}</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">Qty: {item.quantity}</p>
+      {item.selectedVariant && (
+        <p className="text-sm text-gray-500">{item.selectedVariant}</p>
+      )}
+    </div>
+    <span className="font-semibold text-gray-900 dark:text-white">
+      ${((item.product.salePrice || item.product.price) * item.quantity).toFixed(2)}
+    </span>
+  </div>
                   ))}
                 </div>
 
