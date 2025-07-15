@@ -23,7 +23,8 @@ import uploadRoutes from './routes/upload.js';
 import paymentRoutes from './routes/payments.js';
 import adminRoutes from './routes/admin.js';
 import blogRoutes from './routes/blog.js';
-import cartRoutes from './routes/cartRoutes.js'; // ✅ NEWLY ADDED
+import cartRoutes from './routes/cartRoutes.js'; // ✅ CART
+import wishlistRoutes from './routes/wishlistRoutes.js'; // ✅ WISHLIST
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -81,7 +82,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Mount routes
+// Mount API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
@@ -93,9 +94,10 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/blog', blogRoutes);
-app.use('/api/cart', cartRoutes); // ✅ MOUNT CART ROUTES
+app.use('/api/cart', cartRoutes); // ✅ CART
+app.use('/api/wishlist', wishlistRoutes); // ✅ WISHLIST
 
-// Error middleware
+// Error handlers
 app.use(notFound);
 app.use(errorHandler);
 
