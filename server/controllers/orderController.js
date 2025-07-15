@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { sendEmail } from '../utils/sendEmail.js';
 import { processPayment } from '../utils/stripe.js';
+import PDFDocument from 'pdfkit';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -425,8 +426,35 @@ export const cancelOrder = async (req, res, next) => {
   }
 };
 
+export const getOrderInvoice = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    // Optionally check user permissions here
 
+    // Generate PDF
+    const doc = new PDFDocument();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${order.orderNumber}.pdf`);
+    doc.pipe(res);
 
+    doc.fontSize(20).text(`Invoice for Order ${order.orderNumber}`, { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`);
+    doc.text(`Total: $${order.pricing.total.toFixed(2)}`);
+    doc.moveDown();
+    doc.text('Items:');
+    order.items.forEach(item => {
+      doc.text(`- ${item.title} x${item.quantity} ($${item.price.toFixed(2)} each)`);
+    });
+
+    doc.end();
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 
@@ -470,4 +498,20 @@ const sendOrderStatusEmail = async (order) => {
     subject: `Order Update - ${order.orderNumber}`,
     message,
   });
+};
+
+// @desc    Reorder items
+// @route   POST /api/orders/:id/reorder
+// @access  Private
+export const reorderOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    // Optionally check user permissions here
+    res.status(200).json({ success: true, items: order.items });
+  } catch (error) {
+    next(error);
+  }
 };

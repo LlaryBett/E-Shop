@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Truck, CheckCircle, XCircle, Clock, Eye, Download, Search, Filter } from 'lucide-react';
 import OrderService from '../services/orderService';
+import ProductService from '../services/productService';
+import { useCart } from '../contexts/CartContext';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -14,6 +16,8 @@ const Orders = () => {
     limit: 10,
     total: 0
   });
+
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -90,6 +94,35 @@ const Orders = () => {
       setOrders(response.orders);
     } catch (err) {
       setError(err.message || 'Failed to cancel order');
+    }
+  };
+
+  const handleDownloadInvoice = async (orderId, orderNumber) => {
+    try {
+      const blob = await OrderService.downloadInvoice(orderId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${orderNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Failed to download invoice');
+    }
+  };
+
+  const handleReorderItems = async (orderId) => {
+    try {
+      const items = await OrderService.reorderOrder(orderId);
+      for (const item of items) {
+        // Fetch full product details before adding to cart
+        const product = await ProductService.getProduct(item.product);
+        addToCart(product, item.quantity, item.variant);
+      }
+    } catch (err) {
+      setError('Failed to reorder items');
     }
   };
 
@@ -213,7 +246,11 @@ const Orders = () => {
                         <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <button
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          onClick={() => handleDownloadInvoice(order._id, order.orderNumber)}
+                          title="Download Invoice"
+                        >
                           <Download className="h-4 w-4" />
                         </button>
                       </div>
@@ -296,7 +333,10 @@ const Orders = () => {
                         Cancel Order
                       </button>
                     )}
-                    <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <button
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      onClick={() => handleReorderItems(order._id)}
+                    >
                       Reorder Items
                     </button>
                     <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">

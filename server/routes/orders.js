@@ -7,6 +7,8 @@ import {
   getOrder,
   updateOrderStatus,
   cancelOrder,
+  getOrderInvoice, // <-- Add this import
+  reorderOrder, // <-- Add this import
 } from '../controllers/orderController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -43,6 +45,8 @@ router.use(protect);
 router.post('/', orderValidation, createOrder);
 router.get('/', getOrders);
 router.get('/:id', getOrder);
+router.get('/:id/invoice', getOrderInvoice); // <-- Add this route
+router.post('/:id/reorder', reorderOrder); // <-- Add reorder route
 router.put('/:id/cancel', cancelOrder);
 
 // Admin routes

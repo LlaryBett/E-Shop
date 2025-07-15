@@ -35,6 +35,19 @@ class OrderService {
     return response.data.order;
   }
 
+  async downloadInvoice(orderId) {
+    // Returns a blob for the invoice PDF
+    const response = await api.get(`/orders/${orderId}/invoice`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  async reorderOrder(orderId) {
+    const response = await api.post(`/orders/${orderId}/reorder`);
+    return response.data.items;
+  }
+
   // Admin methods
   async getAllOrders(page = 1, limit = 20, filters) {
     const params = new URLSearchParams({
