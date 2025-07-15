@@ -78,6 +78,13 @@ export const createOrder = async (req, res, next) => {
 
     // Validate total amount matches calculated total
     if (Math.abs(calculatedTotal - totalAmount) > 0.01) {
+      console.log('Order total mismatch debug:', {
+        calculatedTotal,
+        totalAmountFromFrontend: totalAmount,
+        subtotal,
+        shippingCost,
+        tax
+      });
       return res.status(400).json({
         success: false,
         message: 'Total amount mismatch',

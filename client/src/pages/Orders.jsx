@@ -203,7 +203,7 @@ const Orders = () => {
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          ${order.totalAmount.toFixed(2)}
+                          ${order.pricing.total.toFixed(2)}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {order.items.length} item{order.items.length !== 1 ? 's' : ''}
@@ -227,12 +227,12 @@ const Orders = () => {
                     {order.items.map((item) => (
                       <div key={item._id} className="flex items-center space-x-4">
                         <img
-                          src={item.product.image || 'https://via.placeholder.com/150'}
-                          alt={item.product.name}
+                          src={item.image || 'https://via.placeholder.com/150'}
+                          alt={item.title}
                           className="w-16 h-16 object-cover rounded-lg"
                         />
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900 dark:text-white">{item.product.name}</h4>
+                          <h4 className="font-medium text-gray-900 dark:text-white">{item.title}</h4>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             Quantity: {item.quantity}
                           </p>

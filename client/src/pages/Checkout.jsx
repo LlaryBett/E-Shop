@@ -48,9 +48,26 @@ const Checkout = () => {
     cardholderName: '',
   });
 
+  // Backend-aligned tax rates
+const taxRates = {
+  'CA': 0.0725,
+  'NY': 0.08875,
+  // Add other states if needed
+};
+
   const subtotal = getTotalPrice();
-  const shippingCost = shippingMethod === 'express' ? 15.99 : shippingMethod === 'overnight' ? 29.99 : subtotal > 50 ? 0 : 9.99;
-  const tax = subtotal * 0.08;
+  let shippingCost;
+  if (shippingMethod === 'express') {
+    shippingCost = 12.99;
+  } else if (shippingMethod === 'overnight') {
+    shippingCost = 24.99;
+  } else {
+    shippingCost = subtotal > 50 ? 0 : 5.99;
+  }
+  const tax =
+    taxRates[shippingAddress.state] !== undefined
+      ? subtotal * taxRates[shippingAddress.state]
+      : 0;
   const total = subtotal + shippingCost + tax;
 
   const shippingOptions = [
@@ -58,19 +75,19 @@ const Checkout = () => {
       id: 'standard',
       name: 'Standard Shipping',
       description: '5-7 business days',
-      price: subtotal > 50 ? 0 : 9.99,
+      price: subtotal > 50 ? 0 : 5.99,
     },
     {
       id: 'express',
       name: 'Express Shipping',
       description: '2-3 business days',
-      price: 15.99,
+      price: 12.99,
     },
     {
       id: 'overnight',
       name: 'Overnight Shipping',
       description: 'Next business day',
-      price: 29.99,
+      price: 24.99,
     },
   ];
 
