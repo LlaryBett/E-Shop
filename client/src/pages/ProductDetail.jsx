@@ -1,28 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Heart, ShoppingCart, Minus, Plus, Share2, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
-import { mockProducts } from '../data/mockData';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
+import ProductService from '../services/productService';
 import toast from 'react-hot-toast';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariants, setSelectedVariants] = useState({});
   const [activeTab, setActiveTab] = useState('description');
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const productData = await ProductService.getProduct(id);
+        
+        const transformedProduct = {
+          ...productData,
+          brand: productData.brand?.name || 'Unknown Brand',
+          images: productData.images || [],
+          tags: productData.tags || [],
+          variants: productData.variants || [],
+          reviews: productData.reviews || [],
+          specifications: productData.specifications || {}
+        };
+        
+        setProduct(transformedProduct);
+        
+        if (productData.category) {
+          const related = await ProductService.getRelatedProducts(productData.id, productData.category);
+          setRelatedProducts(related || []);
+        }
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError('Failed to load product');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (id) {
-      const foundProduct = mockProducts.find(p => p.id === id);
-      setProduct(foundProduct || null);
+      fetchProduct();
     }
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Loading product...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{error}</h2>
+          <Link to="/shop" className="text-blue-600 hover:text-blue-700">
+            Back to Shop
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -68,19 +122,17 @@ const ProductDetail = () => {
     ? Math.round(((product.price - product.salePrice) / product.price) * 100)
     : 0;
 
-  // Group variants by name
-  const groupedVariants = product.variants?.reduce((acc, variant) => {
+  const groupedVariants = product.variants.reduce((acc, variant) => {
     if (!acc[variant.name]) {
       acc[variant.name] = [];
     }
     acc[variant.name].push(variant.value);
     return acc;
-  }, {}) || {};
+  }, {});
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
         <nav className="mb-8">
           <ol className="flex items-center space-x-2 text-sm">
             <li><Link to="/" className="text-gray-500 hover:text-gray-700">Home</Link></li>
@@ -92,11 +144,10 @@ const ProductDetail = () => {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Images */}
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-lg overflow-hidden">
               <img
-                src={product.images[selectedImage]}
+                src={product.images[selectedImage]?.url}
                 alt={product.title}
                 className="w-full h-full object-cover"
               />
@@ -133,21 +184,19 @@ const ProductDetail = () => {
                       selectedImage === index ? 'border-blue-500' : 'border-gray-200'
                     }`}
                   >
-                    <img src={image} alt={`${product.title} ${index + 1}`} className="w-full h-full object-cover" />
+                    <img src={image.url} alt={`${product.title} ${index + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Product Info */}
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{product.title}</h1>
               <p className="text-gray-600 dark:text-gray-400">Brand: {product.brand}</p>
             </div>
 
-            {/* Rating */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
@@ -159,12 +208,11 @@ const ProductDetail = () => {
                   />
                 ))}
                 <span className="ml-2 text-sm text-gray-600 dark:text-gray-300">
-                  {product.rating} ({product.reviewCount} reviews)
+                  {product.rating} ({product.reviewCount || 0} reviews)
                 </span>
               </div>
             </div>
 
-            {/* Price */}
             <div className="flex items-center space-x-4">
               <span className="text-3xl font-bold text-gray-900 dark:text-white">
                 ${currentPrice}
@@ -179,7 +227,6 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Stock Status */}
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded-full ${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
               <span className={`text-sm font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -187,7 +234,6 @@ const ProductDetail = () => {
               </span>
             </div>
 
-            {/* Variants */}
             {Object.keys(groupedVariants).length > 0 && (
               <div className="space-y-4">
                 {Object.entries(groupedVariants).map(([variantName, values]) => (
@@ -219,7 +265,6 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Quantity */}
             <div>
               <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Quantity</h3>
               <div className="flex items-center space-x-3">
@@ -244,7 +289,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex space-x-4">
               <button
                 onClick={handleAddToCart}
@@ -270,7 +314,6 @@ const ProductDetail = () => {
               </button>
             </div>
 
-            {/* Features */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
                 <Truck className="h-6 w-6 text-blue-600" />
@@ -297,7 +340,6 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Product Details Tabs */}
         <div className="mt-16">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex space-x-8">
@@ -347,7 +389,7 @@ const ProductDetail = () => {
 
             {activeTab === 'specifications' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {product.specifications ? (
+                {Object.keys(product.specifications).length > 0 ? (
                   Object.entries(product.specifications).map(([key, value]) => (
                     <div key={key} className="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                       <span className="font-medium text-gray-900 dark:text-white">{key}</span>
@@ -364,7 +406,7 @@ const ProductDetail = () => {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Customer Reviews ({product.reviewCount})
+                    Customer Reviews ({product.reviewCount || 0})
                   </h3>
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     Write a Review
@@ -386,67 +428,52 @@ const ProductDetail = () => {
                         ))}
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Based on {product.reviewCount} reviews
+                        Based on {product.reviewCount || 0} reviews
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Sample Reviews */}
                 <div className="space-y-6">
-                  {[
-                    {
-                      id: 1,
-                      author: 'John D.',
-                      rating: 5,
-                      date: '2024-01-15',
-                      title: 'Excellent product!',
-                      comment: 'Really happy with this purchase. Quality is outstanding and delivery was fast.',
-                    },
-                    {
-                      id: 2,
-                      author: 'Sarah M.',
-                      rating: 4,
-                      date: '2024-01-10',
-                      title: 'Good value for money',
-                      comment: 'Works as expected. Good build quality and reasonable price.',
-                    },
-                  ].map(review => (
-                    <div key={review.id} className="border-b border-gray-200 dark:border-gray-700 pb-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-gray-900 dark:text-white">{review.author}</span>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
+                  {product.reviews.length > 0 ? (
+                    product.reviews.map(review => (
+                      <div key={review._id} className="border-b border-gray-200 dark:border-gray-700 pb-6">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-gray-900 dark:text-white">{review.user?.name || 'Anonymous'}</span>
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
                           </div>
+                          <span className="text-sm text-gray-500">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                        <span className="text-sm text-gray-500">{review.date}</span>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">{review.title}</h4>
+                        <p className="text-gray-600 dark:text-gray-400">{review.comment}</p>
                       </div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">{review.title}</h4>
-                      <p className="text-gray-600 dark:text-gray-400">{review.comment}</p>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">No reviews yet. Be the first to review!</p>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Related Products */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Related Products</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {mockProducts
-              .filter(p => p.category === product.category && p.id !== product.id)
-              .slice(0, 4)
-              .map(relatedProduct => (
+        {relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Related Products</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {relatedProducts.map(relatedProduct => (
                 <Link
                   key={relatedProduct.id}
                   to={`/product/${relatedProduct.id}`}
@@ -454,7 +481,7 @@ const ProductDetail = () => {
                 >
                   <div className="aspect-square overflow-hidden">
                     <img
-                      src={relatedProduct.images[0]}
+                      src={relatedProduct.images[0]?.url}
                       alt={relatedProduct.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -476,8 +503,9 @@ const ProductDetail = () => {
                   </div>
                 </Link>
               ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

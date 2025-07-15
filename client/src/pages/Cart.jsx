@@ -93,7 +93,7 @@ const Cart = () => {
                     {item.product.title}
                   </Link>
                   <p className="text-gray-600 dark:text-gray-400 mt-1">
-                    Brand: {item.product.brand}
+                    Brand: {item.product.brand?.name || 'Unknown'}
                   </p>
                   {item.selectedVariant && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
