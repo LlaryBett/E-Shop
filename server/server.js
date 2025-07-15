@@ -16,13 +16,14 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import productRoutes from './routes/products.js';
 import categoryRoutes from './routes/categories.js';
-import brandRoutes from './routes/brandRoutes.js'; // ✅ Newly added
+import brandRoutes from './routes/brandRoutes.js';
 import orderRoutes from './routes/orders.js';
 import reviewRoutes from './routes/reviews.js';
 import uploadRoutes from './routes/upload.js';
 import paymentRoutes from './routes/payments.js';
 import adminRoutes from './routes/admin.js';
 import blogRoutes from './routes/blog.js';
+import cartRoutes from './routes/cartRoutes.js'; // ✅ NEWLY ADDED
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -32,7 +33,6 @@ import { notFound } from './middleware/notFound.js';
 dotenv.config();
 
 const app = express();
-
 app.set('trust proxy', 1);
 
 // Rate limiter
@@ -57,7 +57,7 @@ app.use(
   })
 );
 
-// Body parsing and cookie
+// Body & cookie parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
@@ -81,18 +81,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API routes
+// Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/brands', brandRoutes); // ✅ Mount brand routes
+app.use('/api/brands', brandRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/blog', blogRoutes);
+app.use('/api/cart', cartRoutes); // ✅ MOUNT CART ROUTES
 
 // Error middleware
 app.use(notFound);
@@ -111,10 +112,8 @@ const connectDB = async () => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-
 const startServer = async () => {
   await connectDB();
-
   app.listen(PORT, () => {
     console.log(`🚀 Server running in ${process.env.NODE_ENV} on port ${PORT}`);
   });
@@ -122,7 +121,7 @@ const startServer = async () => {
 
 startServer();
 
-// Graceful error handling
+// Graceful shutdowns
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err.message);
   process.exit(1);
