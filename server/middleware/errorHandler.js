@@ -34,6 +34,10 @@ export const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 401 };
   }
 
+  // ✅ Add CORS headers to error responses
+  res.header('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'http://localhost:5173');
+  res.header('Access-Control-Allow-Credentials', 'true');
+
   res.status(error.statusCode || 500).json({
     success: false,
     message: error.message || 'Server Error',

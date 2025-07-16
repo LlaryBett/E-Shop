@@ -151,25 +151,25 @@ const CustomersManagement = () => {
     switch (loyalty) {
       case 'bronze':
         return { 
-          color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400',
+          color: 'bg-yellow-800 text-yellow-100 dark:bg-yellow-900/80 dark:text-yellow-200 border border-yellow-900',
           icon: <Star className="h-4 w-4 mr-1" />,
           text: 'Bronze'
         };
       case 'silver':
         return { 
-          color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+          color: 'bg-gray-300 text-gray-800 dark:bg-gray-600 dark:text-gray-100 border border-gray-400',
           icon: <Star className="h-4 w-4 mr-1" />,
           text: 'Silver'
         };
       case 'gold':
         return { 
-          color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+          color: 'bg-yellow-300 text-yellow-900 dark:bg-yellow-400 dark:text-yellow-900 border border-yellow-500',
           icon: <Star className="h-4 w-4 mr-1" />,
           text: 'Gold'
         };
       case 'platinum':
         return { 
-          color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+          color: 'bg-blue-200 text-blue-900 dark:bg-blue-300 dark:text-blue-900 border border-blue-400',
           icon: <Star className="h-4 w-4 mr-1" />,
           text: 'Platinum'
         };
