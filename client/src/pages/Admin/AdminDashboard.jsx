@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import Chart from 'chart.js/auto';
+import { Bar } from 'react-chartjs-2';
 import { 
   BarChart3, 
   Package, 
@@ -21,73 +23,128 @@ import CustomersManagement from './CustomersManagement';
 import CategoryManagement from './CategoryManagement';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import SettingsPage from './SettingsPage';
+import adminService from '../../services/adminService';
 
-// Mock data for dashboard
-const dashboardStats = {
-  totalRevenue: 125430.50,
-  totalOrders: 1247,
-  totalCustomers: 8934,
-  totalProducts: 456,
-  revenueGrowth: 12.5,
-  orderGrowth: 8.3,
-  customerGrowth: 15.2,
-  productGrowth: 5.7,
+const RevenueChart = ({ data }) => {
+  // Format data for chart
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  // Create a full year dataset with 0 values for months without data
+  const currentYear = new Date().getFullYear();
+  const fullYearData = Array(12).fill(0);
+  
+  data.forEach(item => {
+    if (item._id.year === currentYear) {
+      fullYearData[item._id.month - 1] = item.revenue;
+    }
+  });
+
+  // Get current month index (0-11)
+  const currentMonth = new Date().getMonth();
+  
+  // Only show data up to current month
+  const displayedMonths = months.slice(0, currentMonth + 1);
+  const displayedData = fullYearData.slice(0, currentMonth + 1);
+
+  const chartData = {
+    labels: displayedMonths,
+    datasets: [
+      {
+        label: 'Revenue ($)',
+        data: displayedData,
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          color: '#6b7280',
+          font: {
+            family: 'Inter, sans-serif',
+          },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `$${context.raw.toFixed(2)}`;
+          }
+        }
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: '#6b7280',
+        },
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: '#e5e7eb',
+        },
+        ticks: {
+          color: '#6b7280',
+          callback: function(value) {
+            return '$' + value;
+          },
+        },
+      },
+    },
+    elements: {
+      bar: {
+        hoverBackgroundColor: 'rgba(59, 130, 246, 0.9)',
+      },
+    },
+  };
+
+  return (
+    <div className="relative h-full">
+      <Bar data={chartData} options={options} />
+      <style jsx global>{`
+        .dark .chartjs-render-monitor {
+          filter: brightness(0.8);
+        }
+        .dark .chartjs-grid line {
+          stroke: #374151 !important;
+        }
+      `}</style>
+    </div>
+  );
 };
-
-const recentOrders = [
-  {
-    id: 'ORD-001',
-    customer: 'John Doe',
-    email: 'john@example.com',
-    total: 299.99,
-    status: 'completed',
-    date: '2024-01-15',
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Jane Smith',
-    email: 'jane@example.com',
-    total: 149.50,
-    status: 'processing',
-    date: '2024-01-15',
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Mike Johnson',
-    email: 'mike@example.com',
-    total: 89.99,
-    status: 'shipped',
-    date: '2024-01-14',
-  },
-];
-
-const topProducts = [
-  {
-    id: '1',
-    name: 'Wireless Bluetooth Headphones',
-    sales: 234,
-    revenue: 46800,
-    image: 'https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg?auto=compress&cs=tinysrgb&w=100',
-  },
-  {
-    id: '2',
-    name: 'Smart Fitness Watch',
-    sales: 189,
-    revenue: 75600,
-    image: 'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=100',
-  },
-  {
-    id: '3',
-    name: 'Organic Cotton T-Shirt',
-    sales: 456,
-    revenue: 9120,
-    image: 'https://images.pexels.com/photos/1021693/pexels-photo-1021693.jpeg?auto=compress&cs=tinysrgb&w=100',
-  },
-];
 
 const AdminDashboard = () => {
   const location = useLocation();
   const [_activeTab, _setActiveTab] = useState('dashboard');
+
+  // State for backend data
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+
+  useEffect(() => {
+    adminService.getDashboardStats().then(res => {
+      const stats = res.data.stats;
+      setDashboardStats(stats);
+      setRecentOrders(stats.recentOrders || []);
+      setTopProducts(stats.topProducts || []);
+    });
+  }, []);
 
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/admin' },
@@ -123,7 +180,7 @@ const AdminDashboard = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${dashboardStats.totalRevenue.toLocaleString()}
+                ${dashboardStats?.totalRevenue?.toLocaleString() ?? '...'}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -132,7 +189,7 @@ const AdminDashboard = () => {
           </div>
           <div className="mt-4 flex items-center">
             <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600">+{dashboardStats.revenueGrowth}%</span>
+            <span className="text-sm text-green-600">+{dashboardStats?.revenueGrowth ?? '...'}%</span>
             <span className="text-sm text-gray-500 ml-2">vs last month</span>
           </div>
         </div>
@@ -142,7 +199,7 @@ const AdminDashboard = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {dashboardStats.totalOrders.toLocaleString()}
+                {dashboardStats?.totalOrders?.toLocaleString() ?? '...'}
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
@@ -151,7 +208,7 @@ const AdminDashboard = () => {
           </div>
           <div className="mt-4 flex items-center">
             <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600">+{dashboardStats.orderGrowth}%</span>
+            <span className="text-sm text-green-600">+{dashboardStats?.orderGrowth ?? '...'}%</span>
             <span className="text-sm text-gray-500 ml-2">vs last month</span>
           </div>
         </div>
@@ -161,7 +218,7 @@ const AdminDashboard = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Customers</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {dashboardStats.totalCustomers.toLocaleString()}
+                {dashboardStats?.totalUsers?.toLocaleString() ?? '...'}
               </p>
             </div>
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
@@ -170,7 +227,7 @@ const AdminDashboard = () => {
           </div>
           <div className="mt-4 flex items-center">
             <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600">+{dashboardStats.customerGrowth}%</span>
+            <span className="text-sm text-green-600">+{dashboardStats?.userGrowth ?? '...'}%</span>
             <span className="text-sm text-gray-500 ml-2">vs last month</span>
           </div>
         </div>
@@ -180,7 +237,7 @@ const AdminDashboard = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Products</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {dashboardStats.totalProducts.toLocaleString()}
+                {dashboardStats?.totalProducts?.toLocaleString() ?? '...'}
               </p>
             </div>
             <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
@@ -189,7 +246,7 @@ const AdminDashboard = () => {
           </div>
           <div className="mt-4 flex items-center">
             <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600">+{dashboardStats.productGrowth}%</span>
+            <span className="text-sm text-green-600">+{dashboardStats?.productGrowth ?? '...'}%</span>
             <span className="text-sm text-gray-500 ml-2">vs last month</span>
           </div>
         </div>
@@ -209,17 +266,17 @@ const AdminDashboard = () => {
           <div className="p-6">
             <div className="space-y-4">
               {recentOrders.map(order => (
-                <div key={order.id} className="flex items-center justify-between">
+                <div key={order._id} className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{order.id}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{order.customer}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{order.orderNumber}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{order.user?.name}</p>
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">${order.total}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">${order.pricing?.total?.toFixed(2)}</p>
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                       {order.status}
                     </span>
@@ -242,19 +299,19 @@ const AdminDashboard = () => {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {topProducts.map(product => (
-                <div key={product.id} className="flex items-center space-x-4">
+              {topProducts.map(tp => (
+                <div key={tp._id} className="flex items-center space-x-4">
                   <img
-                    src={product.image}
-                    alt={product.name}
+                    src={tp.product?.images?.[0]?.url}
+                    alt={tp.product?.title}
                     className="w-12 h-12 object-cover rounded-lg"
                   />
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white line-clamp-1">{product.name}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{product.sales} sales</p>
+                    <p className="font-medium text-gray-900 dark:text-white line-clamp-1">{tp.product?.title}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{tp.totalSold} sales</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">${product.revenue.toLocaleString()}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">${tp.totalRevenue?.toLocaleString()}</p>
                   </div>
                 </div>
               ))}
@@ -263,14 +320,20 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Chart Placeholder */}
+      {/* Revenue Chart */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Revenue Overview</h3>
-        <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500 dark:text-gray-400">Revenue chart would be displayed here</p>
-          </div>
+        <div className="h-64">
+          {dashboardStats?.monthlyRevenue ? (
+            <RevenueChart data={dashboardStats.monthlyRevenue} />
+          ) : (
+            <div className="h-full bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 dark:text-gray-400">Loading revenue data...</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -335,23 +398,23 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {topProducts.map(product => (
-                <tr key={product.id}>
+              {topProducts.map(tp => (
+                <tr key={tp._id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded-lg mr-3" />
+                      <img src={tp.product?.images?.[0]?.url} alt={tp.product?.title} className="w-10 h-10 object-cover rounded-lg mr-3" />
                       <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{product.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">SKU: PRD-{product.id}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{tp.product?.title}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">SKU: {tp.product?.sku}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">Electronics</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${(product.revenue / product.sales).toFixed(2)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">45</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{tp.product?.subcategory ?? '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${tp.product?.salePrice?.toFixed(2) ?? tp.product?.price?.toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{tp.product?.stock ?? '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                      Active
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${tp.product?.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
+                      {tp.product?.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
