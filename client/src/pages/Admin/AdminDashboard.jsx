@@ -16,6 +16,11 @@ import {
   Filter,
   Download
 } from 'lucide-react';
+import OrdersManagement from './OrdersManagement';
+import CustomersManagement from './CustomersManagement';
+import CategoryManagement from './CategoryManagement';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import SettingsPage from './SettingsPage';
 
 // Mock data for dashboard
 const dashboardStats = {
@@ -89,6 +94,8 @@ const AdminDashboard = () => {
     { id: 'products', label: 'Products', icon: Package, path: '/admin/products' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
     { id: 'customers', label: 'Customers', icon: Users, path: '/admin/customers' },
+    { id: 'categories', label: 'Categories', icon: Package, path: '/admin/categories' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
 
@@ -405,9 +412,11 @@ const AdminDashboard = () => {
           <Routes>
             <Route path="/" element={<DashboardOverview />} />
             <Route path="/products" element={<ProductsManagement />} />
-            <Route path="/orders" element={<div>Orders Management</div>} />
-            <Route path="/customers" element={<div>Customers Management</div>} />
-            <Route path="/settings" element={<div>Settings</div>} />
+            <Route path="/orders" element={<OrdersManagement />} />
+            <Route path="/customers" element={<CustomersManagement />} />
+            <Route path="/categories" element={<CategoryManagement />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/settings" element={<SettingsPage/>} />
           </Routes>
         </div>
       </div>
