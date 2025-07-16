@@ -7,15 +7,26 @@ import mongoose from 'mongoose';
 // @desc    Get all products
 // @route   GET /api/products
 // @access  Public
+
+
+// @desc    Get all products (public or admin with includeInactive)
+// @route   GET /api/products
+// @access  Public | Admin (when includeInactive=true)
 export const getProducts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
     const skip = (page - 1) * limit;
 
-    let query = { isActive: true };
+    // Admins can see inactive products if includeInactive=true
+    const includeInactive = req.user?.role === 'admin' && req.query.includeInactive === 'true';
+    let query = {};
 
-    // Apply filters
+    if (!includeInactive) {
+      query.isActive = true;
+    }
+
+    // Apply filters (same as your second implementation)
     if (req.query.search) query.$text = { $search: req.query.search };
     if (req.query.categories) {
       query.category = { $in: req.query.categories.split(',').map(id => new mongoose.Types.ObjectId(id)) };
@@ -32,18 +43,10 @@ export const getProducts = async (req, res, next) => {
     if (req.query.inStock === 'true') query.stock = { $gt: 0 };
     if (req.query.onSale === 'true') query.salePrice = { $exists: true, $ne: null };
 
-    // Fetch products with populated brand & category
+    // Fetch products
     const products = await Product.find(query)
-      .populate({
-        path: 'brand',
-        select: 'name logo',
-        model: 'Brand'
-      })
-      .populate({
-        path: 'category',
-        select: 'name slug',
-        model: 'Category'
-      })
+      .populate('brand', 'name logo')
+      .populate('category', 'name slug')
       .sort(req.query.sortBy ? { [req.query.sortBy]: req.query.sortOrder === 'asc' ? 1 : -1 } : { createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -62,29 +65,16 @@ export const getProducts = async (req, res, next) => {
   }
 };
 
-// @desc    Get single product
+// @desc    Get single product by ID
 // @route   GET /api/products/:id
 // @access  Public
 export const getProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate({
-        path: 'category',
-        select: 'name slug',
-        model: 'Category'
-      })
-      .populate({
-        path: 'brand',
-        select: 'name logo',
-        model: 'Brand'
-      })
-      .populate({
-        path: 'createdBy',
-        select: 'name',
-        model: 'User'
-      });
+      .populate('brand', 'name logo')
+      .populate('category', 'name slug');
 
-    if (!product) {
+    if (!product || (!product.isActive && req.user?.role !== 'admin')) {
       return res.status(404).json({
         success: false,
         message: 'Product not found',
@@ -99,6 +89,10 @@ export const getProduct = async (req, res, next) => {
     next(error);
   }
 };
+
+// Keep the rest of your functions (createProduct, updateProduct, etc.) unchanged.
+
+
 
 // @desc    Create product
 // @route   POST /api/products

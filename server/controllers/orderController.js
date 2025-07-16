@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import User from '../models/User.js'; // Add this import
 import { sendEmail } from '../utils/sendEmail.js';
 import { processPayment } from '../utils/stripe.js';
 import PDFDocument from 'pdfkit';
@@ -123,6 +124,32 @@ export const createOrder = async (req, res, next) => {
       product.stock -= quantity;
       await product.save({ validateBeforeSave: false });
     }
+
+    // --- Update user orderCount, totalSpent, and loyalty ---
+    try {
+      const user = await User.findById(req.user.id);
+      if (user) {
+        user.orderCount = (user.orderCount || 0) + 1;
+        user.totalSpent = (user.totalSpent || 0) + subtotal + shippingCost + tax;
+
+        // Loyalty logic (example: based on totalSpent)
+        if (user.totalSpent >= 5000) {
+          user.loyalty = 'platinum';
+        } else if (user.totalSpent >= 2000) {
+          user.loyalty = 'gold';
+        } else if (user.totalSpent >= 1000) {
+          user.loyalty = 'silver';
+        } else {
+          user.loyalty = 'bronze';
+        }
+
+        await user.save();
+      }
+    } catch (userUpdateError) {
+      console.error('Failed to update user order stats:', userUpdateError);
+      // Don't fail the order just because user stats update failed
+    }
+    // --- End user stats update ---
 
     // Process payment based on method
     try {

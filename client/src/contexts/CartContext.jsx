@@ -30,14 +30,21 @@ export const CartProvider = ({ children }) => {
       if (user) {
         try {
           const data = await fetchCart();
-          setItems(data.items || []);
+          const normalizedItems = data.items.map(item => ({
+            ...item,
+            id: item._id // normalize _id for frontend
+          }));
+          setItems(normalizedItems);
+          console.log('[🟢 Cart Loaded]', normalizedItems);
         } catch (err) {
-          console.error(err);
+          console.error('[❌ Load Cart Error]', err);
           toast.error('Failed to load cart');
         }
       } else {
         const guestCart = localStorage.getItem('cart_guest');
-        setItems(guestCart ? JSON.parse(guestCart) : []);
+        const parsed = guestCart ? JSON.parse(guestCart) : [];
+        setItems(parsed);
+        console.log('[🟢 Guest Cart Loaded]', parsed);
       }
     };
 
@@ -91,10 +98,10 @@ export const CartProvider = ({ children }) => {
     try {
       await addToCartAPI(product._id, quantity, variant);
       const updated = await fetchCart();
-      setItems(updated.items);
+      setItems(updated.items.map(item => ({ ...item, id: item._id })));
       toast.success(`${product.title} added to cart`);
     } catch (err) {
-      console.error(err);
+      console.error('[❌ Add to Cart Failed]', err);
       toast.error('Failed to add item to cart');
     }
   };
@@ -112,11 +119,20 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
+      console.log('[🟡 Update Quantity]', { itemId, quantity });
+
       await updateCartItem(itemId, quantity);
+
       const updated = await fetchCart();
-      setItems(updated.items);
+      const normalizedItems = updated.items.map(item => ({
+        ...item,
+        id: item._id
+      }));
+      setItems(normalizedItems);
+
+      console.log('[✅ Quantity Updated]', normalizedItems);
     } catch (err) {
-      console.error(err);
+      console.error('[❌ Quantity Update Failed]', err.response?.data || err);
       toast.error('Failed to update quantity');
     }
   };
@@ -130,9 +146,9 @@ export const CartProvider = ({ children }) => {
     try {
       await removeCartItem(itemId);
       const updated = await fetchCart();
-      setItems(updated.items);
+      setItems(updated.items.map(item => ({ ...item, id: item._id })));
     } catch (err) {
-      console.error(err);
+      console.error('[❌ Remove from Cart Failed]', err);
       toast.error('Failed to remove item');
     }
   };
@@ -148,7 +164,7 @@ export const CartProvider = ({ children }) => {
       await clearCartAPI();
       setItems([]);
     } catch (err) {
-      console.error(err);
+      console.error('[❌ Clear Cart Failed]', err);
       toast.error('Failed to clear cart');
     }
   };

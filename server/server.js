@@ -135,3 +135,12 @@ process.on('uncaughtException', (err) => {
 });
 
 export default app;
+
+// If you are still getting CORS errors, make sure:
+// 1. This CORS middleware is placed BEFORE any route definitions (which it is).
+// 2. Your frontend is running on http://localhost:5173 and matches the CLIENT_URL.
+// 3. You restart your backend server after changes.
+// 4. There are no proxy or network issues blocking requests.
+
+// If you want to allow all origins for development, you can use:
+// app.use(cors());

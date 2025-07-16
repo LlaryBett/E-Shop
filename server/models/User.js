@@ -38,6 +38,19 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  orderCount: {
+    type: Number,
+    default: 0,
+  },
+  totalSpent: {
+    type: Number,
+    default: 0,
+  },
+  loyalty: {
+    type: String,
+    enum: ['bronze', 'silver', 'gold', 'platinum'],
+    default: 'bronze',
+  },
   addresses: [{
     type: {
       type: String,
@@ -151,5 +164,16 @@ userSchema.methods.getResetPasswordToken = function() {
   
   return resetToken;
 };
+
+// The User schema now has orderCount, totalSpent, and loyalty fields.
+// These fields are for reporting/analytics and should be updated based on the user's orders.
+// There is no direct reference to the Order schema here, but you should update these fields in your order-related backend logic.
+
+// For example, after an order is completed/paid, you should:
+// 1. Increment user.orderCount
+// 2. Add the order total to user.totalSpent
+// 3. Optionally, update user.loyalty based on totalSpent or orderCount
+
+// This logic should be handled in your order creation/completion controller, not in the User schema itself.
 
 export default mongoose.model('User', userSchema);

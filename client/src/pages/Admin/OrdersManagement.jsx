@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
@@ -24,109 +24,12 @@ import {
   CreditCard,
   User
 } from 'lucide-react';
+import orderService from '../../services/orderService'; // adjust path if needed
 
 const OrdersManagement = () => {
   // Sample order data
-  const [orders, setOrders] = useState([
-    {
-      id: 'ORD-001',
-      customer: 'John Doe',
-      email: 'john@example.com',
-      date: '2024-02-15',
-      status: 'completed',
-      payment: 'paid',
-      total: 299.99,
-      items: 3,
-      shipping: 'Standard',
-      address: '123 Main St, Anytown, USA'
-    },
-    {
-      id: 'ORD-002',
-      customer: 'Jane Smith',
-      email: 'jane@example.com',
-      date: '2024-02-14',
-      status: 'processing',
-      payment: 'paid',
-      total: 149.50,
-      items: 2,
-      shipping: 'Express',
-      address: '456 Oak Ave, Somewhere, USA'
-    },
-    {
-      id: 'ORD-003',
-      customer: 'Mike Johnson',
-      email: 'mike@example.com',
-      date: '2024-02-13',
-      status: 'shipped',
-      payment: 'paid',
-      total: 89.99,
-      items: 1,
-      shipping: 'Standard',
-      address: '789 Pine Rd, Nowhere, USA'
-    },
-    {
-      id: 'ORD-004',
-      customer: 'Sarah Williams',
-      email: 'sarah@example.com',
-      date: '2024-02-12',
-      status: 'pending',
-      payment: 'pending',
-      total: 199.99,
-      items: 4,
-      shipping: 'Free',
-      address: '321 Elm Blvd, Anywhere, USA'
-    },
-    {
-      id: 'ORD-005',
-      customer: 'David Brown',
-      email: 'david@example.com',
-      date: '2024-02-11',
-      status: 'cancelled',
-      payment: 'refunded',
-      total: 159.99,
-      items: 2,
-      shipping: 'Standard',
-      address: '654 Cedar Ln, Somewhere, USA'
-    },
-    {
-      id: 'ORD-006',
-      customer: 'Emily Davis',
-      email: 'emily@example.com',
-      date: '2024-02-10',
-      status: 'delivered',
-      payment: 'paid',
-      total: 229.99,
-      items: 3,
-      shipping: 'Express',
-      address: '987 Maple Dr, Nowhere, USA'
-    },
-    {
-      id: 'ORD-007',
-      customer: 'Robert Wilson',
-      email: 'robert@example.com',
-      date: '2024-02-09',
-      status: 'shipped',
-      payment: 'paid',
-      total: 79.99,
-      items: 1,
-      shipping: 'Standard',
-      address: '135 Birch St, Anywhere, USA'
-    },
-    {
-      id: 'ORD-008',
-      customer: 'Lisa Taylor',
-      email: 'lisa@example.com',
-      date: '2024-02-08',
-      status: 'processing',
-      payment: 'paid',
-      total: 349.99,
-      items: 5,
-      shipping: 'Express',
-      address: '246 Walnut Ave, Somewhere, USA'
-    }
-  ]);
-
-  // State for filters and pagination
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPayment, setSelectedPayment] = useState('all');
@@ -141,23 +44,47 @@ const OrdersManagement = () => {
   const statuses = ['all', 'pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'];
   const payments = ['all', 'paid', 'pending', 'refunded', 'failed'];
 
+  useEffect(() => {
+    setLoading(true);
+    orderService.getAllOrders(1, 100).then(res => {
+      // res.orders is expected from your service
+      setOrders(res.orders || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
   // Filter orders based on search term, status, and payment
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.email.toLowerCase().includes(searchTerm.toLowerCase());
+    // Defensive: use order.orderNumber, order.user?.name, order.user?.email
+    const orderId = order.orderNumber || order._id || '';
+    const customer = order.user?.name || '';
+    const email = order.user?.email || '';
+    const matchesSearch =
+      orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'all' || order.status === selectedStatus;
-    const matchesPayment = selectedPayment === 'all' || order.payment === selectedPayment;
-    
+    // Payment info is nested: order.paymentInfo.status
+    const paymentStatus = order.paymentInfo?.status || '';
+    const matchesPayment = selectedPayment === 'all' || paymentStatus === selectedPayment;
+
     return matchesSearch && matchesStatus && matchesPayment;
   });
 
   // Sort orders
   const sortedOrders = [...filteredOrders].sort((a, b) => {
-    if (a[sortConfig.key] < b[sortConfig.key]) {
+    // Defensive: support sorting by createdAt, orderNumber, etc.
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+    // For date, use createdAt
+    if (sortConfig.key === 'date' || sortConfig.key === 'createdAt') {
+      aValue = a.createdAt;
+      bValue = b.createdAt;
+    }
+    if (aValue < bValue) {
       return sortConfig.direction === 'asc' ? -1 : 1;
     }
-    if (a[sortConfig.key] > b[sortConfig.key]) {
+    if (aValue > bValue) {
       return sortConfig.direction === 'asc' ? 1 : -1;
     }
     return 0;
@@ -408,161 +335,167 @@ const OrdersManagement = () => {
 
         {/* Orders Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('id')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Order ID</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('customer')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Customer</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('date')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Date</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('total')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Total</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('status')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Status</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('payment')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Payment</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {currentItems.length > 0 ? (
-                currentItems.map(order => (
-                  <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                        {order.id}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+          {loading ? (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('id')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Order ID</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('customer')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Customer</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('date')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Date</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('total')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Total</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('status')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Status</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('payment')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Payment</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {currentItems.length > 0 ? (
+                  currentItems.map(order => (
+                    <tr key={order._id || order.orderNumber} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                          {order.orderNumber || order._id}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {order.customer}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {order.email}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {order.user?.name || ''}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {order.user?.email || ''}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {new Date(order.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      ${order.total.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusInfo(order.status).color}`}>
-                          {getStatusInfo(order.status).icon}
-                          {getStatusInfo(order.status).text}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        ${order.pricing?.total?.toFixed(2) ?? '0.00'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusInfo(order.status).color}`}>
+                            {getStatusInfo(order.status).icon}
+                            {getStatusInfo(order.status).text}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentColor(order.paymentInfo?.status)}`}>
+                          {order.paymentInfo?.status ? order.paymentInfo.status.charAt(0).toUpperCase() + order.paymentInfo.status.slice(1) : ''}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentColor(order.payment)}`}>
-                        {order.payment.charAt(0).toUpperCase() + order.payment.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Link
-                          to={`/admin/orders/${order.id}`}
-                          className="text-blue-600 hover:text-blue-700 p-1"
-                          title="View"
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <Link
+                            to={`/admin/orders/${order._id || order.orderNumber}`}
+                            className="text-blue-600 hover:text-blue-700 p-1"
+                            title="View"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                          <Link
+                            to={`/admin/orders/${order._id || order.orderNumber}/edit`}
+                            className="text-green-600 hover:text-green-700 p-1"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(order._id || order.orderNumber)}
+                            className="text-red-600 hover:text-red-700 p-1"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <div className="flex flex-col items-center justify-center">
+                        <ShoppingCart className="h-12 w-12 text-gray-400 mb-2" />
+                        <p>No orders found matching your criteria</p>
+                        <button 
+                          onClick={() => {
+                            setSearchTerm('');
+                            setSelectedStatus('all');
+                            setSelectedPayment('all');
+                            setCurrentPage(1);
+                          }}
+                          className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
                         >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                        <Link
-                          to={`/admin/orders/${order.id}/edit`}
-                          className="text-green-600 hover:text-green-700 p-1"
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(order.id)}
-                          className="text-red-600 hover:text-red-700 p-1"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                          Clear filters
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="flex flex-col items-center justify-center">
-                      <ShoppingCart className="h-12 w-12 text-gray-400 mb-2" />
-                      <p>No orders found matching your criteria</p>
-                      <button 
-                        onClick={() => {
-                          setSearchTerm('');
-                          setSelectedStatus('all');
-                          setSelectedPayment('all');
-                          setCurrentPage(1);
-                        }}
-                        className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
-                      >
-                        Clear filters
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Pagination */}

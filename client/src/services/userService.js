@@ -9,7 +9,7 @@ class UserService {
   async uploadAvatar(file) {
     const formData = new FormData();
     formData.append('avatar', file);
-    
+
     const response = await api.post('/users/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -46,6 +46,12 @@ class UserService {
 
   async removeFromWishlist(productId) {
     await api.delete(`/users/wishlist/${productId}`);
+  }
+
+  // ✅ Admin: Get all users
+  async getAllUsers() {
+    const response = await api.get('/users');
+    return response.data.users;
   }
 }
 

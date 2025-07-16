@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
@@ -26,99 +26,12 @@ import {
   Frown,
   Smile
 } from 'lucide-react';
+import userService from '../../services/userService'; // adjust path if needed
 
 const CustomersManagement = () => {
-  // Sample customer data
-  const [customers, setCustomers] = useState([
-    {
-      id: 'CUST-001',
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+1 (555) 123-4567',
-      joinDate: '2023-01-15',
-      orders: 12,
-      totalSpent: 1254.32,
-      status: 'active',
-      loyalty: 'gold'
-    },
-    {
-      id: 'CUST-002',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+1 (555) 987-6543',
-      joinDate: '2023-02-20',
-      orders: 5,
-      totalSpent: 589.99,
-      status: 'active',
-      loyalty: 'silver'
-    },
-    {
-      id: 'CUST-003',
-      name: 'Michael Johnson',
-      email: 'michael@example.com',
-      phone: '+1 (555) 456-7890',
-      joinDate: '2023-03-10',
-      orders: 8,
-      totalSpent: 876.45,
-      status: 'active',
-      loyalty: 'silver'
-    },
-    {
-      id: 'CUST-004',
-      name: 'Sarah Williams',
-      email: 'sarah@example.com',
-      phone: '+1 (555) 789-0123',
-      joinDate: '2023-04-05',
-      orders: 3,
-      totalSpent: 234.56,
-      status: 'inactive',
-      loyalty: 'bronze'
-    },
-    {
-      id: 'CUST-005',
-      name: 'David Brown',
-      email: 'david@example.com',
-      phone: '+1 (555) 234-5678',
-      joinDate: '2023-05-12',
-      orders: 15,
-      totalSpent: 1897.23,
-      status: 'active',
-      loyalty: 'platinum'
-    },
-    {
-      id: 'CUST-006',
-      name: 'Emily Davis',
-      email: 'emily@example.com',
-      phone: '+1 (555) 345-6789',
-      joinDate: '2023-06-18',
-      orders: 1,
-      totalSpent: 89.99,
-      status: 'inactive',
-      loyalty: 'bronze'
-    },
-    {
-      id: 'CUST-007',
-      name: 'Robert Wilson',
-      email: 'robert@example.com',
-      phone: '+1 (555) 456-7890',
-      joinDate: '2023-07-22',
-      orders: 7,
-      totalSpent: 654.32,
-      status: 'active',
-      loyalty: 'silver'
-    },
-    {
-      id: 'CUST-008',
-      name: 'Lisa Taylor',
-      email: 'lisa@example.com',
-      phone: '+1 (555) 567-8901',
-      joinDate: '2023-08-30',
-      orders: 20,
-      totalSpent: 2456.78,
-      status: 'active',
-      loyalty: 'platinum'
-    }
-  ]);
+  // Backend customer data
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState('');
@@ -135,15 +48,30 @@ const CustomersManagement = () => {
   const statuses = ['all', 'active', 'inactive', 'banned'];
   const loyaltyLevels = ['all', 'bronze', 'silver', 'gold', 'platinum'];
 
+  useEffect(() => {
+    setLoading(true);
+    userService.getAllUsers().then(users => {
+      setCustomers(users || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
   // Filter customers based on search term, status, and loyalty
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === 'all' || customer.status === selectedStatus;
-    const matchesLoyalty = selectedLoyalty === 'all' || customer.loyalty === selectedLoyalty;
-    
+    // Defensive: support both backend and mock structure
+    const id = customer._id || customer.id || '';
+    const name = customer.name || '';
+    const email = customer.email || '';
+    const phone = customer.phone || '';
+    const status = customer.status || 'active';
+    const loyalty = customer.loyalty || '';
+    const matchesSearch =
+      id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      phone.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
+    const matchesLoyalty = selectedLoyalty === 'all' || loyalty === selectedLoyalty;
     return matchesSearch && matchesStatus && matchesLoyalty;
   });
 
@@ -405,189 +333,197 @@ const CustomersManagement = () => {
 
         {/* Customers Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('name')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Customer</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('email')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Contact</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('joinDate')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Member Since</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('orders')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Orders</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('totalSpent')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Total Spent</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('status')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Status</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('loyalty')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Loyalty</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {currentItems.length > 0 ? (
-                currentItems.map(customer => (
-                  <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {customer.name}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {customer.id}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
+          {loading ? (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('name')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Customer</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('email')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Contact</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('joinDate')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Member Since</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('orders')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Orders</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('totalSpent')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Total Spent</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('status')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Status</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('loyalty')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Loyalty</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {currentItems.length > 0 ? (
+                  currentItems.map(customer => (
+                    <tr key={customer._id || customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <Mail className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
-                          {customer.email}
+                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {customer.name}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {customer._id || customer.id}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center mt-1">
-                          <Phone className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
-                          {customer.phone}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          <div className="flex items-center">
+                            <Mail className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
+                            {customer.email}
+                          </div>
+                          <div className="flex items-center mt-1">
+                            <Phone className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
+                            {customer.phone}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
-                        {new Date(customer.joinDate).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      <div className="flex items-center">
-                        <ShoppingCart className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
-                        {customer.orders}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      ${customer.totalSpent.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusInfo(customer.status).color}`}>
-                          {getStatusInfo(customer.status).icon}
-                          {getStatusInfo(customer.status).text}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLoyaltyInfo(customer.loyalty).color}`}>
-                          {getLoyaltyInfo(customer.loyalty).icon}
-                          {getLoyaltyInfo(customer.loyalty).text}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Link
-                          to={`/admin/customers/${customer.id}`}
-                          className="text-blue-600 hover:text-blue-700 p-1"
-                          title="View"
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
+                          {customer.joinDate
+                            ? new Date(customer.joinDate).toLocaleDateString()
+                            : (customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '')}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        <div className="flex items-center">
+                          <ShoppingCart className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
+                          {customer.orders ?? customer.orderCount ?? 0}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        ${customer.totalSpent?.toFixed(2) ?? customer.totalSpent ?? '0.00'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusInfo(customer.status || 'active').color}`}>
+                            {getStatusInfo(customer.status || 'active').icon}
+                            {getStatusInfo(customer.status || 'active').text}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLoyaltyInfo(customer.loyalty || '').color}`}>
+                            {getLoyaltyInfo(customer.loyalty || '').icon}
+                            {getLoyaltyInfo(customer.loyalty || '').text}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <Link
+                            to={`/admin/customers/${customer._id || customer.id}`}
+                            className="text-blue-600 hover:text-blue-700 p-1"
+                            title="View"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                          <Link
+                            to={`/admin/customers/${customer._id || customer.id}/edit`}
+                            className="text-green-600 hover:text-green-700 p-1"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(customer._id || customer.id)}
+                            className="text-red-600 hover:text-red-700 p-1"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <div className="flex flex-col items-center justify-center">
+                        <User className="h-12 w-12 text-gray-400 mb-2" />
+                        <p>No customers found matching your criteria</p>
+                        <button 
+                          onClick={() => {
+                            setSearchTerm('');
+                            setSelectedStatus('all');
+                            setSelectedLoyalty('all');
+                            setCurrentPage(1);
+                          }}
+                          className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
                         >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                        <Link
-                          to={`/admin/customers/${customer.id}/edit`}
-                          className="text-green-600 hover:text-green-700 p-1"
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(customer.id)}
-                          className="text-red-600 hover:text-red-700 p-1"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                          Clear filters
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="flex flex-col items-center justify-center">
-                      <User className="h-12 w-12 text-gray-400 mb-2" />
-                      <p>No customers found matching your criteria</p>
-                      <button 
-                        onClick={() => {
-                          setSearchTerm('');
-                          setSelectedStatus('all');
-                          setSelectedLoyalty('all');
-                          setCurrentPage(1);
-                        }}
-                        className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
-                      >
-                        Clear filters
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Pagination */}

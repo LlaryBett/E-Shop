@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
@@ -20,124 +20,12 @@ import {
   Package,
   ArrowUpDown
 } from 'lucide-react';
+import adminService from '../../services/adminService'; // adjust path if needed
 
 const ProductsManagement = () => {
-  // Sample product data
-  const [products, setProducts] = useState([
-    {
-      id: '1',
-      name: 'Wireless Bluetooth Headphones',
-      sku: 'PRD-001',
-      category: 'Electronics',
-      price: 199.99,
-      cost: 89.99,
-      stock: 45,
-      status: 'active',
-      rating: 4.5,
-      image: 'https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg?auto=compress&cs=tinysrgb&w=100',
-      description: 'High-quality wireless headphones with noise cancellation',
-      createdAt: '2024-01-10'
-    },
-    {
-      id: '2',
-      name: 'Smart Fitness Watch',
-      sku: 'PRD-002',
-      category: 'Electronics',
-      price: 249.99,
-      cost: 120.00,
-      stock: 32,
-      status: 'active',
-      rating: 4.2,
-      image: 'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=100',
-      description: 'Track your fitness metrics with this advanced smartwatch',
-      createdAt: '2024-01-05'
-    },
-    {
-      id: '3',
-      name: 'Organic Cotton T-Shirt',
-      sku: 'PRD-003',
-      category: 'Clothing',
-      price: 29.99,
-      cost: 12.50,
-      stock: 120,
-      status: 'active',
-      rating: 4.7,
-      image: 'https://images.pexels.com/photos/1021693/pexels-photo-1021693.jpeg?auto=compress&cs=tinysrgb&w=100',
-      description: 'Comfortable organic cotton t-shirt in various colors',
-      createdAt: '2023-12-20'
-    },
-    {
-      id: '4',
-      name: 'Stainless Steel Water Bottle',
-      sku: 'PRD-004',
-      category: 'Accessories',
-      price: 24.99,
-      cost: 8.75,
-      stock: 78,
-      status: 'active',
-      rating: 4.3,
-      image: 'https://images.pexels.com/photos/4041392/pexels-photo-4041392.jpeg?auto=compress&cs=tinysrgb&w=100',
-      description: 'Durable stainless steel water bottle with insulation',
-      createdAt: '2023-12-15'
-    },
-    {
-      id: '5',
-      name: 'Wireless Charging Pad',
-      sku: 'PRD-005',
-      category: 'Electronics',
-      price: 39.99,
-      cost: 15.00,
-      stock: 0,
-      status: 'out-of-stock',
-      rating: 4.0,
-      image: 'https://images.pexels.com/photos/1279107/pexels-photo-1279107.jpeg?auto=compress&cs=tinysrgb&w=100',
-      description: 'Fast wireless charging pad for all Qi-enabled devices',
-      createdAt: '2023-12-10'
-    },
-    {
-      id: '6',
-      name: 'Leather Wallet',
-      sku: 'PRD-006',
-      category: 'Accessories',
-      price: 49.99,
-      cost: 22.50,
-      stock: 15,
-      status: 'active',
-      rating: 4.8,
-      image: 'https://images.pexels.com/photos/290857/pexels-photo-290857.jpeg?auto=compress&cs=tinysrgb&w=100',
-      description: 'Genuine leather wallet with multiple card slots',
-      createdAt: '2023-11-28'
-    },
-    {
-      id: '7',
-      name: 'Yoga Mat',
-      sku: 'PRD-007',
-      category: 'Fitness',
-      price: 34.99,
-      cost: 14.00,
-      stock: 28,
-      status: 'active',
-      rating: 4.6,
-      image: 'https://images.pexels.com/photos/221247/pexels-photo-221247.jpeg?auto=compress&cs=tinysrgb&w=100',
-      description: 'Non-slip yoga mat with carrying strap',
-      createdAt: '2023-11-20'
-    },
-    {
-      id: '8',
-      name: 'Bluetooth Speaker',
-      sku: 'PRD-008',
-      category: 'Electronics',
-      price: 89.99,
-      cost: 35.00,
-      stock: 10,
-      status: 'low-stock',
-      rating: 4.4,
-      image: 'https://images.pexels.com/photos/1037992/pexels-photo-1037992.jpeg?auto=compress&cs=tinysrgb&w=100',
-      description: 'Portable Bluetooth speaker with 20-hour battery life',
-      createdAt: '2023-11-15'
-    }
-  ]);
-
+  // Backend product data
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -149,17 +37,28 @@ const ProductsManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
 
+  useEffect(() => {
+    setLoading(true);
+    adminService.getAllProducts().then(res => {
+      setProducts(res.data.products || res.data || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
   // Get unique categories for filter dropdown
-  const categories = ['all', ...new Set(products.map(product => product.category))];
+  const categories = ['all', ...new Set(products.map(product => product.category?.name || product.category || ''))];
   const statuses = ['all', 'active', 'out-of-stock', 'low-stock', 'draft'];
 
   // Filter products based on search term, category, and status
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    const matchesStatus = selectedStatus === 'all' || product.status === selectedStatus;
-    
+    const name = product.title || product.name || '';
+    const sku = product.sku || '';
+    const category = product.category?.name || product.category || '';
+    const status = product.status || (product.isActive === false ? 'draft' : 'active');
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
+    const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
@@ -199,7 +98,7 @@ const ProductsManagement = () => {
   };
 
   const confirmDelete = () => {
-    setProducts(products.filter(product => product.id !== productToDelete));
+    setProducts(products.filter(product => product._id !== productToDelete));
     setShowDeleteModal(false);
     setProductToDelete(null);
   };
@@ -365,144 +264,150 @@ const ProductsManagement = () => {
 
         {/* Products Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('name')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Product</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('category')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Category</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('price')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Price</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('stock')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Stock</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <button 
-                    onClick={() => requestSort('status')}
-                    className="flex items-center space-x-1"
-                  >
-                    <span>Status</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {currentItems.length > 0 ? (
-                currentItems.map(product => (
-                  <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <img 
-                          src={product.image} 
-                          alt={product.name} 
-                          className="w-10 h-10 object-cover rounded-lg mr-3" 
-                        />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                            {product.name}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            SKU: {product.sku}
+          {loading ? (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('name')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Product</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('category')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Category</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('price')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Price</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('stock')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Stock</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <button 
+                      onClick={() => requestSort('status')}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Status</span>
+                      <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {currentItems.length > 0 ? (
+                  currentItems.map(product => (
+                    <tr key={product._id || product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <img 
+                            src={product.images?.[0]?.url || product.image} 
+                            alt={product.title || product.name} 
+                            className="w-10 h-10 object-cover rounded-lg mr-3" 
+                          />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
+                              {product.title || product.name}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              SKU: {product.sku}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white capitalize">
-                      {product.category}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      ${product.price.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {product.stock}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusInfo(product.status).color}`}>
-                        {getStatusInfo(product.status).text}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Link
-                          to={`/admin/products/${product.id}`}
-                          className="text-blue-600 hover:text-blue-700 p-1"
-                          title="View"
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white capitalize">
+                        {product.category?.name || product.category || '-'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        ${product.salePrice?.toFixed(2) ?? product.price?.toFixed(2) ?? '0.00'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {product.stock ?? '-'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusInfo(product.status || (product.isActive === false ? 'draft' : 'active')).color}`}>
+                          {getStatusInfo(product.status || (product.isActive === false ? 'draft' : 'active')).text}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <Link
+                            to={`/admin/products/${product._id || product.id}`}
+                            className="text-blue-600 hover:text-blue-700 p-1"
+                            title="View"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                          <Link
+                            to={`/admin/products/${product._id || product.id}/edit`}
+                            className="text-green-600 hover:text-green-700 p-1"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(product._id || product.id)}
+                            className="text-red-600 hover:text-red-700 p-1"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <div className="flex flex-col items-center justify-center">
+                        <Package className="h-12 w-12 text-gray-400 mb-2" />
+                        <p>No products found matching your criteria</p>
+                        <button 
+                          onClick={() => {
+                            setSearchTerm('');
+                            setSelectedCategory('all');
+                            setSelectedStatus('all');
+                            setCurrentPage(1);
+                          }}
+                          className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
                         >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                        <Link
-                          to={`/admin/products/${product.id}/edit`}
-                          className="text-green-600 hover:text-green-700 p-1"
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="text-red-600 hover:text-red-700 p-1"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                          Clear filters
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="flex flex-col items-center justify-center">
-                      <Package className="h-12 w-12 text-gray-400 mb-2" />
-                      <p>No products found matching your criteria</p>
-                      <button 
-                        onClick={() => {
-                          setSearchTerm('');
-                          setSelectedCategory('all');
-                          setSelectedStatus('all');
-                          setCurrentPage(1);
-                        }}
-                        className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
-                      >
-                        Clear filters
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Pagination */}
@@ -637,3 +542,6 @@ const ProductsManagement = () => {
 };
 
 export default ProductsManagement;
+
+// The error is NOT in your React code. 
+// The error is a CORS (Cross-Origin Resource Sharing) issue between your frontend (localhost:5173) and backend (localhost:5000).
