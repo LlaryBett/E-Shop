@@ -380,7 +380,7 @@ const taxRates = {
                         </div>
                       </div>
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {option.price === 0 ? 'Free' : `$${option.price.toFixed(2)}`}
+                        {option.price === 0 ? 'Free' : `Ksh ${option.price.toFixed(2)}`}
                       </span>
                     </label>
                   ))}
@@ -531,8 +531,8 @@ const taxRates = {
       )}
     </div>
     <span className="font-semibold text-gray-900 dark:text-white">
-      ${((item.product.salePrice || item.product.price) * item.quantity).toFixed(2)}
-    </span>
+        Ksh {((item.product.salePrice || item.product.price) * item.quantity).toFixed(2)}
+      </span>
   </div>
                   ))}
                 </div>
@@ -610,26 +610,26 @@ const taxRates = {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-                  <span className="text-gray-900 dark:text-white">${subtotal.toFixed(2)}</span>
+                  <span className="text-gray-900 dark:text-white">Ksh {subtotal.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Shipping</span>
                   <span className="text-gray-900 dark:text-white">
-                    {shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`}
+                    {shippingCost === 0 ? 'Free' : `Ksh ${shippingCost.toFixed(2)}`}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Tax</span>
-                  <span className="text-gray-900 dark:text-white">${tax.toFixed(2)}</span>
+                  <span className="text-gray-900 dark:text-white">Ksh {tax.toFixed(2)}</span>
                 </div>
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="flex justify-between">
                     <span className="text-lg font-semibold text-gray-900 dark:text-white">Total</span>
                     <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                      ${total.toFixed(2)}
+                      Ksh {total.toFixed(2)}
                     </span>
                   </div>
                 </div>

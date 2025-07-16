@@ -266,8 +266,8 @@ const Shop = () => {
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>$0</span>
-                    <span>${filters.priceRange?.[1] || 2000}</span>
+                    <span>Ksh 0</span>
+                    <span>Ksh {filters.priceRange?.[1] || 2000}</span>
                   </div>
                 </div>
               </div>
@@ -383,11 +383,11 @@ const Shop = () => {
                         <div className="flex items-center space-x-2 mb-3">
                           {product.salePrice ? (
                             <>
-                              <span className="text-lg font-bold text-red-600">${product.salePrice}</span>
-                              <span className="text-gray-500 line-through">${product.price}</span>
+                              <span className="text-lg font-bold text-red-600">Ksh {product.salePrice}</span>
+                              <span className="text-gray-500 line-through">Ksh {product.price}</span>
                             </>
                           ) : (
-                            <span className="text-lg font-bold text-gray-900 dark:text-white">${product.price}</span>
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
                           )}
                         </div>
                       </div>

@@ -130,11 +130,11 @@ const Home = () => {
                     <div className="flex items-center space-x-2">
                       {product.salePrice ? (
                         <>
-                          <span className="text-lg font-bold text-red-600">${product.salePrice}</span>
-                          <span className="text-gray-500 line-through">${product.price}</span>
+                          <span className="text-lg font-bold text-red-600">Ksh {product.salePrice}</span>
+                          <span className="text-gray-500 line-through">Ksh {product.price}</span>
                         </>
                       ) : (
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">${product.price}</span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
                       )}
                     </div>
                   </div>
@@ -190,11 +190,11 @@ const Home = () => {
                     <div className="flex items-center space-x-2">
                       {product.salePrice ? (
                         <>
-                          <span className="text-lg font-bold text-red-600">${product.salePrice}</span>
-                          <span className="text-gray-500 line-through">${product.price}</span>
+                          <span className="text-lg font-bold text-red-600">Ksh {product.salePrice}</span>
+                          <span className="text-gray-500 line-through">Ksh {product.price}</span>
                         </>
                       ) : (
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">${product.price}</span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
                       )}
                     </div>
                   </div>

@@ -213,10 +213,10 @@ const ProductDetail = () => {
 
             <div className="flex items-center space-x-4">
               <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                ${currentPrice}
+                Ksh {currentPrice}
               </span>
               {product.salePrice && (
-                <span className="text-xl text-gray-500 line-through">${product.price}</span>
+                <span className="text-xl text-gray-500 line-through">Ksh {product.price}</span>
               )}
               {discountPercentage > 0 && (
                 <span className="bg-red-100 text-red-800 px-2 py-1 rounded-md text-sm font-semibold">
@@ -225,7 +225,7 @@ const ProductDetail = () => {
               )}
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
               <div className={`w-3 h-3 rounded-full ${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
               <span className={`text-sm font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {product.stock > 0 ? `In Stock (${product.stock} available)` : 'Out of Stock'}
@@ -282,7 +282,7 @@ const ProductDetail = () => {
                   </button>
                 </div>
                 <span className="text-sm text-gray-500">
-                  Total: ${(currentPrice * quantity).toFixed(2)}
+                  Total: Ksh {(currentPrice * quantity).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -317,7 +317,7 @@ const ProductDetail = () => {
                 <Truck className="h-6 w-6 text-blue-600" />
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">Free Shipping</p>
-                  <p className="text-sm text-gray-500">On orders over $50</p>
+                  <p className="text-sm text-gray-500">On orders over Ksh 50</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -491,11 +491,11 @@ const ProductDetail = () => {
                     <div className="flex items-center space-x-2">
                       {relatedProduct.salePrice ? (
                         <>
-                          <span className="text-lg font-bold text-red-600">${relatedProduct.salePrice}</span>
-                          <span className="text-gray-500 line-through">${relatedProduct.price}</span>
+                          <span className="text-lg font-bold text-red-600">Ksh {relatedProduct.salePrice}</span>
+                          <span className="text-gray-500 line-through">Ksh {relatedProduct.price}</span>
                         </>
                       ) : (
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">${relatedProduct.price}</span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">Ksh {relatedProduct.price}</span>
                       )}
                     </div>
                   </div>

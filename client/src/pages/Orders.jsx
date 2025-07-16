@@ -236,7 +236,7 @@ const Orders = () => {
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          ${order.pricing.total.toFixed(2)}
+                          Ksh {order.pricing.total.toFixed(2)}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {order.items.length} item{order.items.length !== 1 ? 's' : ''}
@@ -276,10 +276,10 @@ const Orders = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-gray-900 dark:text-white">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            Ksh {(item.price * item.quantity).toFixed(2)}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            ${item.price.toFixed(2)} each
+                            Ksh {item.price.toFixed(2)} each
                           </p>
                         </div>
                       </div>
