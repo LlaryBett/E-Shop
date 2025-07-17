@@ -1,4 +1,5 @@
 import Notification from '../models/Notification.js';
+import NotificationEvent from '../models/NotificationEvent.js';
 
 class NotificationService {
   // Create notification for a user
@@ -132,6 +133,33 @@ class NotificationService {
       actionText: systemData.actionText,
       actionLink: systemData.actionLink,
       priority: systemData.priority || 'medium'
+    };
+
+    return await this.createNotification(userId, notificationData);
+  }
+
+  // Trigger a notification event by eventKey and data
+  async triggerEvent(userId, eventKey, data = {}) {
+    const event = await NotificationEvent.findOne({ eventKey, enabled: true });
+    if (!event) return null;
+
+    // Replace placeholders in message and actionLink
+    let message = event.defaultMessage;
+    let actionLink = event.actionLinkTemplate;
+    Object.keys(data).forEach(key => {
+      message = message.replace(new RegExp(`{{${key}}}`, 'g'), data[key]);
+      if (actionLink) actionLink = actionLink.replace(new RegExp(`{{${key}}}`, 'g'), data[key]);
+    });
+
+    const notificationData = {
+      type: event.type,
+      title: event.defaultTitle,
+      message,
+      icon: event.icon,
+      color: event.color,
+      actionText: event.actionText,
+      actionLink,
+      priority: event.priority
     };
 
     return await this.createNotification(userId, notificationData);

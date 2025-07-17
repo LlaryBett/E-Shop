@@ -1,5 +1,7 @@
 import Notification from '../models/Notification.js';
 import { validationResult } from 'express-validator';
+// Import your notification service/helper
+import NotificationService from '../middleware/NotificationService.js';
 
 class NotificationsController {
   // Get all notifications for a user
@@ -341,5 +343,22 @@ class NotificationsController {
     }
   }
 }
+
+// Example: Send a system notification to a user
+export const sendSystemNotificationToUser = async (userId, { title, message, actionText, actionLink, priority }) => {
+  // Yes, you can import and use this function in any controller (e.g., userController, orderController, etc.)
+  // Example usage in another controller:
+  // import { sendSystemNotificationToUser } from './notificationsController.js';
+  // await sendSystemNotificationToUser(userId, { title, message, ... });
+  await NotificationService.sendSystemNotification(userId, {
+    title,
+    message,
+    icon: '🔔',
+    color: 'blue',
+    actionText,
+    actionLink,
+    priority: priority || 'medium'
+  });
+};
 
 export default new NotificationsController();

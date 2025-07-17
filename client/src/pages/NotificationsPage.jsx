@@ -303,9 +303,14 @@ const NotificationsPage = () => {
 
                       <div className="flex items-center space-x-2">
                         {/* Action Button */}
-                        {notification.actionText && (
+                        {notification.actionText && notification.actionLink && (
                           <Link
-                            to={notification.actionLink}
+                            // Fix: If actionLink starts with /orders/, change to /orders (your route is /orders, not /orders/:id)
+                            to={
+                              notification.actionLink.startsWith('/orders/')
+                                ? '/orders'
+                                : notification.actionLink
+                            }
                             className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm hover:underline"
                           >
                             {notification.actionText}
