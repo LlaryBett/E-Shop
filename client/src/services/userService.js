@@ -1,6 +1,7 @@
 import api from './api';
 
 class UserService {
+  // 👤 Profile
   async updateProfile(profileData) {
     const response = await api.put('/users/profile', profileData);
     return response.data.user;
@@ -16,6 +17,7 @@ class UserService {
     return response.data.avatarUrl;
   }
 
+  // 📦 Addresses
   async getAddresses() {
     const response = await api.get('/users/addresses');
     return response.data.addresses;
@@ -35,6 +37,7 @@ class UserService {
     await api.delete(`/users/addresses/${id}`);
   }
 
+  // 💖 Wishlist
   async getWishlist() {
     const response = await api.get('/users/wishlist');
     return response.data.wishlist;
@@ -48,10 +51,15 @@ class UserService {
     await api.delete(`/users/wishlist/${productId}`);
   }
 
-  // ✅ Admin: Get all users
+  // 🧑‍💼 Admin: Get all users
   async getAllUsers() {
     const response = await api.get('/users');
     return response.data.users;
+  }
+
+  // 🔐 Account: Update password
+  async updatePassword(passwordData) {
+    await api.put('/users/password', passwordData); // Expects { currentPassword, newPassword }
   }
 }
 

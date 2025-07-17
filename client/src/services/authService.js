@@ -1,6 +1,7 @@
 import api from './api';
 
 class AuthService {
+  // 🔐 Authentication
   async login(data) {
     const response = await api.post('/auth/login', data);
     if (response.data.success) {
@@ -27,7 +28,6 @@ class AuthService {
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Optional: redirect after logout
       window.location.href = '/login';
     }
   }
@@ -37,6 +37,7 @@ class AuthService {
     return response.data.user;
   }
 
+  // 🔑 Password / Email
   async forgotPassword(email) {
     return api.post('/auth/forgot-password', { email });
   }
@@ -53,11 +54,11 @@ class AuthService {
     return api.post('/auth/resend-verification');
   }
 
-  // Add this inside your AuthService class
- async verifyEmail(token) {
-  return api.get(`/auth/verify-email/${token}`);
- }
+  async verifyEmail(token) {
+    return api.get(`/auth/verify-email/${token}`);
+  }
 
+  // 📦 Helpers
   getCurrentUser() {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;

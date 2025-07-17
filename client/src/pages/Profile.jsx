@@ -1,36 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import userService from '../services/userService'; // Add this import if not present
 
 const Profile = () => {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Initialize from user context, but update from backend on mount
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: '',
+    phone: user?.phone || '',
     avatar: user?.avatar || '',
+    role: user?.role || '',
   });
 
-  const [addresses, setAddresses] = useState([
-    {
-      id: '1',
-      type: 'shipping',
-      firstName: 'John',
-      lastName: 'Doe',
-      address: '123 Main St',
-      city: 'New York',
-      state: 'NY',
-      zipCode: '10001',
-      country: 'United States',
-      isDefault: true,
-    },
-  ]);
-
+  const [addresses, setAddresses] = useState(user?.addresses || []);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -40,12 +29,32 @@ const Profile = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
 
+  useEffect(() => {
+    // If user context is updated after refresh, update state
+    setProfileData({
+      name: user?.name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      avatar: user?.avatar || '',
+      role: user?.role || '',
+    });
+    setAddresses(user?.addresses || []);
+  }, [user]);
+
+  useEffect(() => {
+    // Fetch addresses from backend (in case user context is not up-to-date)
+    userService.getAddresses()
+      .then(setAddresses)
+      .catch(() => setAddresses([]));
+    // Optionally, fetch profile data from backend and update profileData here if needed
+  }, []);
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      updateProfile(profileData);
+      await userService.updateProfile(profileData);
       toast.success('Profile updated successfully!');
       setIsEditing(false);
     } catch {
@@ -82,28 +91,35 @@ const Profile = () => {
     }
   };
 
-  const handleAddressSubmit = (addressData) => {
-    if (editingAddress) {
-      setAddresses(prev => prev.map(addr => 
-        addr.id === editingAddress.id ? { ...addressData, id: editingAddress.id } : addr
-      ));
-      toast.success('Address updated successfully!');
-    } else {
-      const newAddress = {
-        ...addressData,
-        id: Date.now().toString(),
-      };
-      setAddresses(prev => [...prev, newAddress]);
-      toast.success('Address added successfully!');
+  // Address CRUD with backend
+  const handleAddressSubmit = async (addressData) => {
+    try {
+      if (editingAddress) {
+        const updated = await userService.updateAddress(editingAddress._id || editingAddress.id, addressData);
+        setAddresses(prev => prev.map(addr =>
+          (addr._id || addr.id) === (editingAddress._id || editingAddress.id) ? updated : addr
+        ));
+        toast.success('Address updated successfully!');
+      } else {
+        const newAddress = await userService.addAddress(addressData);
+        setAddresses(prev => [...prev, newAddress]);
+        toast.success('Address added successfully!');
+      }
+    } catch {
+      toast.error('Failed to save address');
     }
-    
     setShowAddressForm(false);
     setEditingAddress(null);
   };
 
-  const handleDeleteAddress = (id) => {
-    setAddresses(prev => prev.filter(addr => addr.id !== id));
-    toast.success('Address deleted successfully!');
+  const handleDeleteAddress = async (id) => {
+    try {
+      await userService.deleteAddress(id);
+      setAddresses(prev => prev.filter(addr => (addr._id || addr.id) !== id));
+      toast.success('Address deleted successfully!');
+    } catch {
+      toast.error('Failed to delete address');
+    }
   };
 
   const tabs = [
@@ -134,6 +150,11 @@ const Profile = () => {
                 </div>
                 <h3 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">{profileData.name}</h3>
                 <p className="text-gray-600 dark:text-gray-400">{profileData.email}</p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {profileData.phone
+                    ? profileData.phone.replace(/^(\d{4})\d{4}(\d{2})$/, '$1****$2')
+                    : ''}
+                </p>
               </div>
 
               <nav className="space-y-2">
@@ -208,13 +229,17 @@ const Profile = () => {
                       </label>
                       <input
                         type="tel"
-                        value={profileData.phone}
+                        value={
+                          !isEditing && profileData.phone
+                            ? profileData.phone.replace(/^(\d{4})\d{4}(\d{2})$/, '$1****$2')
+                            : profileData.phone
+                        }
                         onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
                         disabled={!isEditing}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
                       />
                     </div>
-
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Role
@@ -264,7 +289,7 @@ const Profile = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {addresses.map(address => (
-                    <div key={address.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                    <div key={address._id || address.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center space-x-2">
                           <span className={`px-2 py-1 text-xs rounded-full ${
@@ -291,7 +316,7 @@ const Profile = () => {
                             <Edit3 className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteAddress(address.id)}
+                            onClick={() => handleDeleteAddress(address._id || address.id)}
                             className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="h-4 w-4" />
