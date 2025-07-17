@@ -5,6 +5,7 @@ import User from '../models/User.js'; // Add this import
 import { sendEmail } from '../utils/sendEmail.js';
 import { processPayment } from '../utils/stripe.js';
 import PDFDocument from 'pdfkit';
+import NotificationService from '../middleware/NotificationService.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -214,6 +215,21 @@ export const createOrder = async (req, res, next) => {
     } catch (emailError) {
       console.error('Failed to send order confirmation email:', emailError);
       // Don't fail the order just because email failed
+    }
+
+    // Send order notification
+    try {
+      await NotificationService.sendOrderNotification(req.user.id, {
+        orderNumber: order.orderNumber,
+        orderId: order._id,
+        status: 'order_confirmed',
+        estimatedDays: order.shippingInfo?.estimatedDelivery
+          ? Math.ceil((new Date(order.shippingInfo.estimatedDelivery) - new Date()) / (1000 * 60 * 60 * 24))
+          : 3
+      });
+    } catch (notifError) {
+      console.error('Failed to send order notification:', notifError);
+      // Don't fail the order just because notification failed
     }
 
     res.status(201).json({

@@ -104,15 +104,15 @@ const Cart = () => {
                     {item.product.salePrice ? (
                       <>
                         <span className="text-lg font-bold text-red-600">
-                          ${item.product.salePrice}
+                          Ksh {item.product.salePrice}
                         </span>
                         <span className="text-gray-500 line-through">
-                          ${item.product.price}
+                          Ksh {item.product.price}
                         </span>
                       </>
                     ) : (
                       <span className="text-lg font-bold text-gray-900 dark:text-white">
-                        ${item.product.price}
+                        Ksh {item.product.price}
                       </span>
                     )}
                   </div>
@@ -141,7 +141,7 @@ const Cart = () => {
                   {/* Item Total */}
                   <div className="text-right">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      ${((item.product.salePrice || item.product.price) * item.quantity).toFixed(2)}
+                      Ksh {((item.product.salePrice || item.product.price) * item.quantity).toFixed(2)}
                     </p>
                   </div>
 
@@ -167,26 +167,26 @@ const Cart = () => {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-                  <span className="text-gray-900 dark:text-white">${subtotal.toFixed(2)}</span>
+                  <span className="text-gray-900 dark:text-white">Ksh {subtotal.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Shipping</span>
                   <span className="text-gray-900 dark:text-white">
-                    {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
+                    {shipping === 0 ? 'Free' : `Ksh ${shipping.toFixed(2)}`}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Tax</span>
-                  <span className="text-gray-900 dark:text-white">${tax.toFixed(2)}</span>
+                  <span className="text-gray-900 dark:text-white">Ksh {tax.toFixed(2)}</span>
                 </div>
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="flex justify-between">
                     <span className="text-lg font-semibold text-gray-900 dark:text-white">Total</span>
                     <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                      ${total.toFixed(2)}
+                      Ksh {total.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -195,7 +195,7 @@ const Cart = () => {
               {shipping > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Add ${(50 - subtotal).toFixed(2)} more to get free shipping!
+                    Add Ksh {(50 - subtotal).toFixed(2)} more to get free shipping!
                   </p>
                 </div>
               )}

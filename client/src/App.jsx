@@ -28,6 +28,8 @@ import Blog from './pages/Blog';
 import FAQ from './pages/FAQ';
 import VerifyEmailPrompt from './pages/VerifyEmailPrompt';
 import VerifyEmail from './pages/VerifyEmail';
+import NotificationsPage from './pages/NotificationsPage';
+import { NotificationsProvider } from './contexts/NotificationsContext'; // <-- Add this import
 
 function App() {
   return (
@@ -35,44 +37,47 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <WishlistProvider>
-            <Router>
-              <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-                <Header />
-                <main className="pt-16">
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/shop" element={<Shop />} />
-                    <Route path="/shop/:category" element={<Shop />} />
-                    <Route path="/product/:id" element={<ProductDetail />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/orders" element={<Orders />} />
-                    <Route path="/wishlist" element={<Wishlist />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/admin/*" element={<AdminDashboard />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="/verify-email-prompt" element={<VerifyEmailPrompt />} />
-                    <Route path="/verify-email/:token" element={<VerifyEmail />} />
-                  </Routes>
-                </main>
-                <Footer />
-              </div>
-            </Router>
-            <Toaster 
-              position="top-right"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  background: '#333',
-                  color: '#fff',
-                },
-              }}
-            />
+            <NotificationsProvider> {/* <-- Wrap your app with NotificationsProvider */}
+              <Router>
+                <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+                  <Header />
+                  <main className="pt-16">
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/shop" element={<Shop />} />
+                      <Route path="/shop/:category" element={<Shop />} />
+                      <Route path="/product/:id" element={<ProductDetail />} />
+                      <Route path="/cart" element={<Cart />} />
+                      <Route path="/checkout" element={<Checkout />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/orders" element={<Orders />} />
+                      <Route path="/wishlist" element={<Wishlist />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
+                      <Route path="/admin/*" element={<AdminDashboard />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/blog" element={<Blog />} />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="/verify-email-prompt" element={<VerifyEmailPrompt />} />
+                      <Route path="/verify-email/:token" element={<VerifyEmail />} />
+                      <Route path="/notifications" element={<NotificationsPage />} />
+                    </Routes>
+                  </main>
+                  <Footer />
+                </div>
+              </Router>
+              <Toaster 
+                position="top-right"
+                toastOptions={{
+                  duration: 3000,
+                  style: {
+                    background: '#333',
+                    color: '#fff',
+                  },
+                }}
+              />
+            </NotificationsProvider>
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>

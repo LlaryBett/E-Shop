@@ -163,7 +163,11 @@ const Header = () => {
               </button>
 
               {/* Enhanced Notifications */}
-              <button className="relative p-3 text-gray-700 dark:text-gray-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl transition-all duration-300">
+              <button
+                className="relative p-3 text-gray-700 dark:text-gray-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl transition-all duration-300"
+                onClick={() => navigate('/notifications')}
+                type="button"
+              >
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
                 <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full"></span>
