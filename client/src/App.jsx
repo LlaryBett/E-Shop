@@ -30,6 +30,8 @@ import VerifyEmailPrompt from './pages/VerifyEmailPrompt';
 import VerifyEmail from './pages/VerifyEmail';
 import NotificationsPage from './pages/NotificationsPage';
 import { NotificationsProvider } from './contexts/NotificationsContext'; // <-- Add this import
+import PromoModalManager from './components/common/PromoModalManager';
+import ExitIntentModal from './components/common/ExitIntentModal';
 
 function App() {
   return (
@@ -40,6 +42,9 @@ function App() {
             <NotificationsProvider> {/* <-- Wrap your app with NotificationsProvider */}
               <Router>
                 <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+                  {/* Promo banners and exit intent modal */}
+                  <PromoModalManager />
+                  <ExitIntentModal />
                   <Header />
                   <main className="pt-16">
                     <Routes>

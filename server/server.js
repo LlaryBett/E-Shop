@@ -26,6 +26,7 @@ import blogRoutes from './routes/blog.js';
 import cartRoutes from './routes/cartRoutes.js'; // ✅ CART
 import wishlistRoutes from './routes/wishlistRoutes.js'; // ✅ WISHLIST
 import notificationsRoutes from './routes/notifications.js'; // <-- Add this line
+import newsletterRoutes from './routes/newsletter.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -98,6 +99,7 @@ app.use('/api/blog', blogRoutes);
 app.use('/api/cart', cartRoutes); // ✅ CART
 app.use('/api/wishlist', wishlistRoutes); // ✅ WISHLIST
 app.use('/api/notifications', notificationsRoutes); // <-- Add this line
+app.use('/api/newsletter', newsletterRoutes);
 
 
 // Error handlers

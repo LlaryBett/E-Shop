@@ -61,6 +61,12 @@ class UserService {
   async updatePassword(passwordData) {
     await api.put('/users/password', passwordData); // Expects { currentPassword, newPassword }
   }
+
+  // 📰 Newsletter
+  async subscribeNewsletter(email) {
+    const response = await api.post('/newsletter/subscribe', { email });
+    return response.data;
+  }
 }
 
 export default new UserService();

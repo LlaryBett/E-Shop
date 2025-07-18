@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Truck, Shield, Headphones, Award, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import ProductService from '../services/productService';
+import PromoModalManager from '../components/common/PromoModalManager';
+import ExitIntentModal from '../components/common/ExitIntentModal';
+import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -88,6 +92,27 @@ const Home = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  const { subscribeNewsletter } = useAuth();
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+
+  // Newsletter submit handler
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    if (!newsletterEmail) {
+      toast.error('Please enter your email');
+      return;
+    }
+    setNewsletterLoading(true);
+    try {
+      await subscribeNewsletter(newsletterEmail);
+      setNewsletterEmail('');
+    } catch (err) {
+      // Error toast handled in context
+    }
+    setNewsletterLoading(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -98,6 +123,10 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Promo Modals */}
+      <PromoModalManager />
+      <ExitIntentModal />
+
       {/* Hero Carousel Section */}
       <section className="relative bg-gradient-to-r from-blue-600 to-purple-700 text-white overflow-hidden">
         <div className="container mx-auto px-4 py-20">
@@ -430,17 +459,21 @@ const Home = () => {
             </p>
             
             <div className="max-w-md mx-auto">
-              <form className="flex flex-col sm:flex-row gap-4">
+              <form className="flex flex-col sm:flex-row gap-4" onSubmit={handleNewsletterSubmit}>
                 <input
                   type="email"
+                  value={newsletterEmail}
+                  onChange={e => setNewsletterEmail(e.target.value)}
                   placeholder="Enter your email address"
                   className="flex-1 px-6 py-4 rounded-xl border-0 focus:outline-none focus:ring-4 focus:ring-white/30 text-gray-900 placeholder-gray-500"
+                  disabled={newsletterLoading}
                 />
                 <button
                   type="submit"
                   className="px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  disabled={newsletterLoading}
                 >
-                  Subscribe
+                  {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
                 </button>
               </form>
               <p className="text-blue-100 text-sm mt-4">

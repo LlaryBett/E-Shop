@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
+import userService from '../services/userService';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext(undefined);
@@ -71,6 +72,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const subscribeNewsletter = async (email) => {
+    try {
+      const response = await userService.subscribeNewsletter(email);
+      toast.success(response.message || 'Subscribed successfully');
+      return response;
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Subscription failed');
+      throw error;
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -78,6 +90,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    subscribeNewsletter,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
   };
