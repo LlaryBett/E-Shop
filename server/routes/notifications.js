@@ -1,11 +1,14 @@
 import express from 'express';
 import { body, param, query } from 'express-validator';
 import notificationsController from '../controllers/notificationsController.js';
-import { protect } from '../middleware/auth.js'; // ✅ Use named import
+import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Validation middleware
+// ----------------------
+// Validation Middleware
+// ----------------------
+
 const validateNotificationCreation = [
   body('type')
     .isIn(['order', 'promotion', 'wishlist', 'system'])
@@ -39,7 +42,7 @@ const validateNotificationCreation = [
   body('priority')
     .optional()
     .isIn(['low', 'medium', 'high'])
-    .withMessage('Invalid priority level')
+    .withMessage('Invalid priority level'),
 ];
 
 const validateBulkOperation = [
@@ -49,18 +52,18 @@ const validateBulkOperation = [
   body('notificationIds')
     .isArray({ min: 1 })
     .withMessage('Notification IDs must be a non-empty array')
-    .custom((value) => {
-      if (!value.every(id => typeof id === 'string' && id.length === 24)) {
+    .custom((ids) => {
+      if (!ids.every(id => typeof id === 'string' && id.length === 24)) {
         throw new Error('Invalid notification ID format');
       }
       return true;
-    })
+    }),
 ];
 
 const validateObjectId = [
   param('id')
     .isMongoId()
-    .withMessage('Invalid notification ID')
+    .withMessage('Invalid notification ID'),
 ];
 
 const validateQueryParams = [
@@ -84,21 +87,32 @@ const validateQueryParams = [
     .optional()
     .trim()
     .isLength({ max: 100 })
-    .withMessage('Search query must be maximum 100 characters')
+    .withMessage('Search query must be maximum 100 characters'),
 ];
 
-// Apply authentication middleware to all routes
+// ----------------------
+// Apply auth middleware
+// ----------------------
+
 router.use(protect);
 
-// Routes
+// ----------------------
+// Notification Routes
+// ----------------------
+
+// Static routes (must come first)
 router.get('/', validateQueryParams, notificationsController.getNotifications);
 router.get('/unread-count', notificationsController.getUnreadCount);
-router.get('/:id', validateObjectId, notificationsController.getNotificationById);
 router.post('/', validateNotificationCreation, notificationsController.createNotification);
 router.patch('/read-all', notificationsController.markAllAsRead);
-router.patch('/:id/read', validateObjectId, notificationsController.markAsRead);
 router.post('/bulk', validateBulkOperation, notificationsController.bulkOperations);
 router.delete('/clear-all', notificationsController.clearAll);
+router.post('/events', notificationsController.createNotificationEvent);
+router.get('/events', notificationsController.getNotificationEvents);
+
+// Dynamic routes (must come last)
+router.get('/:id', validateObjectId, notificationsController.getNotificationById);
+router.patch('/:id/read', validateObjectId, notificationsController.markAsRead);
 router.delete('/:id', validateObjectId, notificationsController.deleteNotification);
 
 export default router;

@@ -1,7 +1,7 @@
 import Notification from '../models/Notification.js';
 import { validationResult } from 'express-validator';
-// Import your notification service/helper
 import NotificationService from '../middleware/NotificationService.js';
+import NotificationEvent from '../models/NotificationEvent.js'; // <-- Add this import
 
 class NotificationsController {
   // Get all notifications for a user
@@ -340,6 +340,26 @@ class NotificationsController {
         message: 'Failed to fetch notification',
         error: error.message
       });
+    }
+  }
+
+  // Create notification event template
+  async createNotificationEvent(req, res) {
+    try {
+      const event = await NotificationEvent.create(req.body);
+      res.status(201).json({ success: true, event });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  // Get all notification event templates
+  async getNotificationEvents(req, res) {
+    try {
+      const events = await NotificationEvent.find();
+      res.json({ success: true, events });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 }

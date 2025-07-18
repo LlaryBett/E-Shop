@@ -3,6 +3,7 @@ import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import Brand from '../models/Brand.js';
 import mongoose from 'mongoose';
+import NotificationService from '../middleware/NotificationService.js';
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -186,6 +187,24 @@ export const createProduct = async (req, res, next) => {
       .populate('brand', 'name logo')
       .populate('category', 'name slug');
 
+    // Send notification to all admins (example event)
+    try {
+      // Find all admin users
+      const admins = await mongoose.model('User').find({ role: 'admin' }).select('_id');
+      const adminIds = admins.map(admin => admin._id);
+
+      // This does NOT consult NotificationEvent.js directly:
+      // await NotificationService.sendPromotionNotification(adminIds, { ... });
+
+      // To consult NotificationEvent.js, use:
+      await NotificationService.triggerEvent(adminIds, 'product_created', {
+        title: populatedProduct.title,
+        productId: populatedProduct._id
+      });
+    } catch (notifError) {
+      console.error('Failed to send admin notification:', notifError);
+    }
+
     res.status(201).json({
       success: true,
       product: populatedProduct,
@@ -217,6 +236,10 @@ export const updateProduct = async (req, res, next) => {
         message: 'Product not found',
       });
     }
+
+    // Track if discount is being added or updated
+    const hadSalePrice = !!product.salePrice;
+    const newSalePrice = req.body.salePrice;
 
     // Handle category update
     if (req.body.category) {
@@ -264,6 +287,28 @@ export const updateProduct = async (req, res, next) => {
     )
       .populate('brand', 'name logo')
       .populate('category', 'name slug');
+
+    // If a new discount is added or updated, trigger a notification event
+    if ((!hadSalePrice && newSalePrice) || (hadSalePrice && newSalePrice && newSalePrice !== product.salePrice)) {
+      try {
+        // Find all users with this product in their wishlist (example logic)
+        const Wishlist = mongoose.model('Wishlist');
+        const wishlists = await Wishlist.find({ 'items.product': product._id }).select('user');
+        const userIds = wishlists.map(w => w.user);
+
+        // This does NOT consult NotificationEvent.js directly:
+        // await NotificationService.sendWishlistNotification(userIds, { ... });
+
+        // To consult NotificationEvent.js, use:
+        await NotificationService.triggerEvent(userIds, 'product_discount', {
+          productName: product.title,
+          discount: Math.round(((product.price - newSalePrice) / product.price) * 100),
+          productId: product._id
+        });
+      } catch (notifError) {
+        console.error('Failed to send discount notification:', notifError);
+      }
+    }
 
     res.status(200).json({
       success: true,

@@ -99,6 +99,7 @@ app.use('/api/cart', cartRoutes); // ✅ CART
 app.use('/api/wishlist', wishlistRoutes); // ✅ WISHLIST
 app.use('/api/notifications', notificationsRoutes); // <-- Add this line
 
+
 // Error handlers
 app.use(notFound);
 app.use(errorHandler);

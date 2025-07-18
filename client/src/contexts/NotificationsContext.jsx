@@ -13,21 +13,19 @@ export const useNotifications = () => {
 
 export const NotificationsProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  const [events, setEvents] = useState([]);
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true);
 
   // Fetch notifications from backend
   useEffect(() => {
     setLoading(true);
     notificationsService.getNotifications()
       .then((data) => {
-        // Handle backend response shape
-        // If you see [] in NotificationsPage, it's likely notifications are not being set correctly here.
-        // Add a debug log:
         console.log('notificationsService.getNotifications() response:', data);
 
-        // Try all possible shapes
         if (data && data.data && Array.isArray(data.data.notifications)) {
           setNotifications(data.data.notifications);
         } else if (data && Array.isArray(data.notifications)) {
@@ -38,7 +36,32 @@ export const NotificationsProvider = ({ children }) => {
           setNotifications([]);
         }
       })
+      .catch((err) => {
+        console.error('Error fetching notifications:', err);
+        setNotifications([]);
+      })
       .finally(() => setLoading(false));
+  }, []);
+
+  // Fetch notification events
+  useEffect(() => {
+    setEventsLoading(true);
+    notificationsService.getEvents()
+      .then((res) => {
+        // Adjust based on your API's response shape
+        if (Array.isArray(res)) {
+          setEvents(res);
+        } else if (res && Array.isArray(res.events)) {
+          setEvents(res.events);
+        } else {
+          setEvents([]);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching events:', error);
+        setEvents([]);
+      })
+      .finally(() => setEventsLoading(false));
   }, []);
 
   const markAsRead = async (id) => {
@@ -69,6 +92,36 @@ export const NotificationsProvider = ({ children }) => {
     setNotifications([]);
   };
 
+  const createEvent = async (eventData) => {
+    const newEvent = await notificationsService.createEvent(eventData);
+    setEvents(prev => [...prev, newEvent]);
+    return newEvent;
+  };
+
+  const updateEvent = async (eventKey, eventData) => {
+    const updatedEvent = await notificationsService.updateEvent(eventKey, eventData);
+    setEvents(prev =>
+      prev.map(event =>
+        event.eventKey === eventKey ? updatedEvent : event
+      )
+    );
+    return updatedEvent;
+  };
+
+  const deleteEvent = async (eventKey) => {
+    await notificationsService.deleteEvent(eventKey);
+    setEvents(prev => prev.filter(event => event.eventKey !== eventKey));
+  };
+
+  const toggleEvent = async (eventKey, enabled) => {
+    await notificationsService.toggleEvent(eventKey, enabled);
+    setEvents(prev =>
+      prev.map(event =>
+        event.eventKey === eventKey ? { ...event, enabled } : event
+      )
+    );
+  };
+
   const getUnreadCount = () => {
     return notifications.filter(notification => !notification.isRead).length;
   };
@@ -76,7 +129,6 @@ export const NotificationsProvider = ({ children }) => {
   const getFilteredNotifications = () => {
     let filtered = notifications;
 
-    // Apply filter
     if (filter !== 'all') {
       if (filter === 'unread') {
         filtered = filtered.filter(notification => !notification.isRead);
@@ -85,7 +137,6 @@ export const NotificationsProvider = ({ children }) => {
       }
     }
 
-    // Apply sort
     filtered = [...filtered].sort((a, b) => {
       if (sortBy === 'newest') {
         return new Date(b.timestamp) - new Date(a.timestamp);
@@ -102,17 +153,23 @@ export const NotificationsProvider = ({ children }) => {
 
   const value = {
     notifications,
+    events,
     filter,
     setFilter,
     sortBy,
     setSortBy,
+    loading,
+    eventsLoading,
     markAsRead,
     markAllAsRead,
     deleteNotification,
     clearAll,
+    createEvent,
+    updateEvent,
+    deleteEvent,
+    toggleEvent,
     getUnreadCount,
-    getFilteredNotifications,
-    loading
+    getFilteredNotifications
   };
 
   return (

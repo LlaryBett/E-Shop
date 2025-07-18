@@ -140,6 +140,7 @@ class NotificationService {
 
   // Trigger a notification event by eventKey and data
   async triggerEvent(userId, eventKey, data = {}) {
+    // This is where NotificationEvent schema is used
     const event = await NotificationEvent.findOne({ eventKey, enabled: true });
     if (!event) return null;
 

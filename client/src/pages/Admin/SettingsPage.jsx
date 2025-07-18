@@ -21,6 +21,7 @@ import {
   Check,
   X
 } from 'lucide-react';
+import { useNotifications } from '../../contexts/NotificationsContext';
 
 const SettingsPage = () => {
   // Form states
@@ -87,6 +88,9 @@ const SettingsPage = () => {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Add context for notification events
+  const { events, eventsLoading, toggleEvent } = useNotifications();
 
   // Toggle section expansion
   const toggleSection = (section) => {
@@ -444,163 +448,257 @@ const SettingsPage = () => {
 
             {/* Notification Settings */}
             {activeTab === 'notifications' && (
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Notification Preferences</h3>
-                  <button
-                    type="button"
-                    onClick={() => toggleSection('notifications')}
-                    className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                  >
-                    {expandedSections.notifications ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                  </button>
-                </div>
+  <div className="p-6">
+    <div className="flex items-center justify-between mb-6">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Notification Preferences</h3>
+      <button
+        type="button"
+        onClick={() => toggleSection('notifications')}
+        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+      >
+        {expandedSections.notifications ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+      </button>
+    </div>
 
-                {expandedSections.notifications && (
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Email Notifications</h4>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">Email notifications</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Receive notifications via email
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setNotifications(prev => ({
-                              ...prev,
-                              email: !prev.email
-                            }))}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                              notifications.email ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
-                            }`}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                notifications.email ? 'translate-x-5' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">Weekly reports</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Get weekly summary of your store performance
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setNotifications(prev => ({
-                              ...prev,
-                              weeklyReport: !prev.weeklyReport
-                            }))}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                              notifications.weeklyReport ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
-                            }`}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                notifications.weeklyReport ? 'translate-x-5' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">Order updates</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Notify me about order status changes
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setNotifications(prev => ({
-                              ...prev,
-                              orderUpdates: !prev.orderUpdates
-                            }))}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                              notifications.orderUpdates ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
-                            }`}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                notifications.orderUpdates ? 'translate-x-5' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Push Notifications</h4>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">Push notifications</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Receive push notifications on your device
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setNotifications(prev => ({
-                              ...prev,
-                              push: !prev.push
-                            }))}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                              notifications.push ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
-                            }`}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                notifications.push ? 'translate-x-5' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">Promotional offers</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Get notified about special offers and discounts
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setNotifications(prev => ({
-                              ...prev,
-                              promotions: !prev.promotions
-                            }))}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                              notifications.promotions ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
-                            }`}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                notifications.promotions ? 'translate-x-5' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+    {expandedSections.notifications && (
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Email Notifications</h4>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Email notifications</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Receive notifications via email
+                </p>
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setNotifications(prev => ({
+                  ...prev,
+                  email: !prev.email
+                }))}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  notifications.email ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    notifications.email ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Weekly reports</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Get weekly summary of your store performance
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNotifications(prev => ({
+                  ...prev,
+                  weeklyReport: !prev.weeklyReport
+                }))}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  notifications.weeklyReport ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    notifications.weeklyReport ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Order updates</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Notify me about order status changes
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNotifications(prev => ({
+                  ...prev,
+                  orderUpdates: !prev.orderUpdates
+                }))}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  notifications.orderUpdates ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    notifications.orderUpdates ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Push Notifications</h4>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Push notifications</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Receive push notifications on your device
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNotifications(prev => ({
+                  ...prev,
+                  push: !prev.push
+                }))}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  notifications.push ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    notifications.push ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Promotional offers</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Get notified about special offers and discounts
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNotifications(prev => ({
+                  ...prev,
+                  promotions: !prev.promotions
+                }))}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  notifications.promotions ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    notifications.promotions ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* New Event Management Section */}
+        <div>
+          <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">Notification Events</h4>
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Event
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {eventsLoading ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                        Loading events...
+                      </td>
+                    </tr>
+                  ) : events.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                        No notification events found.
+                      </td>
+                    </tr>
+                  ) : (
+                    events.map((event) => (
+                      <tr key={event.eventKey}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                          {event.defaultTitle}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {event.description}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            event.enabled 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {event.enabled ? 'Enabled' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleEvent(event.eventKey, !event.enabled)}
+                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                                event.enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                              }`}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                  event.enabled ? 'translate-x-5' : 'translate-x-0'
+                                }`}
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Add New Event
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
             {/* Appearance Settings */}
             {activeTab === 'appearance' && (
