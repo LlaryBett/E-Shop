@@ -381,4 +381,18 @@ export const sendSystemNotificationToUser = async (userId, { title, message, act
   });
 };
 
+// Helper: Send contact reply notification to user
+export const sendContactReplyNotification = async (userId, { subject, reply }) => {
+  await NotificationService.sendSystemNotification(userId, {
+    title: 'Reply to your contact message',
+    message: reply,
+    icon: '📩',
+    color: 'green',
+    actionText: 'View Message',
+    actionLink: '/account/messages', // adjust as needed
+    priority: 'high',
+    meta: { subject }
+  });
+};
+
 export default new NotificationsController();

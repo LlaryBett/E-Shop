@@ -9,17 +9,27 @@ export const getCategories = async (req, res, next) => {
   try {
     const categories = await Category.find({ isActive: true })
       .populate('subcategories')
-      .populate('productCount')
-      .sort({ sortOrder: 1, name: 1 });
+      .sort({ sortOrder: 1, name: 1 })
+      .select('name slug description image parent subcategories isActive sortOrder seoKeywords createdAt updatedAt');
+
+    // ✅ Log each category with its name and image URL
+    console.log('[GET /api/categories] Categories:');
+    categories.forEach((cat, idx) => {
+      const imageUrl = cat.image?.url || 'N/A';
+      console.log(`${idx + 1}. ${cat.name} - image: ${imageUrl}`);
+    });
 
     res.status(200).json({
       success: true,
       categories,
     });
   } catch (error) {
+    console.error('[GET /api/categories] Error:', error);
     next(error);
   }
 };
+
+
 
 // @desc    Get single category
 // @route   GET /api/categories/:slug
@@ -63,11 +73,13 @@ export const createCategory = async (req, res, next) => {
       });
     }
 
-    // image is expected as a URL in req.body.image
+    // ✅ Handle image upload and wrap it as { url }
+    if (req.file && req.file.path) {
+      req.body.image = { url: req.file.location || req.file.path };
+    }
 
     const category = await Category.create(req.body);
 
-    // If this category has a parent, add it to parent's subcategories
     if (category.parent) {
       await Category.findByIdAndUpdate(
         category.parent,
@@ -83,6 +95,7 @@ export const createCategory = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // @desc    Update category
 // @route   PUT /api/categories/:id
@@ -107,7 +120,12 @@ export const updateCategory = async (req, res, next) => {
       });
     }
 
-    // image URL can be updated via req.body.image
+    // Handle image upload: set image as string URL if file uploaded
+    if (req.file && req.file.path) {
+      req.body.image = req.file.location || req.file.path;
+    } else if (req.body.image && typeof req.body.image === 'object' && req.body.image.url) {
+      req.body.image = req.body.image.url;
+    }
 
     category = await Category.findByIdAndUpdate(
       req.params.id,

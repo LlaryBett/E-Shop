@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Clock, Send, MessageCircle, Headphones } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const Contact = () => {
     category: 'general',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submitContactForm } = useAuth();
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -24,8 +26,8 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call AuthContext logic to handle contact submission
+      await submitContactForm(formData);
       toast.success('Message sent successfully! We\'ll get back to you soon.');
       setFormData({
         name: '',

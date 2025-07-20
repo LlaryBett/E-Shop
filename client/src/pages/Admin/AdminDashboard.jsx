@@ -181,7 +181,7 @@ const AdminDashboard = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${dashboardStats?.totalRevenue?.toLocaleString() ?? '...'}
+                Ksh {dashboardStats?.totalRevenue?.toLocaleString() ?? '...'}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -277,7 +277,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">${order.pricing?.total?.toFixed(2)}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">Ksh {order.pricing?.total?.toFixed(2)}</p>
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                       {order.status}
                     </span>
@@ -312,7 +312,7 @@ const AdminDashboard = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{tp.totalSold} sales</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">${tp.totalRevenue?.toLocaleString()}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">Ksh {tp.totalRevenue?.toLocaleString()}</p>
                   </div>
                 </div>
               ))}
@@ -325,7 +325,11 @@ const AdminDashboard = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Revenue Overview</h3>
         <div className="h-64">
-          {dashboardStats?.monthlyRevenue ? (
+          {!dashboardStats ? (
+            <div className="min-h-full flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : dashboardStats?.monthlyRevenue ? (
             <RevenueChart data={dashboardStats.monthlyRevenue} />
           ) : (
             <div className="h-full bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">

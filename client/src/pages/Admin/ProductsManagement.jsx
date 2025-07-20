@@ -21,6 +21,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import adminService from '../../services/adminService'; // adjust path if needed
+import * as XLSX from 'xlsx';
 
 const ProductsManagement = () => {
   // Backend product data
@@ -101,6 +102,51 @@ const ProductsManagement = () => {
     setProducts(products.filter(product => product._id !== productToDelete));
     setShowDeleteModal(false);
     setProductToDelete(null);
+  };
+
+  // Export products to Excel (with N/A for missing and wide columns)
+  const handleExportProducts = () => {
+    const columns = [
+      'ID',
+      'Name',
+      'SKU',
+      'Category',
+      'Price',
+      'Stock',
+      'Status',
+      'Created'
+    ];
+
+    const exportData = filteredProducts.map(product => ({
+      ID: product._id || product.id || 'N/A',
+      Name: product.title || product.name || 'N/A',
+      SKU: product.sku || 'N/A',
+      Category: product.category?.name || product.category || 'N/A',
+      Price: product.salePrice != null
+        ? product.salePrice.toFixed(2)
+        : (product.price != null ? product.price.toFixed(2) : 'N/A'),
+      Stock: product.stock != null ? product.stock : 'N/A',
+      Status: product.status || (product.isActive === false ? 'Draft' : 'Active'),
+      Created: product.createdAt ? new Date(product.createdAt).toLocaleString() : 'N/A'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData, { header: columns });
+    XLSX.utils.sheet_add_aoa(worksheet, [columns], { origin: "A1" });
+
+    worksheet['!cols'] = [
+      { wch: 28 }, // ID
+      { wch: 22 }, // Name
+      { wch: 18 }, // SKU
+      { wch: 22 }, // Category
+      { wch: 14 }, // Price
+      { wch: 10 }, // Stock
+      { wch: 14 }, // Status
+      { wch: 28 }  // Created
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    XLSX.writeFile(workbook, 'products.xlsx');
   };
 
   // Get status color and text
@@ -213,7 +259,10 @@ const ProductsManagement = () => {
                 </div>
               </div>
               
-              <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2">
+              <button
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                onClick={handleExportProducts}
+              >
                 <Download className="h-4 w-4" />
                 <span>Export</span>
               </button>
@@ -347,7 +396,7 @@ const ProductsManagement = () => {
                         {product.category?.name || product.category || '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        ${product.salePrice?.toFixed(2) ?? product.price?.toFixed(2) ?? '0.00'}
+                        Ksh {product.salePrice?.toFixed(2) ?? product.price?.toFixed(2) ?? '0.00'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {product.stock ?? '-'}

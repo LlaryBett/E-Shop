@@ -26,8 +26,23 @@ router.get('/tree', getCategoryTree);
 router.get('/:slug', getCategory);
 
 // Protected routes (Admin only)
-router.post('/', protect, authorize('admin'), upload.single('image'), categoryValidation, createCategory);
-router.put('/:id', protect, authorize('admin'), upload.single('image'), categoryValidation, updateCategory);
+// If you use upload.single('image'), your controller must handle both file and body.image
+router.post(
+  '/',
+  protect,
+  authorize('admin'),
+  upload.single('image'),
+  categoryValidation,
+  createCategory
+);
+router.put(
+  '/:id',
+  protect,
+  authorize('admin'),
+  upload.single('image'),
+  categoryValidation,
+  updateCategory
+);
 router.delete('/:id', protect, authorize('admin'), deleteCategory);
 
 export default router;

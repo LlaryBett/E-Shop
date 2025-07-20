@@ -18,8 +18,10 @@ const categorySchema = new mongoose.Schema({
     maxlength: [500, 'Description cannot be more than 500 characters'],
   },
   image: {
-    type: String, // ✅ Now a simple URL string
-    trim: true,
+    type: new mongoose.Schema({
+      url: { type: String, trim: true, default: '' }
+    }, { _id: false }),
+    default: () => ({ url: '' }),
   },
   parent: {
     type: mongoose.Schema.Types.ObjectId,

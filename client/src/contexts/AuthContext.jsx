@@ -24,11 +24,9 @@ export const AuthProvider = ({ children }) => {
       
       if (token && savedUser) {
         try {
-          // Verify token is still valid
           const currentUser = await authService.getMe();
           setUser(currentUser);
         } catch {
-          // Token is invalid, clear storage
           authService.logout();
         }
       }
@@ -52,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.register({ name, email, password });
       setUser(response.user);
-      return response; // <-- return the response so Register.jsx gets it
+      return response;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
       throw error;
@@ -83,6 +81,52 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 📩 Contact Form
+  const submitContactForm = async (formData) => {
+    try {
+      const message = await userService.submitContactForm(formData);
+      toast.success(message || 'Message sent successfully');
+      return message;
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Message failed to send');
+      throw error;
+    }
+  };
+
+  // 🛡️ Admin: Contact Management
+  const getAllContactMessages = async () => {
+    try {
+      const messages = await userService.getAllContactMessages();
+      return messages;
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to fetch messages');
+      throw error;
+    }
+  };
+
+  // Update contact message status and send reply content if provided
+  const updateContactMessageStatus = async (id, status, replyContent) => {
+    try {
+      // Pass replyContent to userService if provided
+      const message = await userService.updateContactMessageStatus(id, status, replyContent);
+      toast.success('Status updated');
+      return message;
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Update failed');
+      throw error;
+    }
+  };
+
+  const deleteContactMessage = async (id) => {
+    try {
+      await userService.deleteContactMessage(id);
+      toast.success('Message deleted');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Delete failed');
+      throw error;
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -91,6 +135,10 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     subscribeNewsletter,
+    submitContactForm,
+    getAllContactMessages,
+    updateContactMessageStatus,
+    deleteContactMessage,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
   };

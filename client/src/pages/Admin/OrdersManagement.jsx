@@ -25,6 +25,7 @@ import {
   User
 } from 'lucide-react';
 import orderService from '../../services/orderService'; // adjust path if needed
+import * as XLSX from 'xlsx'; // Add this import
 
 const OrdersManagement = () => {
   // Sample order data
@@ -118,6 +119,48 @@ const OrdersManagement = () => {
     setOrders(orders.filter(order => order.id !== orderToDelete));
     setShowDeleteModal(false);
     setOrderToDelete(null);
+  };
+
+  // Export orders to Excel (with N/A for missing and wide columns)
+  const handleExportOrders = () => {
+    const columns = [
+      'Order ID',
+      'Customer',
+      'Email',
+      'Date',
+      'Total',
+      'Status',
+      'Payment'
+    ];
+
+    const exportData = filteredOrders.map(order => ({
+      'Order ID': order.orderNumber || order._id || 'N/A',
+      'Customer': order.user?.name || 'N/A',
+      'Email': order.user?.email || 'N/A',
+      'Date': order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A',
+      'Total': order.pricing?.total != null ? order.pricing.total.toFixed(2) : 'N/A',
+      'Status': order.status || 'N/A',
+      'Payment': order.paymentInfo?.status
+        ? order.paymentInfo.status.charAt(0).toUpperCase() + order.paymentInfo.status.slice(1)
+        : 'N/A'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData, { header: columns });
+    XLSX.utils.sheet_add_aoa(worksheet, [columns], { origin: "A1" });
+
+    worksheet['!cols'] = [
+      { wch: 24 }, // Order ID
+      { wch: 22 }, // Customer
+      { wch: 32 }, // Email
+      { wch: 22 }, // Date
+      { wch: 14 }, // Total
+      { wch: 14 }, // Status
+      { wch: 14 }  // Payment
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+    XLSX.writeFile(workbook, 'orders.xlsx');
   };
 
   // Get status color and icon
@@ -282,7 +325,10 @@ const OrdersManagement = () => {
                 </div>
               </div>
               
-              <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2">
+              <button
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                onClick={handleExportOrders}
+              >
                 <Download className="h-4 w-4" />
                 <span>Export</span>
               </button>
@@ -430,7 +476,7 @@ const OrdersManagement = () => {
                         {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        ${order.pricing?.total?.toFixed(2) ?? '0.00'}
+                        Ksh {order.pricing?.total?.toFixed(2) ?? '0.00'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center">

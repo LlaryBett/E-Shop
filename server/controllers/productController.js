@@ -30,10 +30,35 @@ export const getProducts = async (req, res, next) => {
     // Apply filters (same as your second implementation)
     if (req.query.search) query.$text = { $search: req.query.search };
     if (req.query.categories) {
-      query.category = { $in: req.query.categories.split(',').map(id => new mongoose.Types.ObjectId(id)) };
+      // Accept both ObjectId and category slug/name
+      const categoriesRaw = req.query.categories.split(',');
+      const categoryIds = [];
+      for (const cat of categoriesRaw) {
+        // Try to convert to ObjectId, else find by slug or name
+        if (/^[a-f\d]{24}$/i.test(cat)) {
+          categoryIds.push(new mongoose.Types.ObjectId(cat));
+        } else {
+          // Find category by slug or name
+          const found = await Category.findOne({
+            $or: [{ slug: cat }, { name: cat }]
+          }).select('_id');
+          if (found) categoryIds.push(found._id);
+        }
+      }
+      if (categoryIds.length > 0) {
+        query.category = { $in: categoryIds };
+      }
     }
+    // Brand filter (fix: filter by brand ObjectId)
+    let brandIds = [];
     if (req.query.brands) {
-      query.brand = { $in: req.query.brands.split(',').map(id => new mongoose.Types.ObjectId(id)) };
+      brandIds = req.query.brands.split(',').map(id => {
+        // Only accept valid ObjectId strings
+        return /^[a-f\d]{24}$/i.test(id) ? new mongoose.Types.ObjectId(id) : null;
+      }).filter(Boolean);
+      if (brandIds.length > 0) {
+        query.brand = { $in: brandIds };
+      }
     }
     if (req.query.minPrice || req.query.maxPrice) {
       query.price = {};
@@ -44,6 +69,20 @@ export const getProducts = async (req, res, next) => {
     if (req.query.inStock === 'true') query.stock = { $gt: 0 };
     if (req.query.onSale === 'true') query.salePrice = { $exists: true, $ne: null };
 
+    // Log filters and query for debugging
+    console.log('[GET /api/products] Query params:', req.query);
+    console.log('[GET /api/products] Mongo query:', JSON.stringify(query, null, 2));
+
+    // Debug: Check actual brand values in products collection
+    const debugBrands = await Product.distinct('brand');
+    console.log('[GET /api/products] Distinct brand values in products:', debugBrands);
+
+    // Debug: Check type of brand field in a sample product
+    if (brandIds.length > 0) {
+      const sampleProduct = await Product.findOne({ brand: brandIds[0] });
+      console.log('[GET /api/products] Sample product for brand:', brandIds[0], sampleProduct);
+    }
+
     // Fetch products
     const products = await Product.find(query)
       .populate('brand', 'name logo')
@@ -52,6 +91,8 @@ export const getProducts = async (req, res, next) => {
       .skip(skip)
       .limit(limit)
       .lean();
+
+    console.log('[GET /api/products] Products found:', products.length);
 
     const total = await Product.countDocuments(query);
     const pages = Math.ceil(total / limit);

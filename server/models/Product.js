@@ -45,11 +45,11 @@ const productSchema = new mongoose.Schema({
     trim: true,
   },
   // In productSchema.js
-brand: {
-  type: mongoose.Schema.Types.ObjectId,  // Change from String
-  ref: 'Brand',                         // Add reference
-  required: [true, 'Please select a brand']
-},
+  brand: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Brand',
+    required: [true, 'Please select a brand'],
+  },
   sku: {
     type: String,
     unique: true,
@@ -169,3 +169,11 @@ productSchema.pre('save', function (next) {
 });
 
 export default mongoose.model('Product', productSchema);
+
+// Run this in your MongoDB shell or a migration script:
+// db.products.updateOne(
+//   { _id: ObjectId("687550211b81d7e9c6c7b18b") },
+//   [
+//     { $set: { brand: { $toObjectId: "$brand" } } }
+//   ]
+// )

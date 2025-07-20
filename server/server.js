@@ -9,7 +9,6 @@ import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss-clean';
 import hpp from 'hpp';
-import rateLimit from 'express-rate-limit';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -23,10 +22,11 @@ import uploadRoutes from './routes/upload.js';
 import paymentRoutes from './routes/payments.js';
 import adminRoutes from './routes/admin.js';
 import blogRoutes from './routes/blog.js';
-import cartRoutes from './routes/cartRoutes.js'; // ✅ CART
-import wishlistRoutes from './routes/wishlistRoutes.js'; // ✅ WISHLIST
-import notificationsRoutes from './routes/notifications.js'; // <-- Add this line
+import cartRoutes from './routes/cartRoutes.js';
+import wishlistRoutes from './routes/wishlistRoutes.js';
+import notificationsRoutes from './routes/notifications.js';
 import newsletterRoutes from './routes/newsletter.js';
+import contactRoutes from './routes/contact.js'; // ✅ NEW
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -38,17 +38,9 @@ dotenv.config();
 const app = express();
 app.set('trust proxy', 1);
 
-// Rate limiter
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Too many requests from this IP, please try again later.',
-});
-
 // Security middleware
 app.use(helmet());
 app.use(compression());
-app.use(limiter);
 
 // CORS
 app.use(
@@ -96,11 +88,11 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/blog', blogRoutes);
-app.use('/api/cart', cartRoutes); // ✅ CART
-app.use('/api/wishlist', wishlistRoutes); // ✅ WISHLIST
-app.use('/api/notifications', notificationsRoutes); // <-- Add this line
+app.use('/api/cart', cartRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/notifications', notificationsRoutes);
 app.use('/api/newsletter', newsletterRoutes);
-
+app.use('/api/contact', contactRoutes); // ✅ NEW
 
 // Error handlers
 app.use(notFound);
@@ -140,12 +132,3 @@ process.on('uncaughtException', (err) => {
 });
 
 export default app;
-
-// If you are still getting CORS errors, make sure:
-// 1. This CORS middleware is placed BEFORE any route definitions (which it is).
-// 2. Your frontend is running on http://localhost:5173 and matches the CLIENT_URL.
-// 3. You restart your backend server after changes.
-// 4. There are no proxy or network issues blocking requests.
-
-// If you want to allow all origins for development, you can use:
-// app.use(cors());
