@@ -31,17 +31,19 @@ const Shop = () => {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
+    // Read category from URL query params
+    const categoryFromUrl = searchParams.get('category');
+    let filtersToSend = { ...filters };
+
+    // If category is present in URL, use it for filtering
+    if (categoryFromUrl) {
+      filtersToSend.categories = [categoryFromUrl];
+    }
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        // Fix: send brand IDs, not names, in filters
-        const filtersToSend = {
-          ...filters,
-          brands: filters.brands, // should be array of brand IDs
-          categories: filters.categories, // should be array of category names or slugs
-        };
 
         const response = await ProductService.getProducts(
           1,
@@ -85,7 +87,7 @@ const Shop = () => {
     };
 
     fetchProducts();
-  }, [filters, sortBy, searchQuery]);
+  }, [filters, sortBy, searchQuery, searchParams]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));

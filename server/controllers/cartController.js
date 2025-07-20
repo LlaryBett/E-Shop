@@ -4,8 +4,24 @@ import Product from '../models/Product.js';
 // Get current user's cart
 export const getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
-    res.json({ items: cart?.items || [] });
+    // Populate product and its brand
+    const cart = await Cart.findOne({ user: req.user.id })
+      .populate({
+        path: 'items.product',
+        populate: { path: 'brand', select: 'name logo' }
+      });
+
+    // Map items to include brand name directly in product
+    const items = (cart?.items || []).map(item => {
+      const product = item.product?.toObject ? item.product.toObject() : item.product;
+      if (product && product.brand && typeof product.brand === 'object') {
+        product.brandName = product.brand.name;
+        product.brandLogo = product.brand.logo;
+      }
+      return { ...item.toObject(), product };
+    });
+
+    res.json({ items });
   } catch (err) {
     console.error('Get Cart Error:', err);
     res.status(500).json({ message: 'Server Error' });

@@ -264,7 +264,10 @@ const Categories = () => {
                 className={`group relative overflow-hidden rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
                   isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
                 } cursor-pointer`}
-                onClick={() => navigate(`/shop?category=${encodeURIComponent(category.slug)}`)}
+                onClick={() => {
+                  console.log('Navigating to category:', category.slug);
+                  navigate(`/shop?category=${encodeURIComponent(category.slug)}`);
+                }}
               >
                 {/* Category Image */}
                 <div className="relative h-48 overflow-hidden">
