@@ -261,7 +261,12 @@ const Home = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Free Shipping</h3>
               <p className="text-gray-600 dark:text-gray-300">Free delivery on orders over $50 with tracking included</p>
-              <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">Learn More →</div>
+              <Link
+                to="/shipping"
+                className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline"
+              >
+                Learn More →
+              </Link>
             </div>
 
             <div className="text-center space-y-4 group">
@@ -270,7 +275,12 @@ const Home = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Secure Payment</h3>
               <p className="text-gray-600 dark:text-gray-300">256-bit SSL encryption for all transactions and data</p>
-              <div className="text-sm text-green-600 dark:text-green-400 font-medium">Security Details →</div>
+              <Link
+                to="/checkout"
+                className="text-sm text-green-600 dark:text-green-400 font-medium hover:underline"
+              >
+                Security Details →
+              </Link>
             </div>
 
             <div className="text-center space-y-4 group">
@@ -279,7 +289,12 @@ const Home = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">24/7 Support</h3>
               <p className="text-gray-600 dark:text-gray-300">Round-the-clock customer service via chat, email, and phone</p>
-              <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">Contact Support →</div>
+              <Link
+                to="/contact"
+                className="text-sm text-purple-600 dark:text-purple-400 font-medium hover:underline"
+              >
+                Contact Support →
+              </Link>
             </div>
 
             <div className="text-center space-y-4 group">
@@ -288,7 +303,12 @@ const Home = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Quality Guarantee</h3>
               <p className="text-gray-600 dark:text-gray-300">Premium quality products with 30-day money-back guarantee</p>
-              <div className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Our Promise →</div>
+              <Link
+                to="/shop?quality=true"
+                className="text-sm text-yellow-600 dark:text-yellow-400 font-medium hover:underline"
+              >
+                Our Promise →
+              </Link>
             </div>
           </div>
         </div>

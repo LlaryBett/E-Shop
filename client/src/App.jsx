@@ -34,6 +34,7 @@ import PromoModalManager from './components/common/PromoModalManager';
 import ExitIntentModal from './components/common/ExitIntentModal';
 import Categories from './pages/Categories';
 import { CategoryProvider } from './contexts/CategoryContext';
+import Shipping from './pages/Shipping';
 
 function App() {
   return (
@@ -71,6 +72,7 @@ function App() {
                         <Route path="/verify-email/:token" element={<VerifyEmail />} />
                         <Route path="/notifications" element={<NotificationsPage />} />
                         <Route path="/categories" element={<Categories />} />
+                        <Route path="/shipping" element={<Shipping />} />
                       </Routes>
                     </main>
                     <Footer />

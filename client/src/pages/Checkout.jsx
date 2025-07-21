@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CreditCard, Truck, MapPin, User, Mail, Phone, Lock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { CreditCard, Truck, MapPin, User, Mail, Phone, Lock, Shield, CheckCircle, Eye, Fingerprint, X } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import OrderService from '../services/orderService';
@@ -8,10 +8,12 @@ import toast from 'react-hot-toast';
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { items, getTotalPrice, clearCart } = useCart();
   const { user } = useAuth();
   
   const [currentStep, setCurrentStep] = useState(1);
+  const [showSecurityDetails, setShowSecurityDetails] = useState(false);
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [sameAsBilling, setSameAsBilling] = useState(true);
@@ -91,6 +93,13 @@ const taxRates = {
     },
   ];
 
+  // Check if redirected for security details
+  useEffect(() => {
+    if (location.state?.showSecurityDetails) {
+      setShowSecurityDetails(true);
+    }
+  }, [location.state]);
+
   const handleShippingAddressChange = (field, value) => {
     setShippingAddress(prev => ({ ...prev, [field]: value }));
     if (sameAsBilling) {
@@ -165,7 +174,8 @@ const taxRates = {
   }
 };
 
-  if (items.length === 0) {
+  // Allow viewing security details even without items
+  if (items.length === 0 && !location.state?.showSecurityDetails) {
     navigate('/cart');
     return null;
   }
@@ -181,6 +191,97 @@ const taxRates = {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Checkout</h1>
+
+        {/* Security Details Modal */}
+        {showSecurityDetails && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Security Details</h2>
+                <button
+                  onClick={() => setShowSecurityDetails(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 p-6 rounded-xl border border-green-200 dark:border-green-800">
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mb-4">
+                      <Lock className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">SSL Encryption</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      All data transmitted between your browser and our servers is protected with 256-bit SSL encryption, the same level used by banks.
+                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mb-4">
+                      <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">PCI Compliance</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      We are PCI DSS Level 1 compliant, meeting the highest standards for payment card data security.
+                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/10 dark:to-violet-900/10 p-6 rounded-xl border border-purple-200 dark:border-purple-800">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center mb-4">
+                      <Eye className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Data Protection</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      Your personal information is never stored on our servers and is immediately encrypted upon entry.
+                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/10 dark:to-red-900/10 p-6 rounded-xl border border-orange-200 dark:border-orange-800">
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center mb-4">
+                      <Fingerprint className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Fraud Prevention</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      Advanced fraud detection systems monitor all transactions for suspicious activity in real-time.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Trust Badges & Certifications</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { name: 'SSL Secured', icon: <Lock className="h-5 w-5" /> },
+                      { name: 'PCI Compliant', icon: <Shield className="h-5 w-5" /> },
+                      { name: 'GDPR Ready', icon: <Eye className="h-5 w-5" /> },
+                      { name: 'Fraud Protected', icon: <Fingerprint className="h-5 w-5" /> }
+                    ].map((badge) => (
+                      <div key={badge.name} className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        {badge.icon}
+                        <span>{badge.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <button
+                    onClick={() => {
+                      setShowSecurityDetails(false);
+                      navigate('/shop');
+                    }}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    Continue Shopping Securely
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="mb-8">
@@ -637,9 +738,43 @@ const taxRates = {
 
               {/* Security Info */}
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
                   <Lock className="h-4 w-4 text-green-500" />
                   <span>Secure SSL encrypted checkout</span>
+                </div>
+
+                {/* Security Section */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="text-center space-y-4 group">
+                    <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                      <Shield className="h-10 w-10 text-white" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Secure Payment</h3>
+                    <p className="text-gray-600 dark:text-gray-300">256-bit SSL encryption for all transactions and data</p>
+                    <button
+                      onClick={() => setShowSecurityDetails(true)}
+                      className="text-sm text-green-600 dark:text-green-400 font-medium hover:underline"
+                    >
+                      Security Details →
+                    </button>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {[
+                        { name: 'PCI Compliant', icon: <Shield className="h-3 w-3" /> },
+                        { name: 'Data Protected', icon: <Eye className="h-3 w-3" /> },
+                        { name: 'Fraud Prevention', icon: <Fingerprint className="h-3 w-3" /> },
+                        { name: 'SSL Secured', icon: <Lock className="h-3 w-3" /> }
+                      ].map((badge) => (
+                        <div key={badge.name} className="flex items-center space-x-1 text-green-700 dark:text-green-400">
+                          <CheckCircle className="h-3 w-3" />
+                          {badge.icon}
+                          <span>{badge.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -5,7 +5,8 @@ import { useCart } from '../contexts/CartContext';
 import toast from 'react-hot-toast';
 
 const Cart = () => {
-  const { items, updateQuantity, removeFromCart, getTotalPrice, getTotalItems, clearCart } = useCart();
+  const { items, updateQuantity, removeFromCart, getTotalPrice, getTotalItems, clearCart, loading } = useCart();
+  // Remove local loading state, use loading from context if available
 
   const handleQuantityChange = (id, newQuantity) => {
     if (newQuantity < 1) {
@@ -30,6 +31,14 @@ const Cart = () => {
   const shipping = subtotal > 50 ? 0 : 9.99;
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + shipping + tax;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
