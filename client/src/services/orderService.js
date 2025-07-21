@@ -62,6 +62,16 @@ class OrderService {
     const response = await api.get(`/admin/orders?${params}`);
     return response.data;
   }
+
+ 
+  
+
+  // Proceed to checkout (place an order)
+  async proceedToCheckout(checkoutPayload) {
+    // The backend expects /api/checkout as the route
+    const res = await api.post('/api/checkout', checkoutPayload);
+    return res.data;
+  }
 }
 
 export default new OrderService();

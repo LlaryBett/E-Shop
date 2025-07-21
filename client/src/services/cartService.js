@@ -34,3 +34,10 @@ export const clearCartAPI = async () => {
   const res = await api.delete('/cart');
   return res.data;
 };
+
+// Proceed to checkout (place an order)
+export const proceedToCheckout = async (checkoutPayload) => {
+  // Remove duplicate 'api' in the route if your frontend api baseURL already includes '/api'
+  const res = await api.post('/checkout', checkoutPayload);
+  return res.data;
+};

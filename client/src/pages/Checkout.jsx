@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CreditCard, Truck, MapPin, User, Mail, Phone, Lock, Shield, CheckCircle, Eye, Fingerprint, X } from 'lucide-react';
+import { CreditCard, Truck, MapPin, User, Mail, Phone, Lock, Shield, CheckCircle, Eye, Fingerprint, X, Tag, Check } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import OrderService from '../services/orderService';
@@ -11,7 +11,36 @@ const Checkout = () => {
   const location = useLocation();
   const { items, getTotalPrice, clearCart } = useCart();
   const { user } = useAuth();
-  
+
+  // Autofill shipping address from user profile (me payload)
+  const getDefaultShippingAddress = () => {
+    const defaultAddress = user?.addresses?.find(addr => addr.isDefault && addr.type === 'shipping');
+    if (defaultAddress) {
+      return {
+        firstName: defaultAddress.firstName || user?.name?.split(' ')[0] || '',
+        lastName: defaultAddress.lastName || user?.name?.split(' ')[1] || '',
+        email: user?.email || '',
+        phone: user?.phone || '',
+        address: defaultAddress.address || '',
+        city: defaultAddress.city || '',
+        state: defaultAddress.state || '',
+        zipCode: defaultAddress.zipCode || '',
+        country: defaultAddress.country || '',
+      };
+    }
+    return {
+      firstName: user?.name?.split(' ')[0] || '',
+      lastName: user?.name?.split(' ')[1] || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: 'United States',
+    };
+  };
+
   const [currentStep, setCurrentStep] = useState(1);
   const [showSecurityDetails, setShowSecurityDetails] = useState(false);
   const [shippingMethod, setShippingMethod] = useState('standard');
@@ -19,17 +48,12 @@ const Checkout = () => {
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const [shippingAddress, setShippingAddress] = useState({
-    firstName: user?.name?.split(' ')[0] || '',
-    lastName: user?.name?.split(' ')[1] || '',
-    email: user?.email || '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: 'United States',
-  });
+  // Coupon related state
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+
+  const [shippingAddress, setShippingAddress] = useState(getDefaultShippingAddress());
 
   const [_billingAddress, setBillingAddress] = useState({
     firstName: '',
@@ -50,12 +74,21 @@ const Checkout = () => {
     cardholderName: '',
   });
 
+  // Mock coupon database - in real app this would be from API
+  const availableCoupons = {
+    'SAVE10': { discount: 10, type: 'percentage', minAmount: 0 },
+    'WELCOME20': { discount: 20, type: 'percentage', minAmount: 50 },
+    'FIXED15': { discount: 15, type: 'fixed', minAmount: 0 },
+    'NEWUSER': { discount: 25, type: 'percentage', minAmount: 100 },
+    'FREE5': { discount: 5, type: 'fixed', minAmount: 30 }
+  };
+
   // Backend-aligned tax rates
-const taxRates = {
-  'CA': 0.0725,
-  'NY': 0.08875,
-  // Add other states if needed
-};
+  const taxRates = {
+    'CA': 0.0725,
+    'NY': 0.08875,
+    // Add other states if needed
+  };
 
   const subtotal = getTotalPrice();
   let shippingCost;
@@ -66,11 +99,22 @@ const taxRates = {
   } else {
     shippingCost = subtotal > 50 ? 0 : 5.99;
   }
-  const tax =
-    taxRates[shippingAddress.state] !== undefined
-      ? subtotal * taxRates[shippingAddress.state]
-      : 0;
-  const total = subtotal + shippingCost + tax;
+
+  // Calculate discount amount
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'percentage') {
+      discountAmount = subtotal * (appliedCoupon.discount / 100);
+    } else {
+      discountAmount = appliedCoupon.discount;
+    }
+  }
+
+  const discountedSubtotal = subtotal - discountAmount;
+  const tax = taxRates[shippingAddress.state] !== undefined
+    ? discountedSubtotal * taxRates[shippingAddress.state]
+    : 0;
+  const total = discountedSubtotal + shippingCost + tax;
 
   const shippingOptions = [
     {
@@ -115,6 +159,50 @@ const taxRates = {
     setPaymentInfo(prev => ({ ...prev, [field]: value }));
   };
 
+  // Coupon handling functions
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+
+    setCouponLoading(true);
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const coupon = availableCoupons[couponCode.toUpperCase()];
+      
+      if (!coupon) {
+        toast.error('Invalid coupon code');
+        return;
+      }
+
+      if (subtotal < coupon.minAmount) {
+        toast.error(`Minimum order amount of Ksh ${coupon.minAmount} required for this coupon`);
+        return;
+      }
+
+      setAppliedCoupon({ 
+        code: couponCode.toUpperCase(), 
+        ...coupon 
+      });
+      toast.success('Coupon applied successfully!');
+      setCouponCode('');
+    } catch (error) {
+      toast.error('Failed to apply coupon. Please try again.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    toast.success('Coupon removed');
+  };
+
   const validateStep = (step) => {
     switch (step) {
       case 1:
@@ -146,33 +234,35 @@ const taxRates = {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
- const handlePlaceOrder = async () => {
-  if (!validateStep(3)) {
-    toast.error('Please complete all required fields');
-    return;
-  }
+  const handlePlaceOrder = async () => {
+    if (!validateStep(3)) {
+      toast.error('Please complete all required fields');
+      return;
+    }
 
-  setIsProcessing(true);
-  
-  try {
-    const orderData = {
-      items,
-      shippingAddress,
-      paymentMethod,
-      shippingMethod,
-      totalAmount: total
-    };
+    setIsProcessing(true);
     
-    await OrderService.createOrder(orderData);
-    clearCart();
-    toast.success('Order placed successfully!');
-    navigate('/orders');
-  } catch (err) {
-    toast.error(err.message || 'Failed to place order. Please try again.');
-  } finally {
-    setIsProcessing(false);
-  }
-};
+    try {
+      const orderData = {
+        items,
+        shippingAddress,
+        paymentMethod,
+        shippingMethod,
+        appliedCoupon,
+        discountAmount,
+        totalAmount: total
+      };
+      
+      await OrderService.createOrder(orderData);
+      clearCart();
+      toast.success('Order placed successfully!');
+      navigate('/orders');
+    } catch (err) {
+      toast.error(err.message || 'Failed to place order. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Allow viewing security details even without items
   if (items.length === 0 && !location.state?.showSecurityDetails) {
@@ -619,22 +709,22 @@ const taxRates = {
                 <div className="space-y-4 mb-6">
                   {items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4 py-4 border-b border-gray-200 dark:border-gray-700">
-    <img
-      src={item.product.images[0]?.url}
-      alt={item.product.title}
-      className="w-16 h-16 object-cover rounded-lg"
-    />
-    <div className="flex-1">
-      <h3 className="font-medium text-gray-900 dark:text-white">{item.product.title}</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">Qty: {item.quantity}</p>
-      {item.selectedVariant && (
-        <p className="text-sm text-gray-500">{item.selectedVariant}</p>
-      )}
-    </div>
-    <span className="font-semibold text-gray-900 dark:text-white">
-        Ksh {((item.product.salePrice || item.product.price) * item.quantity).toFixed(2)}
-      </span>
-  </div>
+                      <img
+                        src={item.product.images[0]?.url}
+                        alt={item.product.title}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900 dark:text-white">{item.product.title}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Qty: {item.quantity}</p>
+                        {item.selectedVariant && (
+                          <p className="text-sm text-gray-500">{item.selectedVariant}</p>
+                        )}
+                      </div>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        Ksh {((item.product.salePrice || item.product.price) * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
                   ))}
                 </div>
 
@@ -714,6 +804,67 @@ const taxRates = {
                   <span className="text-gray-900 dark:text-white">Ksh {subtotal.toFixed(2)}</span>
                 </div>
 
+                {/* Coupon Section */}
+                <div className="border-t border-b border-gray-200 dark:border-gray-700 py-4">
+                  {!appliedCoupon ? (
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Coupon Code
+                      </label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="text"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value)}
+                          placeholder="Enter coupon code"
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                          onKeyPress={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                        />
+                        <button
+                          onClick={handleApplyCoupon}
+                          disabled={couponLoading}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors text-sm font-medium flex items-center space-x-1 min-w-[80px] justify-center"
+                        >
+                          {couponLoading ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <>
+                              <Tag className="h-4 w-4" />
+                              <span>Apply</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                        <p>Try these codes: SAVE10, WELCOME20, FIXED15</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                            {appliedCoupon.code}
+                          </span>
+                        </div>
+                        <button
+                          onClick={handleRemoveCoupon}
+                          className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="flex justify-between mt-2">
+                        <span className="text-sm text-green-700 dark:text-green-400">Discount</span>
+                        <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                          -Ksh {discountAmount.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Shipping</span>
                   <span className="text-gray-900 dark:text-white">
@@ -733,6 +884,11 @@ const taxRates = {
                       Ksh {total.toFixed(2)}
                     </span>
                   </div>
+                  {appliedCoupon && (
+                    <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                      You saved Ksh {discountAmount.toFixed(2)}!
+                    </p>
+                  )}
                 </div>
               </div>
 

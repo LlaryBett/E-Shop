@@ -6,7 +6,8 @@ import {
   addToCartAPI,
   updateCartItem,
   removeCartItem,
-  clearCartAPI
+  clearCartAPI,
+  proceedToCheckout
 } from '../services/cartService';
 
 const CartContext = createContext(undefined);
@@ -159,6 +160,10 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const checkout = async (checkoutPayload) => {
+    return await proceedToCheckout(checkoutPayload);
+  };
+
   const getTotalPrice = () => {
     return items.reduce((total, item) => {
       const price = item.product.salePrice || item.product.price;
@@ -178,7 +183,9 @@ export const CartProvider = ({ children }) => {
     clearCart,
     getTotalPrice,
     getTotalItems,
+    checkout,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
+
