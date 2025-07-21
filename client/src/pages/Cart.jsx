@@ -86,6 +86,7 @@ const Cart = () => {
                 </Link>
 
                 <div className="flex-1 min-w-0">
+                  
                   <Link
                     to={`/product/${item.product.id}`}
                     className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 transition-colors"
