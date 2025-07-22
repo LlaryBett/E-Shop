@@ -27,6 +27,7 @@ import wishlistRoutes from './routes/wishlistRoutes.js';
 import notificationsRoutes from './routes/notifications.js';
 import newsletterRoutes from './routes/newsletter.js';
 import contactRoutes from './routes/contact.js'; // ✅ NEW
+import configRoutes from './routes/configRoutes.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -93,6 +94,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/contact', contactRoutes); // ✅ NEW
+app.use('/api/config', configRoutes); // ✅ ADD CONFIG ROUTES
 
 // Error handlers
 app.use(notFound);

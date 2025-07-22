@@ -2,10 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { useCheckout } from '../contexts/CheckoutContext';
 import toast from 'react-hot-toast';
 
 const Cart = () => {
   const { items, updateQuantity, removeFromCart, getTotalPrice, getTotalItems, clearCart, loading } = useCart();
+  const { taxRates = [] } = useCheckout() || {};
   // Remove local loading state, use loading from context if available
 
   const handleQuantityChange = (id, newQuantity) => {
@@ -28,9 +30,21 @@ const Cart = () => {
   };
 
   const subtotal = getTotalPrice();
-  const shipping = subtotal > 50 ? 0 : 9.99;
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + shipping + tax;
+  // Remove shipping calculation, since shipping is decided at checkout
+  // const shipping = subtotal > 50 ? 0 : 9.99;
+
+  // Calculate tax using taxRates array (range-based)
+  let tax = 0;
+  if (taxRates && Array.isArray(taxRates)) {
+    const taxRule = taxRates.find(
+      rule => subtotal >= rule.min && subtotal <= rule.max
+    );
+    if (taxRule) {
+      tax = subtotal * taxRule.rate;
+    }
+  }
+
+  const total = subtotal + tax;
 
   if (loading) {
     return (
@@ -183,7 +197,7 @@ const Cart = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Shipping</span>
                   <span className="text-gray-900 dark:text-white">
-                    {shipping === 0 ? 'Free' : `Ksh ${shipping.toFixed(2)}`}
+                    To be decided during checkout
                   </span>
                 </div>
 
@@ -201,14 +215,6 @@ const Cart = () => {
                   </div>
                 </div>
               </div>
-
-              {shipping > 0 && (
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Add Ksh {(50 - subtotal).toFixed(2)} more to get free shipping!
-                  </p>
-                </div>
-              )}
 
               <div className="mt-6 space-y-3">
                 <Link

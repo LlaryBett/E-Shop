@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { CreditCard, Truck, MapPin, User, Mail, Phone, Lock, Shield, CheckCircle, Eye, Fingerprint, X, Tag, Check } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useCheckout } from '../contexts/CheckoutContext';
 import OrderService from '../services/orderService';
 import toast from 'react-hot-toast';
 
@@ -11,6 +12,15 @@ const Checkout = () => {
   const location = useLocation();
   const { items, getTotalPrice, clearCart } = useCart();
   const { user } = useAuth();
+  const { coupons = [], taxRates = [], shippingMethods = [] } = useCheckout() || {};
+
+  // For shipping options, use shippingMethods
+  const shippingOptions = shippingMethods;
+
+  // Debug: log what is received from context
+  console.log('coupons:', coupons);
+  console.log('taxRates:', taxRates);
+  console.log('shippingOptions:', shippingOptions);
 
   // Autofill shipping address from user profile (me payload)
   const getDefaultShippingAddress = () => {
@@ -74,31 +84,41 @@ const Checkout = () => {
     cardholderName: '',
   });
 
-  // Mock coupon database - in real app this would be from API
-  const availableCoupons = {
-    'SAVE10': { discount: 10, type: 'percentage', minAmount: 0 },
-    'WELCOME20': { discount: 20, type: 'percentage', minAmount: 50 },
-    'FIXED15': { discount: 15, type: 'fixed', minAmount: 0 },
-    'NEWUSER': { discount: 25, type: 'percentage', minAmount: 100 },
-    'FREE5': { discount: 5, type: 'fixed', minAmount: 30 }
-  };
-
-  // Backend-aligned tax rates
-  const taxRates = {
-    'CA': 0.0725,
-    'NY': 0.08875,
-    // Add other states if needed
-  };
+  const [shippingError, setShippingError] = useState('');
 
   const subtotal = getTotalPrice();
-  let shippingCost;
-  if (shippingMethod === 'express') {
-    shippingCost = 12.99;
-  } else if (shippingMethod === 'overnight') {
-    shippingCost = 24.99;
-  } else {
-    shippingCost = subtotal > 50 ? 0 : 5.99;
+
+  // Calculate shipping cost based on selected method
+  let shippingCost = 0;
+  const selectedShipping = shippingOptions.find(opt => opt._id === shippingMethod);
+  if (selectedShipping) {
+    // Use backend minFree value for free shipping logic
+    if (
+      selectedShipping.name === 'Free Shipping' &&
+      selectedShipping.minFree &&
+      subtotal >= selectedShipping.minFree
+    ) {
+      shippingCost = 0;
+    } else {
+      shippingCost = selectedShipping.cost;
+    }
   }
+
+  // Fix: set shippingError in useEffect, not in render
+  useEffect(() => {
+    // Use backend minFree value for error logic
+    if (
+      currentStep === 2 &&
+      selectedShipping &&
+      selectedShipping.name === 'Free Shipping' &&
+      selectedShipping.minFree &&
+      subtotal < selectedShipping.minFree
+    ) {
+      setShippingError(`This shipping method requires a minimum order of Ksh ${selectedShipping.minFree}.`);
+    } else {
+      setShippingError('');
+    }
+  }, [selectedShipping, subtotal, currentStep]);
 
   // Calculate discount amount
   let discountAmount = 0;
@@ -111,31 +131,19 @@ const Checkout = () => {
   }
 
   const discountedSubtotal = subtotal - discountAmount;
-  const tax = taxRates[shippingAddress.state] !== undefined
-    ? discountedSubtotal * taxRates[shippingAddress.state]
-    : 0;
-  const total = discountedSubtotal + shippingCost + tax;
 
-  const shippingOptions = [
-    {
-      id: 'standard',
-      name: 'Standard Shipping',
-      description: '5-7 business days',
-      price: subtotal > 50 ? 0 : 5.99,
-    },
-    {
-      id: 'express',
-      name: 'Express Shipping',
-      description: '2-3 business days',
-      price: 12.99,
-    },
-    {
-      id: 'overnight',
-      name: 'Overnight Shipping',
-      description: 'Next business day',
-      price: 24.99,
-    },
-  ];
+  // Calculate tax using taxRates array (range-based)
+  let tax = 0;
+  if (taxRates && Array.isArray(taxRates)) {
+    const taxRule = taxRates.find(
+      rule => discountedSubtotal >= rule.min && discountedSubtotal <= rule.max
+    );
+    if (taxRule) {
+      tax = discountedSubtotal * taxRule.rate;
+    }
+  }
+
+  const total = discountedSubtotal + shippingCost + tax;
 
   // Check if redirected for security details
   useEffect(() => {
@@ -167,13 +175,14 @@ const Checkout = () => {
     }
 
     setCouponLoading(true);
-    
+
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const coupon = availableCoupons[couponCode.toUpperCase()];
-      
+
+      // Use coupons from context
+      const coupon = coupons[couponCode.toUpperCase()];
+
       if (!coupon) {
         toast.error('Invalid coupon code');
         return;
@@ -184,9 +193,9 @@ const Checkout = () => {
         return;
       }
 
-      setAppliedCoupon({ 
-        code: couponCode.toUpperCase(), 
-        ...coupon 
+      setAppliedCoupon({
+        code: couponCode.toUpperCase(),
+        ...coupon
       });
       toast.success('Coupon applied successfully!');
       setCouponCode('');
@@ -223,6 +232,17 @@ const Checkout = () => {
   };
 
   const handleNextStep = () => {
+    // Use backend minFree value for step validation
+    if (
+      currentStep === 2 &&
+      selectedShipping &&
+      selectedShipping.name === 'Free Shipping' &&
+      selectedShipping.minFree &&
+      subtotal < selectedShipping.minFree
+    ) {
+      toast.error(`Free Shipping is only available for orders above Ksh ${selectedShipping.minFree}.`);
+      return;
+    }
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, 4));
     } else {
@@ -549,9 +569,9 @@ const Checkout = () => {
                 <div className="space-y-4">
                   {shippingOptions.map((option) => (
                     <label
-                      key={option.id}
+                      key={option._id}
                       className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
-                        shippingMethod === option.id
+                        shippingMethod === option._id
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
@@ -560,8 +580,8 @@ const Checkout = () => {
                         <input
                           type="radio"
                           name="shipping"
-                          value={option.id}
-                          checked={shippingMethod === option.id}
+                          value={option._id}
+                          checked={shippingMethod === option._id}
                           onChange={(e) => setShippingMethod(e.target.value)}
                           className="text-blue-600 focus:ring-blue-500"
                         />
@@ -571,11 +591,16 @@ const Checkout = () => {
                         </div>
                       </div>
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {option.price === 0 ? 'Free' : `Ksh ${option.price.toFixed(2)}`}
+                        {option.cost === 0 ? 'Free' : `Ksh ${option.cost.toFixed(2)}`}
                       </span>
                     </label>
                   ))}
                 </div>
+
+                {/* Error Message */}
+                {shippingError && (
+                  <div className="text-red-600 text-sm mb-2">{shippingError}</div>
+                )}
               </div>
             )}
 

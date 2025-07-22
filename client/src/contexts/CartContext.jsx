@@ -188,4 +188,7 @@ export const CartProvider = ({ children }) => {
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
+// This is the CartContext, not CheckoutContext.
+// The error is likely because you are trying to use fetchCoupons from CartContext instead of CheckoutContext.
+// Make sure you import and use useCheckout from CheckoutContext in your Checkout.jsx page, not useCart from CartContext.
 
