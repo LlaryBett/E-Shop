@@ -118,4 +118,6 @@ blogSchema.index({ publishedAt: -1 });
 blogSchema.index({ category: 1 });
 blogSchema.index({ title: 'text', content: 'text', tags: 'text' });
 
-export default mongoose.model('Blog', blogSchema);
+export default mongoose.model('Blog', blogSchema); 
+
+// set published date
