@@ -6,7 +6,7 @@ import PromoModalManager from '../components/common/PromoModalManager';
 import ExitIntentModal from '../components/common/ExitIntentModal';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
+// 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
