@@ -1,7 +1,7 @@
 import { validationResult } from 'express-validator';
 import Blog from '../models/Blog.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
-
+// @desc
 // @desc    Get all blog posts
 // @route   GET /api/blog
 // @access  Public
