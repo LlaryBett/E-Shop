@@ -13,6 +13,24 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCategories } from '../contexts/CategoryContext';
 import toast from 'react-hot-toast';
 
+// Updated Visa Promo Banner component with better spacing and visibility
+const VisaPromoBanner = () => {
+  return (
+    <section className="relative overflow-hidden">
+  <div className="container mx-auto px-4">
+    <div className="w-full bg-gradient-to-r from-blue-900 to-blue-700 text-white text-center border-b border-blue-800 shadow-sm rounded-b-2xl mt-6 sm:mt-8 px-3 py-2 sm:py-3 overflow-hidden">
+      <p className="text-xs sm:text-sm md:text-base font-medium animate-pulse leading-snug">
+        🎉 Use code <span className="font-bold text-yellow-300">VISA500</span> to save 500 KES with Visa.
+        <a href="/terms" className="underline ml-1 hover:opacity-80 whitespace-nowrap">T&Cs Apply</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+  );
+};
+
+// comments
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
