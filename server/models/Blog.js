@@ -7,6 +7,8 @@ const blogSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Title cannot be more than 200 characters'],
   },
+
+  // comments
   slug: {
     type: String,
     unique: true,
@@ -118,4 +120,6 @@ blogSchema.index({ publishedAt: -1 });
 blogSchema.index({ category: 1 });
 blogSchema.index({ title: 'text', content: 'text', tags: 'text' });
 
-export default mongoose.model('Blog', blogSchema);
+export default mongoose.model('Blog', blogSchema); 
+
+// set published date
