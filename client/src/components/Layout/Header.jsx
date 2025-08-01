@@ -37,7 +37,31 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Remove type annotation from handleSearch
+  // Close menus when clicking outside or pressing escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+        setShowUserMenu(false);
+        setIsSearchOpen(false);
+      }
+    };
+
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-menu]')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  // Handle search with debouncing
   const handleSearch = async (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -77,30 +101,37 @@ const Header = () => {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-200/20 dark:border-gray-700/20' 
-          : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-md'
-      }`}>
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
-            {/* Enhanced Logo */}
-            <Link to="/" className="flex items-center space-x-3 group">
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled 
+            ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-200/20 dark:border-gray-700/20' 
+            : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-md'
+        }`}
+        role="banner"
+      >
+        <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 xl:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-18 md:h-20">
+            
+            {/* Enhanced Logo - Responsive */}
+            <Link 
+              to="/" 
+              className="flex items-center space-x-2 sm:space-x-3 group shrink-0"
+              aria-label="E-Shop Home"
+            >
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-                  <span className="text-white font-bold text-xl">E</span>
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                    <Sparkles className="h-2 w-2 text-yellow-800" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                  <span className="text-white font-bold text-sm sm:text-lg md:text-xl">E</span>
+                  <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-1.5 w-1.5 sm:h-2 sm:w-2 text-yellow-800" />
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
               </div>
-              <div className="hidden sm:block">
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <div className="hidden xs:block">
+                <span className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                   E-Shop
                 </span>
-                <div className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Premium Store</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 -mt-1 hidden sm:block">Premium Store</div>
               </div>
             </Link>
 
@@ -315,12 +346,17 @@ const Header = () => {
                 </div>
               )}
 
-              {/* Enhanced Mobile Menu Toggle */}
+              {/* Mobile Menu Toggle */}
               <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all duration-300"
+                onClick={() => {
+                  setIsMobileMenuOpen(!isMobileMenuOpen);
+                  setIsSearchOpen(false);
+                }}
+                className="xl:hidden p-2 sm:p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg sm:rounded-xl transition-all duration-300"
+                aria-label="Menu"
+                aria-expanded={isMobileMenuOpen}
               >
-                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {isMobileMenuOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
               </button>
             </div>
           </div>
@@ -351,18 +387,18 @@ const Header = () => {
             </div>
           )}
 
-          {/* Enhanced Mobile Navigation */}
+          {/* Mobile Navigation */}
           {isMobileMenuOpen && (
-            <div className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-4">
-              <nav className="space-y-2">
+            <div className="xl:hidden py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-4">
+              <nav className="space-y-1" role="navigation">
                 {navItems.map((item) => (
                   <Link
                     key={item.name}
                     to={item.path}
-                    className="flex items-center justify-between px-4 py-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all duration-300"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
+                    onClick={closeMobileMenu}
                   >
-                    <span className="font-medium">{item.name}</span>
+                    <span className="font-medium text-sm sm:text-base">{item.name}</span>
                     {item.badge && (
                       <span className={`px-2 py-1 text-xs font-bold rounded-full ${
                         item.badge === 'New' 
@@ -375,19 +411,20 @@ const Header = () => {
                   </Link>
                 ))}
                 
+                {/* Mobile Auth Buttons */}
                 {!isAuthenticated && (
-                  <div className="pt-4 space-y-2">
+                  <div className="pt-3 space-y-2 border-t border-gray-200 dark:border-gray-700 mt-3">
                     <Link
                       to="/login"
-                      className="block w-full px-4 py-3 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block w-full px-3 sm:px-4 py-2 sm:py-3 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-sm"
+                      onClick={closeMobileMenu}
                     >
                       Sign In
                     </Link>
                     <Link
                       to="/register"
-                      className="block w-full px-4 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300"
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block w-full px-3 sm:px-4 py-2 sm:py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300 text-sm"
+                      onClick={closeMobileMenu}
                     >
                       Get Started
                     </Link>
@@ -395,15 +432,25 @@ const Header = () => {
                 )}
               </nav>
             </div>
-          </nav>
+          )}
         </div>
-      </div>
+      </header>
 
       {/* Backdrop for user menu */}
       {showUserMenu && (
         <div 
           className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm" 
           onClick={() => setShowUserMenu(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Backdrop for mobile menu */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm xl:hidden" 
+          onClick={closeMobileMenu}
+          aria-hidden="true"
         />
       )}
     </>
