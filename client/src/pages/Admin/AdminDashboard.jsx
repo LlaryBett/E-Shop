@@ -16,7 +16,9 @@ import {
   Trash2,
   Search,
   Filter,
-  Download
+  Download,
+  Menu,
+  X
 } from 'lucide-react';
 import OrdersManagement from './OrdersManagement';
 import CustomersManagement from './CustomersManagement';
@@ -27,13 +29,11 @@ import ProductsManagement from './ProductsManagement';
 import adminService from '../../services/adminService';
 
 const RevenueChart = ({ data }) => {
-  // Format data for chart
   const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
 
-  // Create a full year dataset with 0 values for months without data
   const currentYear = new Date().getFullYear();
   const fullYearData = Array(12).fill(0);
   
@@ -43,10 +43,7 @@ const RevenueChart = ({ data }) => {
     }
   });
 
-  // Get current month index (0-11)
   const currentMonth = new Date().getMonth();
-  
-  // Only show data up to current month
   const displayedMonths = months.slice(0, currentMonth + 1);
   const displayedData = fullYearData.slice(0, currentMonth + 1);
 
@@ -131,9 +128,7 @@ const RevenueChart = ({ data }) => {
 
 const AdminDashboard = () => {
   const location = useLocation();
-  const [_activeTab, _setActiveTab] = useState('dashboard');
-
-  // State for backend data
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [dashboardStats, setDashboardStats] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
@@ -175,110 +170,110 @@ const AdminDashboard = () => {
   const DashboardOverview = () => (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Ksh {dashboardStats?.totalRevenue?.toLocaleString() ?? '...'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-              <DollarSign className="h-6 w-6 text-green-600" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+              <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600">+{dashboardStats?.revenueGrowth ?? '...'}%</span>
-            <span className="text-sm text-gray-500 ml-2">vs last month</span>
+          <div className="mt-2 md:mt-4 flex items-center">
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-green-500 mr-1" />
+            <span className="text-xs md:text-sm text-green-600">+{dashboardStats?.revenueGrowth ?? '...'}%</span>
+            <span className="text-xs md:text-sm text-gray-500 ml-1 md:ml-2">vs last month</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {dashboardStats?.totalOrders?.toLocaleString() ?? '...'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-              <ShoppingCart className="h-6 w-6 text-blue-600" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+              <ShoppingCart className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600">+{dashboardStats?.orderGrowth ?? '...'}%</span>
-            <span className="text-sm text-gray-500 ml-2">vs last month</span>
+          <div className="mt-2 md:mt-4 flex items-center">
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-green-500 mr-1" />
+            <span className="text-xs md:text-sm text-green-600">+{dashboardStats?.orderGrowth ?? '...'}%</span>
+            <span className="text-xs md:text-sm text-gray-500 ml-1 md:ml-2">vs last month</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Customers</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {dashboardStats?.totalUsers?.toLocaleString() ?? '...'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-              <Users className="h-6 w-6 text-purple-600" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+              <Users className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600">+{dashboardStats?.userGrowth ?? '...'}%</span>
-            <span className="text-sm text-gray-500 ml-2">vs last month</span>
+          <div className="mt-2 md:mt-4 flex items-center">
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-green-500 mr-1" />
+            <span className="text-xs md:text-sm text-green-600">+{dashboardStats?.userGrowth ?? '...'}%</span>
+            <span className="text-xs md:text-sm text-gray-500 ml-1 md:ml-2">vs last month</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {dashboardStats?.totalProducts?.toLocaleString() ?? '...'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
-              <Package className="h-6 w-6 text-yellow-600" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+              <Package className="h-5 w-5 md:h-6 md:w-6 text-yellow-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-600">+{dashboardStats?.productGrowth ?? '...'}%</span>
-            <span className="text-sm text-gray-500 ml-2">vs last month</span>
+          <div className="mt-2 md:mt-4 flex items-center">
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-green-500 mr-1" />
+            <span className="text-xs md:text-sm text-green-600">+{dashboardStats?.productGrowth ?? '...'}%</span>
+            <span className="text-xs md:text-sm text-gray-500 ml-1 md:ml-2">vs last month</span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Recent Orders */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Orders</h3>
-              <Link to="/admin/orders" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Recent Orders</h3>
+              <Link to="/admin/orders" className="text-blue-600 hover:text-blue-700 text-xs md:text-sm font-medium">
                 View All
               </Link>
             </div>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
+          <div className="p-4 md:p-6">
+            <div className="space-y-3 md:space-y-4">
               {recentOrders.map(order => (
                 <div key={order._id} className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{order.orderNumber}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{order.user?.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 md:space-x-3">
+                      <div className="truncate">
+                        <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white truncate">{order.orderNumber}</p>
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 truncate">{order.user?.name}</p>
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">Ksh {order.pricing?.total?.toFixed(2)}</p>
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                  <div className="text-right ml-2">
+                    <p className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">Ksh {order.pricing?.total?.toFixed(2)}</p>
+                    <span className={`inline-block px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}`}>
                       {order.status}
                     </span>
                   </div>
@@ -289,30 +284,30 @@ const AdminDashboard = () => {
         </div>
 
         {/* Top Products */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Top Products</h3>
-              <Link to="/admin/products" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Top Products</h3>
+              <Link to="/admin/products" className="text-blue-600 hover:text-blue-700 text-xs md:text-sm font-medium">
                 View All
               </Link>
             </div>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
+          <div className="p-4 md:p-6">
+            <div className="space-y-3 md:space-y-4">
               {topProducts.map(tp => (
-                <div key={tp._id} className="flex items-center space-x-4">
+                <div key={tp._id} className="flex items-center space-x-2 md:space-x-4">
                   <img
                     src={tp.product?.images?.[0]?.url}
                     alt={tp.product?.title}
-                    className="w-12 h-12 object-cover rounded-lg"
+                    className="w-10 h-10 md:w-12 md:h-12 object-cover rounded-lg"
                   />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white line-clamp-1">{tp.product?.title}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{tp.totalSold} sales</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm md:text-base font-medium text-gray-900 dark:text-white truncate">{tp.product?.title}</p>
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">{tp.totalSold} sales</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">Ksh {tp.totalRevenue?.toLocaleString()}</p>
+                    <p className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">Ksh {tp.totalRevenue?.toLocaleString()}</p>
                   </div>
                 </div>
               ))}
@@ -322,8 +317,8 @@ const AdminDashboard = () => {
       </div>
 
       {/* Revenue Chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Revenue Overview</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6">
+        <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4 md:mb-6">Revenue Overview</h3>
         <div className="h-64">
           {!dashboardStats ? (
             <div className="min-h-full flex items-center justify-center">
@@ -334,8 +329,8 @@ const AdminDashboard = () => {
           ) : (
             <div className="h-full bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
               <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500 dark:text-gray-400">Loading revenue data...</p>
+                <BarChart3 className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Loading revenue data...</p>
               </div>
             </div>
           )}
@@ -346,9 +341,55 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white dark:bg-gray-800 shadow-md min-h-screen">
+      {/* Mobile header */}
+      <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm p-4 flex items-center justify-between">
+        <button 
+          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+        >
+          {mobileSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
+        <div className="w-6"></div> {/* Spacer for alignment */}
+      </div>
+
+      <div className="flex flex-col lg:flex-row">
+        {/* Sidebar - Mobile */}
+        {mobileSidebarOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setMobileSidebarOpen(false)}></div>
+            <div className="relative flex flex-col w-64 max-w-xs h-full bg-white dark:bg-gray-800 shadow-xl">
+              <div className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
+              </div>
+              <nav className="mt-6 flex-1 overflow-y-auto">
+                {sidebarItems.map(item => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path || 
+                                 (item.id === 'dashboard' && location.pathname === '/admin');
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      onClick={() => setMobileSidebarOpen(false)}
+                      className={`flex items-center space-x-3 px-6 py-3 text-left w-full transition-colors ${
+                        isActive
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-r-2 border-blue-600'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+        )}
+
+        {/* Sidebar - Desktop */}
+        <div className="hidden lg:block w-64 bg-white dark:bg-gray-800 shadow-md min-h-screen fixed left-0 top-0">
           <div className="p-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
           </div>
@@ -376,7 +417,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 lg:ml-64 p-4 md:p-6 lg:p-8">
           <Routes>
             <Route path="/" element={<DashboardOverview />} />
             <Route path="/products" element={<ProductsManagement />} />

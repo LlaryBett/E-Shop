@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import AuthService from '../services/AuthService';
+import AuthService from '../services/authService';
 
 const VerifyEmail = () => {
   const { token } = useParams();

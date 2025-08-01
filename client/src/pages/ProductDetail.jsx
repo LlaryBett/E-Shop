@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Heart, ShoppingCart, Minus, Plus, Share2, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import ProductService from '../services/productService';
 import toast from 'react-hot-toast';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -16,6 +23,7 @@ const ProductDetail = () => {
   const [selectedVariants, setSelectedVariants] = useState({});
   const [activeTab, setActiveTab] = useState('description');
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const swiperRef = useRef(null);
 
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
@@ -469,38 +477,133 @@ const ProductDetail = () => {
 
         {relatedProducts.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Related Products</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {relatedProducts.map(relatedProduct => (
-                <Link
-                  key={relatedProduct.id}
-                  to={`/product/${relatedProduct.id}`}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Related Products</h2>
+              <div className="flex space-x-2">
+                <button
+                  className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  onClick={() => swiperRef.current?.slidePrev()}
+                  type="button"
                 >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={relatedProduct.images[0]?.url}
-                      alt={relatedProduct.title}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                      {relatedProduct.title}
+                  <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  className="rounded-full p-2 bg-blue-600 hover:bg-blue-700 transition-colors"
+                  onClick={() => swiperRef.current?.slideNext()}
+                  type="button"
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="relative">
+              <Swiper
+                modules={[Navigation]}
+                spaceBetween={10}
+                slidesPerView={2}
+                onSwiper={swiper => { swiperRef.current = swiper; }}
+                breakpoints={{
+                  640: {
+                    slidesPerView: 2,
+                    spaceBetween: 16,
+                  },
+                  768: {
+                    slidesPerView: 3,
+                    spaceBetween: 16,
+                  },
+                  1024: {
+                    slidesPerView: 4,
+                    spaceBetween: 16,
+                  },
+                }}
+              >
+                {relatedProducts.map(product => (
+        <SwiperSlide key={product._id || product.id}>
+          <div className="h-full flex flex-col"> {/* Added flex-col here */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
+              {/* Product Image - Fixed height */}
+              <Link to={`/product/${product._id || product.id}`}>
+                <div className="aspect-square overflow-hidden">
+                  <img
+                    src={product.images?.[0]?.url || 'https://via.placeholder.com/300'}
+                    alt={product.title}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+              </Link>
+              
+              {/* Product Info - Fixed structure */}
+              <div className="p-3 md:p-4 flex flex-col flex-grow">
+                {/* Title and rating - fixed height */}
+                <div className="min-h-[72px]"> {/* Fixed height for title + rating */}
+                  <Link to={`/product/${product._id || product.id}`}>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 transition-colors line-clamp-2">
+                      {product.title}
                     </h3>
-                    <div className="flex items-center space-x-2">
-                      {relatedProduct.salePrice ? (
-                        <>
-                          <span className="text-lg font-bold text-red-600">Ksh {relatedProduct.salePrice}</span>
-                          <span className="text-gray-500 line-through">Ksh {relatedProduct.price}</span>
-                        </>
-                      ) : (
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">Ksh {relatedProduct.price}</span>
-                      )}
+                  </Link>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="flex items-center">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
+                        {product.rating || 0}
+                      </span>
                     </div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      ({product.reviewCount || 0})
+                    </span>
                   </div>
-                </Link>
-              ))}
+                </div>
+
+                {/* Price section - fixed height with consistent spacing */}
+                <div className="min-h-[48px] flex items-center"> {/* Fixed height for price */}
+                  {product.salePrice ? (
+                    <div className="flex flex-col"> {/* Changed to flex-col */}
+                      <span className="text-lg font-bold text-red-600">Ksh {product.salePrice}</span>
+                      <span className="text-sm text-gray-500 line-through">Ksh {product.price}</span>
+                    </div>
+                  ) : (
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
+                  )}
+                </div>
+
+                {/* Buttons - fixed at bottom */}
+                <div className="mt-4 flex items-center space-x-1 sm:space-x-2">
+                  <button
+                    onClick={() => addToCart(product, 1)}
+                    className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                  >
+                    <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="text-xs sm:text-sm">Add to Cart</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (isInWishlist(product._id || product.id)) {
+                        removeFromWishlist(product._id || product.id);
+                        toast.success('Removed from wishlist');
+                      } else {
+                        addToWishlist(product);
+                        toast.success('Added to wishlist!');
+                      }
+                    }}
+                    className={`p-2 rounded-lg border transition-colors ${
+                      isInWishlist(product._id || product.id)
+                        ? 'bg-red-50 border-red-200 text-red-600'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Heart className={`h-4 w-4 ${isInWishlist(product._id || product.id) ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SwiperSlide>
+      ))}
+              </Swiper>
             </div>
           </div>
         )}

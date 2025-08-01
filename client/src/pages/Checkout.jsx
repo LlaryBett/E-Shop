@@ -123,10 +123,13 @@ const Checkout = () => {
   // Calculate discount amount
   let discountAmount = 0;
   if (appliedCoupon) {
-    if (appliedCoupon.type === 'percentage') {
-      discountAmount = subtotal * (appliedCoupon.discount / 100);
+    // Use 'amount' property from backend coupon object
+    if (appliedCoupon.type === 'percentage' && typeof appliedCoupon.amount === 'number') {
+      discountAmount = subtotal * (appliedCoupon.amount / 100);
+    } else if (typeof appliedCoupon.amount === 'number') {
+      discountAmount = appliedCoupon.amount;
     } else {
-      discountAmount = appliedCoupon.discount;
+      discountAmount = 0;
     }
   }
 
@@ -180,22 +183,33 @@ const Checkout = () => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Use coupons from context
-      const coupon = coupons[couponCode.toUpperCase()];
+      // Use coupons from context (object or array)
+      // Coupons must be fetched and available in context before applying
+      let coupon;
+      if (Array.isArray(coupons)) {
+        coupon = coupons.find(c => c.code?.toUpperCase() === couponCode.toUpperCase());
+      } else {
+        coupon = coupons[couponCode.toUpperCase()];
+      }
 
       if (!coupon) {
         toast.error('Invalid coupon code');
+        setCouponLoading(false);
         return;
       }
 
       if (subtotal < coupon.minAmount) {
         toast.error(`Minimum order amount of Ksh ${coupon.minAmount} required for this coupon`);
+        setCouponLoading(false);
         return;
       }
 
       setAppliedCoupon({
         code: couponCode.toUpperCase(),
-        ...coupon
+        type: coupon.type,
+        amount: coupon.amount,
+        minAmount: coupon.minAmount,
+        // ...other coupon fields if needed
       });
       toast.success('Coupon applied successfully!');
       setCouponCode('');
@@ -883,7 +897,7 @@ const Checkout = () => {
                       <div className="flex justify-between mt-2">
                         <span className="text-sm text-green-700 dark:text-green-400">Discount</span>
                         <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-                          -Ksh {discountAmount.toFixed(2)}
+                          -Ksh {Number(discountAmount).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -911,7 +925,7 @@ const Checkout = () => {
                   </div>
                   {appliedCoupon && (
                     <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                      You saved Ksh {discountAmount.toFixed(2)}!
+                      You saved Ksh {Number(discountAmount).toFixed(2)}!
                     </p>
                   )}
                 </div>

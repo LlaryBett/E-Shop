@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import AuthService from '../services/AuthService'; // Ensure the path is correct
+import AuthService from '../services/authService'; // Ensure the path is correct
 
 const VerifyEmailPrompt = () => {
   const location = useLocation();

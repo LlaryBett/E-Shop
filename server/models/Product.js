@@ -27,7 +27,6 @@ const productSchema = new mongoose.Schema({
       message: 'Sale price must be less than regular price',
     },
   },
-  // 🔄 Simplified image structure (no Cloudinary public_id)
   images: [{
     url: {
       type: String,
@@ -44,7 +43,6 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  // In productSchema.js
   brand: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Brand',
@@ -126,6 +124,15 @@ const productSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+
+  // ✅ New field to group products into sections
+  sections: [{
+    type: String,
+    enum: ['featured', 'trending', 'picks', 'check-this-out'], // Add more as needed
+    lowercase: true,
+    trim: true
+  }],
+
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -141,6 +148,7 @@ productSchema.index({ rating: -1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ featured: 1 });
 productSchema.index({ trending: 1 });
+productSchema.index({ sections: 1 }); // ✅ index for sections
 
 // Virtual fields
 productSchema.virtual('currentPrice').get(function () {
@@ -169,11 +177,3 @@ productSchema.pre('save', function (next) {
 });
 
 export default mongoose.model('Product', productSchema);
-
-// Run this in your MongoDB shell or a migration script:
-// db.products.updateOne(
-//   { _id: ObjectId("687550211b81d7e9c6c7b18b") },
-//   [
-//     { $set: { brand: { $toObjectId: "$brand" } } }
-//   ]
-// )

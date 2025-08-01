@@ -36,7 +36,12 @@ const orderValidation = [
   body('shippingAddress.zipCode').trim().notEmpty().withMessage('ZIP code is required'),
   body('shippingAddress.country').trim().notEmpty().withMessage('Country is required'),
   body('paymentMethod').isIn(['stripe', 'paypal', 'cash_on_delivery', 'card']).withMessage('Valid payment method is required'),
-  body('shippingMethod').isIn(['standard', 'express', 'overnight']).withMessage('Valid shipping method is required'),
+  body('shippingMethod')
+    .custom((value) => {
+      // Accept valid MongoDB ObjectId for shippingMethod
+      return mongoose.Types.ObjectId.isValid(value);
+    })
+    .withMessage('Valid shipping method is required'),
 ];
 
 // Protected routes

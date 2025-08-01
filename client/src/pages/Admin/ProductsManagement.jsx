@@ -18,7 +18,11 @@ import {
   Star,
   Tag,
   Package,
-  ArrowUpDown
+  ArrowUpDown,
+  Upload,
+  Image as ImageIcon,
+  Save,
+  AlertCircle
 } from 'lucide-react';
 import adminService from '../../services/adminService'; // adjust path if needed
 import * as XLSX from 'xlsx';
@@ -37,6 +41,29 @@ const ProductsManagement = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
+  
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  // Form state for add/edit
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    sku: '',
+    category: '',
+    price: '',
+    salePrice: '',
+    stock: '',
+    status: 'active',
+    images: [],
+    tags: '',
+    weight: '',
+    dimensions: ''
+  });
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     setLoading(true);
@@ -80,6 +107,135 @@ const ProductsManagement = () => {
   const currentItems = sortedProducts.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
+  // Reset form data
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      sku: '',
+      category: '',
+      price: '',
+      salePrice: '',
+      stock: '',
+      status: 'active',
+      images: [],
+      tags: '',
+      weight: '',
+      dimensions: ''
+    });
+    setFormErrors({});
+  };
+
+  // Handle form input changes
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  // Validate form
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.title.trim()) errors.title = 'Product name is required';
+    if (!formData.sku.trim()) errors.sku = 'SKU is required';
+    if (!formData.price || parseFloat(formData.price) <= 0) errors.price = 'Valid price is required';
+    if (!formData.category.trim()) errors.category = 'Category is required';
+    if (!formData.stock || parseInt(formData.stock) < 0) errors.stock = 'Valid stock quantity is required';
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle add product
+  const handleAddProduct = () => {
+    resetForm();
+    setShowAddModal(true);
+  };
+
+  // Handle edit product
+  const handleEditProduct = (product) => {
+    setEditingProduct(product);
+    setFormData({
+      title: product.title || product.name || '',
+      description: product.description || '',
+      sku: product.sku || '',
+      category: product.category?.name || product.category || '',
+      price: product.price || '',
+      salePrice: product.salePrice || '',
+      stock: product.stock || '',
+      status: product.status || (product.isActive === false ? 'draft' : 'active'),
+      images: product.images || [],
+      tags: product.tags?.join(', ') || '',
+      weight: product.weight || '',
+      dimensions: product.dimensions || ''
+    });
+    setShowEditModal(true);
+  };
+
+  // Submit add product
+  const submitAddProduct = async () => {
+    if (!validateForm()) return;
+
+    setModalLoading(true);
+    try {
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        salePrice: formData.salePrice ? parseFloat(formData.salePrice) : null,
+        stock: parseInt(formData.stock),
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
+      };
+
+      const response = await adminService.createProduct(productData);
+      setProducts(prev => [response.data, ...prev]);
+      setShowAddModal(false);
+      resetForm();
+      // Show success message (you can implement toast notification here)
+    } catch (error) {
+      console.error('Error adding product:', error);
+      // Show error message
+    }
+    setModalLoading(false);
+  };
+
+  // Submit edit product
+  const submitEditProduct = async () => {
+    if (!validateForm()) return;
+
+    setModalLoading(true);
+    try {
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        salePrice: formData.salePrice ? parseFloat(formData.salePrice) : null,
+        stock: parseInt(formData.stock),
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
+      };
+
+      const response = await adminService.updateProduct(editingProduct._id || editingProduct.id, productData);
+      setProducts(prev => prev.map(p => 
+        (p._id || p.id) === (editingProduct._id || editingProduct.id) ? response.data : p
+      ));
+      setShowEditModal(false);
+      setEditingProduct(null);
+      resetForm();
+      // Show success message
+    } catch (error) {
+      console.error('Error updating product:', error);
+      // Show error message
+    }
+    setModalLoading(false);
+  };
+
   // Request sort
   const requestSort = (key) => {
     let direction = 'asc';
@@ -98,13 +254,18 @@ const ProductsManagement = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    setProducts(products.filter(product => product._id !== productToDelete));
+  const confirmDelete = async () => {
+    try {
+      await adminService.deleteProduct(productToDelete);
+      setProducts(products.filter(product => (product._id || product.id) !== productToDelete));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
     setShowDeleteModal(false);
     setProductToDelete(null);
   };
 
-  // Export products to Excel (with N/A for missing and wide columns)
+  // Export products to Excel
   const handleExportProducts = () => {
     const columns = [
       'ID',
@@ -134,14 +295,8 @@ const ProductsManagement = () => {
     XLSX.utils.sheet_add_aoa(worksheet, [columns], { origin: "A1" });
 
     worksheet['!cols'] = [
-      { wch: 28 }, // ID
-      { wch: 22 }, // Name
-      { wch: 18 }, // SKU
-      { wch: 22 }, // Category
-      { wch: 14 }, // Price
-      { wch: 10 }, // Stock
-      { wch: 14 }, // Status
-      { wch: 28 }  // Created
+      { wch: 28 }, { wch: 22 }, { wch: 18 }, { wch: 22 },
+      { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 28 }
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -165,6 +320,312 @@ const ProductsManagement = () => {
     }
   };
 
+  // Modal Form Component
+  const ProductModal = ({ isEdit = false }) => {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {isEdit ? 'Edit Product' : 'Add New Product'}
+            </h3>
+            <button 
+              onClick={() => {
+                if (isEdit) {
+                  setShowEditModal(false);
+                  setEditingProduct(null);
+                } else {
+                  setShowAddModal(false);
+                }
+                resetForm();
+              }}
+              className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              disabled={modalLoading}
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={(e) => e.preventDefault()} className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h4>
+                
+                {/* Product Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Product Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleFormChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.title ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    placeholder="Enter product name"
+                    disabled={modalLoading}
+                  />
+                  {formErrors.title && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {formErrors.title}
+                    </p>
+                  )}
+                </div>
+
+                {/* SKU */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    SKU *
+                  </label>
+                  <input
+                    type="text"
+                    name="sku"
+                    value={formData.sku}
+                    onChange={handleFormChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.sku ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    placeholder="Enter SKU"
+                    disabled={modalLoading}
+                  />
+                  {formErrors.sku && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {formErrors.sku}
+                    </p>
+                  )}
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Category *
+                  </label>
+                  <input
+                    type="text"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleFormChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.category ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    placeholder="Enter category"
+                    disabled={modalLoading}
+                  />
+                  {formErrors.category && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {formErrors.category}
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    rows="4"
+                    value={formData.description}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter product description"
+                    disabled={modalLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Pricing and Inventory */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white">Pricing & Inventory</h4>
+                
+                {/* Price */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Regular Price (Ksh) *
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={handleFormChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.price ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    placeholder="0.00"
+                    disabled={modalLoading}
+                  />
+                  {formErrors.price && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {formErrors.price}
+                    </p>
+                  )}
+                </div>
+
+                {/* Sale Price */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Sale Price (Ksh)
+                  </label>
+                  <input
+                    type="number"
+                    name="salePrice"
+                    step="0.01"
+                    value={formData.salePrice}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="0.00 (optional)"
+                    disabled={modalLoading}
+                  />
+                </div>
+
+                {/* Stock */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Stock Quantity *
+                  </label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={formData.stock}
+                    onChange={handleFormChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.stock ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    placeholder="0"
+                    disabled={modalLoading}
+                  />
+                  {formErrors.stock && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {formErrors.stock}
+                    </p>
+                  )}
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    disabled={modalLoading}
+                  >
+                    <option value="active">Active</option>
+                    <option value="draft">Draft</option>
+                    <option value="out-of-stock">Out of Stock</option>
+                    <option value="low-stock">Low Stock</option>
+                  </select>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="electronics, smartphone, mobile (comma separated)"
+                    disabled={modalLoading}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Details */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  name="weight"
+                  step="0.01"
+                  value={formData.weight}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="0.00"
+                  disabled={modalLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Dimensions
+                </label>
+                <input
+                  type="text"
+                  name="dimensions"
+                  value={formData.dimensions}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="L x W x H (cm)"
+                  disabled={modalLoading}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-8 flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isEdit) {
+                    setShowEditModal(false);
+                    setEditingProduct(null);
+                  } else {
+                    setShowAddModal(false);
+                  }
+                  resetForm();
+                }}
+                disabled={modalLoading}
+                className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={isEdit ? submitEditProduct : submitAddProduct}
+                disabled={modalLoading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {modalLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>{isEdit ? 'Updating...' : 'Creating...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>{isEdit ? 'Update Product' : 'Create Product'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header and Add Product Button */}
@@ -175,13 +636,13 @@ const ProductsManagement = () => {
             Manage your product inventory, pricing, and details
           </p>
         </div>
-        <Link
-          to="/admin/products/new"
+        <button
+          onClick={handleAddProduct}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
         >
           <Plus className="h-4 w-4" />
           <span>Add Product</span>
-        </Link>
+        </button>
       </div>
 
       {/* Search and Filter Bar */}
@@ -378,7 +839,7 @@ const ProductsManagement = () => {
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <img 
-                            src={product.images?.[0]?.url || product.image} 
+                            src={product.images?.[0]?.url || product.image || 'https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg?auto=compress&cs=tinysrgb&w=400'} 
                             alt={product.title || product.name} 
                             className="w-10 h-10 object-cover rounded-lg mr-3" 
                           />
@@ -415,13 +876,13 @@ const ProductsManagement = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Link>
-                          <Link
-                            to={`/admin/products/${product._id || product.id}/edit`}
+                          <button
+                            onClick={() => handleEditProduct(product)}
                             className="text-green-600 hover:text-green-700 p-1"
                             title="Edit"
                           >
                             <Edit className="h-4 w-4" />
-                          </Link>
+                          </button>
                           <button
                             onClick={() => handleDelete(product._id || product.id)}
                             className="text-red-600 hover:text-red-700 p-1"
@@ -551,6 +1012,12 @@ const ProductsManagement = () => {
         )}
       </div>
 
+      {/* Add Product Modal */}
+      {showAddModal && <ProductModal isEdit={false} />}
+
+      {/* Edit Product Modal */}
+      {showEditModal && <ProductModal isEdit={true} />}
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -591,6 +1058,3 @@ const ProductsManagement = () => {
 };
 
 export default ProductsManagement;
-
-// The error is NOT in your React code. 
-// The error is a CORS (Cross-Origin Resource Sharing) issue between your frontend (localhost:5173) and backend (localhost:5000).

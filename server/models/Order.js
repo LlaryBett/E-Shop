@@ -125,10 +125,29 @@ const orderSchema = new mongoose.Schema({
   shippingInfo: {
     method: {
       type: String,
-      enum: ['standard', 'express', 'overnight'],
-      default: 'standard',
+      // Accept ObjectId as string for validation, but store the key for reporting
+      // Remove enum validation here, since method is now dynamic from DB
+      required: true,
     },
+    methodId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ShippingMethod',
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    description: String,
     cost: {
+      type: Number,
+      default: 0,
+    },
+    estimatedDays: {
+      type: Number,
+      default: 3,
+    },
+    minFree: {
       type: Number,
       default: 0,
     },

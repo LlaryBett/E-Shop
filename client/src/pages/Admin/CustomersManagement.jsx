@@ -51,6 +51,19 @@ const CustomersManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
 
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [customerToEdit, setCustomerToEdit] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    status: '',
+    loyalty: '',
+    notes: ''
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
+
   // Contact messages state
   const [activeTab, setActiveTab] = useState('customers');
   const [messageFilter, setMessageFilter] = useState('all');
@@ -150,9 +163,63 @@ const CustomersManagement = () => {
   };
 
   const confirmDelete = () => {
-    setCustomers(customers.filter(customer => customer.id !== customerToDelete));
+    setCustomers(customers.filter(customer => customer._id !== customerToDelete));
     setShowDeleteModal(false);
     setCustomerToDelete(null);
+  };
+
+  // Edit customer
+  const handleEdit = (customer) => {
+    setCustomerToEdit(customer);
+    setEditFormData({
+      name: customer.name || '',
+      email: customer.email || '',
+      phone: customer.phone || '',
+      status: customer.status || 'active',
+      loyalty: customer.loyalty || '',
+      notes: customer.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditFormChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleUpdateCustomer = async () => {
+    if (!customerToEdit) return;
+    
+    setIsUpdating(true);
+    try {
+      // Call your API to update the customer
+      const updatedCustomer = {
+        ...customerToEdit,
+        name: editFormData.name,
+        email: editFormData.email,
+        phone: editFormData.phone,
+        status: editFormData.status,
+        loyalty: editFormData.loyalty,
+        notes: editFormData.notes,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Update the customers list
+      setCustomers(customers.map(customer => 
+        customer._id === customerToEdit._id ? updatedCustomer : customer
+      ));
+
+      setShowEditModal(false);
+      setCustomerToEdit(null);
+      // You can add a toast notification here
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      // Handle error - show toast notification
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   // Message actions
@@ -301,7 +368,7 @@ const CustomersManagement = () => {
         return { 
           color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
           icon: <Star className="h-4 w-4 mr-1" />,
-          text: loyalty
+          text: loyalty || 'None'
         };
     }
   };
@@ -429,7 +496,10 @@ const CustomersManagement = () => {
                 <Filter className="h-4 w-4" />
                 <span>Filters</span>
               </button>
-              <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center">
+              <button 
+                onClick={activeTab === 'customers' ? handleExportCustomers : undefined}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
+              >
                 <Download className="h-4 w-4" />
               </button>
             </div>
@@ -734,13 +804,13 @@ const CustomersManagement = () => {
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Link>
-                                <Link
-                                  to={`/admin/customers/${customer._id || customer.id}/edit`}
+                                <button
+                                  onClick={() => handleEdit(customer)}
                                   className="text-green-600 hover:text-green-700 p-1"
                                   title="Edit"
                                 >
                                   <Edit className="h-4 w-4" />
-                                </Link>
+                                </button>
                                 <button
                                   onClick={() => handleDelete(customer._id || customer.id)}
                                   className="text-red-600 hover:text-red-700 p-1"
@@ -1106,6 +1176,185 @@ const CustomersManagement = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Customer Modal */}
+      {showEditModal && customerToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Edit Customer
+              </h3>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* Customer Info */}
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Customer ID:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {customerToEdit._id || customerToEdit.id}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Member Since:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {customerToEdit.joinDate 
+                        ? new Date(customerToEdit.joinDate).toLocaleDateString()
+                        : (customerToEdit.createdAt ? new Date(customerToEdit.createdAt).toLocaleDateString() : 'N/A')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Total Orders:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {customerToEdit.orders ?? customerToEdit.orderCount ?? 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Total Spent:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      Ksh {customerToEdit.totalSpent?.toFixed(2) ?? '0.00'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edit Form */}
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) => handleEditFormChange('name', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="Enter customer name"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) => handleEditFormChange('email', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="Enter email address"
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={editFormData.phone}
+                      onChange={(e) => handleEditFormChange('phone', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Account Status
+                    </label>
+                    <select
+                      value={editFormData.status}
+                      onChange={(e) => handleEditFormChange('status', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      {statuses.filter(status => status !== 'all').map(status => (
+                        <option key={status} value={status}>
+                          {getStatusInfo(status).text}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Loyalty Level */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Loyalty Level
+                    </label>
+                    <select
+                      value={editFormData.loyalty}
+                      onChange={(e) => handleEditFormChange('loyalty', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">No Loyalty Level</option>
+                      {loyaltyLevels.filter(level => level !== 'all').map(level => (
+                        <option key={level} value={level}>
+                          {getLoyaltyInfo(level).text}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Internal Notes
+                  </label>
+                  <textarea
+                    value={editFormData.notes}
+                    onChange={(e) => handleEditFormChange('notes', e.target.value)}
+                    placeholder="Add internal notes about this customer..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                disabled={isUpdating}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateCustomer}
+                disabled={isUpdating || !editFormData.name || !editFormData.email}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+              >
+                {isUpdating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" />
+                    <span>Update Customer</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

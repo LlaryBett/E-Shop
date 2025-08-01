@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -63,10 +62,20 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-6">Customer Service</h3>
             <ul className="space-y-3">
               <li><Link to="/orders" className="text-gray-400 hover:text-white transition-colors">Track Orders</Link></li>
-              <li><Link to="/returns" className="text-gray-400 hover:text-white transition-colors">Returns</Link></li>
+              <li>
+                <Link
+                  to={{
+                    pathname: "/shop",
+                    search: "?quality=true"
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  Returns
+                </Link>
+              </li>
               <li><Link to="/shipping" className="text-gray-400 hover:text-white transition-colors">Shipping Info</Link></li>
               <li><Link to="/size-guide" className="text-gray-400 hover:text-white transition-colors">Size Guide</Link></li>
-              <li><Link to="/help" className="text-gray-400 hover:text-white transition-colors">Help Center</Link></li>
+              <li><Link to="/contact" className="text-gray-400 hover:text-white transition-colors">Help Center</Link></li>
             </ul>
           </div>
 
@@ -90,32 +99,7 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Features */}
-        <div className="border-t border-gray-800 mt-12 pt-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex items-center space-x-3">
-              <Truck className="h-8 w-8 text-blue-600" />
-              <div>
-                <h4 className="font-semibold">Free Shipping</h4>
-                <p className="text-gray-400 text-sm">On orders over $50</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Shield className="h-8 w-8 text-green-600" />
-              <div>
-                <h4 className="font-semibold">Secure Payment</h4>
-                <p className="text-gray-400 text-sm">100% secure transactions</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <CreditCard className="h-8 w-8 text-purple-600" />
-              <div>
-                <h4 className="font-semibold">Easy Returns</h4>
-                <p className="text-gray-400 text-sm">30-day return policy</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">

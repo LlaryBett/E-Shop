@@ -150,6 +150,14 @@ const Shop = () => {
     setSearchParams({});
   };
 
+  // Lock body scroll when filters are open on mobile
+  useEffect(() => {
+    if (showFilters && window.innerWidth < 1024) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [showFilters]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -174,7 +182,7 @@ const Shop = () => {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 lg:mb-0">Shop</h1>
             
             {/* Quality Guarantee Banner */}
-            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+            {/* <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
               <div className="flex items-center space-x-3">
                 <Shield className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                 <div>
@@ -188,69 +196,86 @@ const Shop = () => {
                   Our Promise →
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
           
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                />
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              </div>
-            </div>
+            <div className="flex items-center flex-wrap gap-2 w-full">
+              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+  <div className="flex items-center space-x-4 flex-wrap">
+    {/* Updated Select with width-controlling container */}
+    <div className="flex-1 min-w-0">
+      <select
+        value={`${sortBy.field}-${sortBy.direction}`}
+        onChange={(e) => {
+          const [field, direction] = e.target.value.split('-');
+          setSortBy({ field, direction });
+        }}
+        className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white w-full"
+      >
+        <option value="createdAt-desc">Newest First</option>
+        <option value="createdAt-asc">Oldest First</option>
+        <option value="price-asc">Price: Low to High</option>
+        <option value="price-desc">Price: High to Low</option>
+        <option value="rating-desc">Highest Rated</option>
+        <option value="title-asc">Name: A to Z</option>
+      </select>
+    </div>
 
-            <div className="flex items-center space-x-4">
-              <select
-                value={`${sortBy.field}-${sortBy.direction}`}
-                onChange={(e) => {
-                  const [field, direction] = e.target.value.split('-');
-                  setSortBy({ field, direction });
-                }}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="createdAt-desc">Newest First</option>
-                <option value="createdAt-asc">Oldest First</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="rating-desc">Highest Rated</option>
-                <option value="title-asc">Name: A to Z</option>
-              </select>
+    <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shrink-0">
+      <button
+        onClick={() => setViewMode('grid')}
+        className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+      >
+        <Grid className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => setViewMode('list')}
+        className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+      >
+        <List className="h-4 w-4" />
+      </button>
+    </div>
 
-              <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
-                >
-                  <Grid className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
-                >
-                  <List className="h-4 w-4" />
-                </button>
-              </div>
+    <button
+      onClick={() => setShowFilters(!showFilters)}
+      className="lg:hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 shrink-0"
+      aria-expanded={showFilters}
+      aria-controls="filter-sidebar"
+    >
+      <Filter className="h-4 w-4" />
+      <span>Filters</span>
+    </button>
+  </div>
+</div>
 
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="lg:hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-              >
-                <Filter className="h-4 w-4" />
-                <span>Filters</span>
-              </button>
+
+              
             </div>
           </div>
         </div>
 
+        {/* Mobile Backdrop */}
+        {showFilters && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+            onClick={() => setShowFilters(false)}
+          />
+        )}
+
         <div className="flex gap-8">
-          <div className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-64 space-y-6`}>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+          <div 
+            id="filter-sidebar"
+            className={`
+              fixed lg:static inset-y-0 left-0 z-40 w-4/5 max-w-sm lg:w-64
+              transform ${showFilters ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
+              transition-transform duration-300 ease-in-out
+              bg-white dark:bg-gray-800 shadow-xl lg:shadow-none
+              overflow-y-auto
+              space-y-6
+            `}
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md lg:shadow-none">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
                 <button
@@ -381,18 +406,19 @@ const Shop = () => {
               </div>
             ) : (
               <div className={viewMode === 'grid' 
-                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+                ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'
                 : 'space-y-4'
               }>
                 {filteredProducts.map(product => (
                   <div
                     key={product._id}
                     className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow ${
-                      viewMode === 'list' ? 'flex' : ''
+                      viewMode === 'list' ? 'flex' : 'flex flex-col'
                     }`}
                   >
+                    {/* Product Image (same as before) */}
                     <Link to={`/product/${product._id}`} className={viewMode === 'list' ? 'flex-shrink-0' : ''}>
-                      <div className={`${viewMode === 'list' ? 'w-48 h-32' : 'aspect-square'} overflow-hidden`}>
+                      <div className={`${viewMode === 'list' ? 'w-32 sm:w-48 aspect-square' : 'aspect-square'} overflow-hidden`}>
                         <img
                           src={product.images[0]?.url || 'https://via.placeholder.com/300'}
                           alt={product.title}
@@ -401,14 +427,17 @@ const Shop = () => {
                       </div>
                     </Link>
                     
-                    <div className={`p-4 ${viewMode === 'list' ? 'flex-1 flex flex-col justify-between' : ''}`}>
-                      <div>
+                    {/* Product Info + Buttons Container */}
+                    <div className={`p-3 md:p-4 flex flex-col h-full ${
+                      viewMode === 'list' ? 'flex-1' : ''
+                    }`}>
+                      {/* Product Details */}
+                      <div className="flex-grow">
                         <Link to={`/product/${product._id}`}>
                           <h3 className="font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 transition-colors line-clamp-2">
                             {product.title}
                           </h3>
                         </Link>
-                        
                         <div className="flex items-center space-x-2 mb-2">
                           <div className="flex items-center">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -433,13 +462,14 @@ const Shop = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2">
+                      {/* Buttons Container */}
+                      <div className="flex items-center space-x-1 sm:space-x-2 mt-auto pt-2">
                         <button
                           onClick={() => handleAddToCart(product)}
-                          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                          className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
                         >
-                          <ShoppingCart className="h-4 w-4" />
-                          <span>Add to Cart</span>
+                          <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <span className="text-xs sm:text-sm">Add to Cart</span>
                         </button>
                         <button
                           onClick={() => handleWishlistToggle(product)}

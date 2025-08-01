@@ -11,40 +11,59 @@ import {
   Calendar,
   Zap,
   Heart,
-  ArrowLeft
+  ArrowLeft,
+  Store
 } from 'lucide-react';
 
 const Shipping = () => {
   const shippingOptions = [
     {
-      id: 'standard',
-      name: 'Standard Shipping',
+      id: 'free-shipping',
+      name: 'Free Shipping',
       price: 'Free',
-      minOrder: 'Ksh 2,500+',
-      duration: '5-7 business days',
-      description: 'Our most popular option with reliable delivery',
+      minOrder: 'Ksh 2,000+',
+      duration: '5 business days',
+      description: 'Available on orders above 2000 KES',
       icon: <Package className="h-6 w-6" />,
-      features: ['Free on orders over Ksh 2,500', 'Tracking included', 'Signature required']
+      features: ['Free on orders over Ksh 2,000', 'Tracking included', 'Signature required'],
+      cost: 0,
+      estimatedDays: 5
     },
     {
-      id: 'express',
-      name: 'Express Shipping',
-      price: 'Ksh 500',
+      id: 'flat-rate',
+      name: 'Flat Rate',
+      price: 'Ksh 250',
       minOrder: 'Any order',
-      duration: '2-3 business days',
-      description: 'Faster delivery for when you need it sooner',
+      duration: '3 business days',
+      description: 'Standard delivery within Kenya',
+      icon: <Truck className="h-6 w-6" />,
+      features: ['Standard delivery', 'Nationwide coverage', 'SMS notifications'],
+      cost: 250,
+      estimatedDays: 3
+    },
+    {
+      id: 'pickup-station',
+      name: 'Pickup Station',
+      price: 'Ksh 88',
+      minOrder: 'Any order',
+      duration: '2 business days',
+      description: 'Collect your order from the nearest station',
+      icon: <Store className="h-6 w-6" />,
+      features: ['Convenient pickup locations', 'Extended pickup hours', 'Secure storage'],
+      cost: 88,
+      estimatedDays: 2
+    },
+    {
+      id: 'express-delivery',
+      name: 'Express Delivery',
+      price: 'Ksh 600',
+      minOrder: 'Any order',
+      duration: '1 business day',
+      description: 'Fast delivery within 24 hours in Nairobi',
       icon: <Zap className="h-6 w-6" />,
-      features: ['2-3 day delivery', 'Priority handling', 'SMS notifications']
-    },
-    {
-      id: 'overnight',
-      name: 'Overnight Delivery',
-      price: 'Ksh 1,200',
-      minOrder: 'Any order',
-      duration: 'Next business day',
-      description: 'Get your order as fast as possible',
-      icon: <Clock className="h-6 w-6" />,
-      features: ['Next day delivery', 'Morning delivery slot', 'Real-time tracking']
+      features: ['Next day delivery', 'Priority handling', 'Real-time tracking'],
+      cost: 600,
+      estimatedDays: 1
     }
   ];
 
@@ -73,8 +92,8 @@ const Shipping = () => {
       answer: 'You can change your delivery address within 2 hours of placing your order. After that, please contact our support team.'
     },
     {
-      question: 'What about international shipping?',
-      answer: 'Currently, we only ship within Kenya. International shipping is coming soon!'
+      question: 'What about pickup stations?',
+      answer: 'Our pickup stations are located in major shopping centers and business districts. You\'ll receive an SMS when your order is ready for collection.'
     }
   ];
 
@@ -108,7 +127,7 @@ const Shipping = () => {
           <div className="flex flex-wrap justify-center gap-6 text-sm">
             <div className="flex items-center text-green-600 dark:text-green-400">
               <CheckCircle className="h-5 w-5 mr-2" />
-              Free shipping on orders over Ksh 2,500
+              Free shipping on orders over Ksh 2,000
             </div>
             <div className="flex items-center text-green-600 dark:text-green-400">
               <CheckCircle className="h-5 w-5 mr-2" />
@@ -128,45 +147,45 @@ const Shipping = () => {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
             Choose Your Shipping Speed
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {shippingOptions.map((option, index) => (
               <div 
                 key={option.id}
-                className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 border-2 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+                className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
                   index === 0 ? 'border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900/20' : 'border-gray-200 dark:border-gray-700'
                 }`}
               >
                 {index === 0 && (
-                  <div className="bg-blue-500 text-white text-sm font-medium px-3 py-1 rounded-full inline-block mb-4">
+                  <div className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded-full inline-block mb-3">
                     Most Popular
                   </div>
                 )}
                 <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mr-4">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mr-3">
                     {option.icon}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {option.name}
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400">{option.duration}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{option.duration}</p>
                   </div>
                 </div>
                 <div className="mb-4">
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
                     {option.price}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
                     {option.minOrder}
                   </div>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                   {option.description}
                 </p>
-                <ul className="space-y-2">
+                <ul className="space-y-1">
                   {option.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                    <li key={idx} className="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                      <CheckCircle className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
                       {feature}
                     </li>
                   ))}

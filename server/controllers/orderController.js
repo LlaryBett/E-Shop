@@ -6,6 +6,9 @@ import { sendEmail } from '../utils/sendEmail.js';
 import { processPayment } from '../utils/stripe.js';
 import PDFDocument from 'pdfkit';
 import NotificationService from '../middleware/NotificationService.js';
+import Coupon from '../models/Coupon.js'; // Import Coupon model
+import ShippingMethod from '../models/ShippingMethod.js';
+import TaxRate from '../models/TaxRate.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -28,13 +31,15 @@ export const createOrder = async (req, res, next) => {
       paymentMethod,
       shippingMethod,
       totalAmount,
+      appliedCoupon // <-- Accept coupon from frontend
     } = req.body;
 
-    // Validate products and calculate totals
+    // Fix: Declare subtotal, orderItems, productsToUpdate before using them
     let subtotal = 0;
     const orderItems = [];
     const productsToUpdate = [];
 
+    // 🛒 Load fresh cart/products: Fetch each product from DB, check stock, get latest price
     for (const item of items) {
       // Handle both string ID and full product object
       const productId = typeof item.product === 'string' ? item.product : item.product?._id;
@@ -74,19 +79,152 @@ export const createOrder = async (req, res, next) => {
       });
     }
 
-    // Calculate shipping and tax
-    const shippingCost = calculateShipping(shippingMethod, subtotal);
-    const tax = calculateTax(subtotal, shippingAddress.state);
-    const calculatedTotal = subtotal + shippingCost + tax;
+    // 💸 Recalculate totals: subtotal, discount, shipping, tax, total are recalculated server-side
+    // let subtotal = 0;
+    // const orderItems = [];
+    // const productsToUpdate = [];
+
+    // for (const item of items) {
+    //   // Handle both string ID and full product object
+    //   const productId = typeof item.product === 'string' ? item.product : item.product?._id;
+    //   const product = await Product.findById(productId);
+      
+    //   if (!product) {
+    //     return res.status(404).json({
+    //       success: false,
+    //       message: `Product not found: ${productId}`,
+    //     });
+    //   }
+
+    //   if (product.stock < item.quantity) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: `Insufficient stock for product: ${product.title}`,
+    //     });
+    //   }
+
+    //   const price = product.salePrice || product.price;
+    //   subtotal += price * item.quantity;
+
+    //   orderItems.push({
+    //     product: product._id,
+    //     title: product.title,
+    //     image: product.images[0]?.url || '',
+    //     price,
+    //     quantity: item.quantity,
+    //     variant: item.variant,
+    //     sku: product.sku,
+    //   });
+
+    //   // Track products for stock update
+    //   productsToUpdate.push({
+    //     product,
+    //     quantity: item.quantity
+    //   });
+    // }
+
+    // 🎫 Validate coupon: Coupon is fetched from DB, checked for isActive, minAmount, maxUses
+    let discountAmount = 0;
+    let couponDetails = null;
+    if (appliedCoupon && appliedCoupon.code) {
+      // Fetch coupon from DB (never trust frontend)
+      const dbCoupon = await Coupon.findOne({ code: appliedCoupon.code, isActive: true });
+      if (!dbCoupon) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or inactive coupon code',
+        });
+      }
+      // Check minAmount
+      if (subtotal < dbCoupon.minAmount) {
+        return res.status(400).json({
+          success: false,
+          message: `Coupon requires minimum order of Ksh ${dbCoupon.minAmount}`,
+        });
+      }
+      // Check maxUses
+      if (dbCoupon.maxUses && dbCoupon.usedCount >= dbCoupon.maxUses) {
+        return res.status(400).json({
+          success: false,
+          message: 'Coupon usage limit reached',
+        });
+      }
+      // Calculate discount
+      if (dbCoupon.type === 'percentage') {
+        discountAmount = subtotal * (dbCoupon.amount / 100);
+      } else {
+        discountAmount = dbCoupon.amount;
+      }
+      couponDetails = dbCoupon;
+    }
+
+    const discountedSubtotal = subtotal - discountAmount;
+
+    // 🚚 Validate shipping: Fetch shipping method from DB and use its cost/minFree logic
+    const shippingMethodObj = await ShippingMethod.findById(shippingMethod);
+    let shippingCost = 0;
+    if (shippingMethodObj) {
+      if (
+        shippingMethodObj.name === 'Free Shipping' &&
+        shippingMethodObj.minFree &&
+        discountedSubtotal >= shippingMethodObj.minFree
+      ) {
+        shippingCost = 0;
+      } else {
+        shippingCost = shippingMethodObj.cost;
+      }
+    } else {
+      // If not found, fallback to 0
+      shippingCost = 0;
+    }
+
+    // 💸 Tax calculation: Fetch tax rate from DB by subtotal range (not by state)
+    let tax = 0;
+    // Find the correct tax rate for the discountedSubtotal
+    const taxRates = await TaxRate.find({});
+    if (Array.isArray(taxRates) && taxRates.length > 0) {
+      const taxRule = taxRates.find(
+        rule => discountedSubtotal >= rule.min && discountedSubtotal <= rule.max
+      );
+      if (taxRule) {
+        tax = discountedSubtotal * taxRule.rate;
+      }
+    }
+
+    const calculatedTotal = discountedSubtotal + shippingCost + tax;
 
     // Validate total amount matches calculated total
     if (Math.abs(calculatedTotal - totalAmount) > 0.01) {
-      console.log('Order total mismatch debug:', {
-        calculatedTotal,
-        totalAmountFromFrontend: totalAmount,
+      // Full backend calculation log
+      console.log('--- FULL BACKEND CALCULATION LOG ---');
+      console.log({
+        items: orderItems.map(i => ({
+          title: i.title,
+          price: i.price,
+          quantity: i.quantity,
+          lineTotal: i.price * i.quantity
+        })),
+        subtotalCalculation: orderItems.reduce((acc, i) => acc + i.price * i.quantity, 0),
         subtotal,
+        coupon: couponDetails ? {
+          code: couponDetails.code,
+          type: couponDetails.type,
+          amount: couponDetails.amount,
+          minAmount: couponDetails.minAmount
+        } : null,
+        discountAmount,
+        discountedSubtotal,
+        shippingMethodObj: shippingMethodObj ? {
+          _id: shippingMethodObj._id,
+          name: shippingMethodObj.name,
+          cost: shippingMethodObj.cost,
+          minFree: shippingMethodObj.minFree
+        } : null,
         shippingCost,
-        tax
+        taxRate: shippingAddress.state ? (await TaxRate.findOne({ state: shippingAddress.state }))?.rate || 0 : 0,
+        tax,
+        calculatedTotal,
+        totalAmountFromFrontend: totalAmount
       });
       return res.status(400).json({
         success: false,
@@ -94,6 +232,9 @@ export const createOrder = async (req, res, next) => {
       });
     }
 
+    // 📦 Check stock: Already done above for each product
+    // 🔐 Lock order totals: Only backend-calculated totals are used for order creation
+    // 📜 Store final summary: Order is saved with canonical pricing, discount, tax, shipping, total
     // Create order
     const order = new Order({
       user: req.user.id,
@@ -106,10 +247,18 @@ export const createOrder = async (req, res, next) => {
       },
       pricing: {
         subtotal,
+        discount: discountAmount,
         tax,
         shipping: shippingCost,
-        total: totalAmount,
+        total: calculatedTotal,
       },
+      appliedCoupon: couponDetails ? {
+        code: couponDetails.code,
+        type: couponDetails.type,
+        amount: couponDetails.amount,
+        minAmount: couponDetails.minAmount,
+        _id: couponDetails._id
+      } : undefined,
       shippingInfo: {
         method: shippingMethod,
         cost: shippingCost,
@@ -232,6 +381,38 @@ export const createOrder = async (req, res, next) => {
       // Don't fail the order just because notification failed
     }
 
+    // Mark coupon as used (optional, if you want to track usage)
+    if (couponDetails) {
+      couponDetails.usedCount = (couponDetails.usedCount || 0) + 1;
+      await couponDetails.save();
+    }
+
+    // Add frontend calculation logging
+    console.log('--- FRONTEND ORDER DATA ---');
+    console.log({
+      subtotal: req.body.subtotal,
+      discount: req.body.discountAmount,
+      shipping: req.body.shippingCost,
+      tax: req.body.tax,
+      total: req.body.totalAmount,
+      appliedCoupon: req.body.appliedCoupon,
+      shippingMethod: req.body.shippingMethod,
+      items: req.body.items,
+    });
+
+    // Add backend calculation logging
+    console.log('--- BACKEND ORDER CALCULATION ---');
+    console.log({
+      subtotal,
+      discount: discountAmount,
+      shipping: shippingCost,
+      tax,
+      total: calculatedTotal,
+      appliedCoupon: couponDetails,
+      shippingMethod: shippingMethodObj,
+      items: orderItems,
+    });
+
     res.status(201).json({
       success: true,
       order,
@@ -257,26 +438,6 @@ async function processCardPayment({ amount, orderId, user }) {
 
 async function createPayPalPayment(order) {
   // Implement PayPal payment creation
-}
-
-function calculateShipping(method, subtotal) {
-  // Implement shipping calculation logic
-  const rates = {
-    standard: subtotal > 50 ? 0 : 5.99,
-    express: 12.99,
-    overnight: 24.99,
-  };
-  return rates[method] || 0;
-}
-
-function calculateTax(subtotal, state) {
-  // Implement tax calculation logic
-  const taxRates = {
-    'CA': 0.0725,
-    'NY': 0.08875,
-    // Add other states as needed
-  };
-  return subtotal * (taxRates[state] || 0);
 }
 
 function calculateDeliveryDate(method) {
@@ -443,6 +604,17 @@ export const cancelOrder = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Cannot cancel order that has been shipped or delivered',
+      });
+    }
+
+    // Only allow cancellation within 15 minutes of order creation
+    const now = new Date();
+    const createdAt = new Date(order.createdAt);
+    const diffMinutes = (now - createdAt) / (1000 * 60);
+    if (diffMinutes > 15) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order can only be cancelled within 15 minutes of placement',
       });
     }
 

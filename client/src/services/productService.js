@@ -43,7 +43,7 @@ class ProductService {
   }
 
   async getTrendingProducts() {
-    const response = await api.get('/products?trending=true&limit=4');
+    const response = await api.get('/products?trending=true');
     return response.data.products;
   }
 
