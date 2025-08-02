@@ -44,12 +44,27 @@ const Shop = () => {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    // Read category from URL query params
+    // Read category or filter from URL query params
     const categoryFromUrl = searchParams.get('category');
+    const filterFromUrl = searchParams.get('filter');
     let filtersToSend = { ...filters };
 
-    // If category is present in URL, use it for filtering
-    if (categoryFromUrl) {
+    // If filter is present in URL, map it to categories or handle special cases
+    if (filterFromUrl) {
+      if (filterFromUrl === 'promos') {
+        filtersToSend.categories = ['Promos'];
+      } else if (filterFromUrl === 'food-cupboard') {
+        filtersToSend.categories = ['Food Cupboard'];
+      } else if (filterFromUrl === 'electronics') {
+        filtersToSend.categories = ['Electronics'];
+      } else if (filterFromUrl === 'home-garden') {
+        filtersToSend.categories = ['Home & Garden'];
+      } else if (filterFromUrl === 'voucher') {
+        filtersToSend.categories = ['Voucher'];
+      } else if (filterFromUrl === 'fashion') {
+        filtersToSend.categories = ['Fashion'];
+      }
+    } else if (categoryFromUrl) {
       filtersToSend.categories = [categoryFromUrl];
     }
 
@@ -65,21 +80,28 @@ const Shop = () => {
           sortBy,
           searchQuery
         );
-        
+
         if (!response.success) {
           throw new Error('Failed to fetch products');
         }
 
         setProducts(response.products);
-        setFilteredProducts(response.products);
-        
+
+        // Apply local filtering if a filter is set (to handle backend not filtering)
+        let filtered = response.products;
+        if (filtersToSend.categories && filtersToSend.categories.length > 0) {
+          filtered = filtered.filter(
+            p => filtersToSend.categories.includes(p.category?.name)
+          );
+        }
+        setFilteredProducts(filtered);
+
         // Extract unique categories
         const uniqueCategories = [...new Set(
           response.products
             .map(p => p.category?.name)
             .filter(Boolean)
         )];
-        
         // Create brand mapping {id: name}
         const brandMap = response.products.reduce((acc, product) => {
           if (product.brand?._id) {

@@ -343,7 +343,8 @@ const Home = () => {
     <section className="py-12 sm:py-14 md:py-18">
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-    <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-10 sm:mb-12 md:mb-14">
+<div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
+
       <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
         Featured Products
       </h2>
@@ -471,10 +472,11 @@ const Home = () => {
   </div>
 </section>
 
+
 <section className="py-1">
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-    <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 lg:gap-8 mb-10 sm:mb-12 md:mb-14 lg:mb-16">
+    <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
       <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
         Shop by Category
       </h2>
@@ -560,10 +562,10 @@ const Home = () => {
   </div>
 </section>
 
-<section className="py-12 sm:py-14 md:py-18">
+<section className="py-0 sm:py-2 md:py-3">
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-    <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-10 sm:mb-12 md:mb-14">
+<div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
       <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
         New Arrivals
       </h2>
@@ -696,13 +698,17 @@ const Home = () => {
 
 
 
+
       {/* Trending Products with Enhanced Design */}
-     <section className="py-12 sm:py-14 md:py-18">
+<section className="py-0 sm:py-2 md:py-3">
+
+
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-    <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-10 sm:mb-12 md:mb-14">
+<div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
+
       <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-        Trending Now
+      Just For You
       </h2>
       <div className="flex space-x-2">
         <button
@@ -815,12 +821,27 @@ const Home = () => {
   </div>
 </section>
 
+<section className="relative overflow-hidden my-0 sm:my-1 md:my-2">
 
-<section className="py-12 sm:py-14 md:py-18">
+  <div className="container mx-auto px-4">
+    <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-700" style={{ aspectRatio: '4.6875 / 1' }}>
+      <img
+        src="/assets/Banner ecommerce smartwatch electronics store product promotion dropshipping offer instagram stories.png"
+        alt="Smartwatch Promotion Banner"
+        className="absolute inset-0 w-full h-full object-cover object-center"
+        loading="lazy"
+        onError={(e) => (e.target.style.display = 'none')}
+      />
+    </div>
+  </div>
+</section>
+
+<section className="py-0 sm:py-2 md:py-3">
+
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-    <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-10 sm:mb-12 md:mb-14">
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+  <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
+    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
         Check This Out
       </h2>
       <div className="flex space-x-2">

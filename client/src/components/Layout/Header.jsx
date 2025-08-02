@@ -1,27 +1,333 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Heart, User, Menu, X, Sun, Moon, Bell, ChevronDown, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Beef, Home, Shirt, Smartphone, Book, Gift, Star, Wallet, CreditCard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
-import { useWishlist } from '../../contexts/WishlistContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import ProductService from '../../services/productService';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [showCategoriesMenu, setShowCategoriesMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState(566); // Default to Promos
+  const [activeNavTab, setActiveNavTab] = useState(null); // For navigation mega menus
   const { user, logout, isAuthenticated } = useAuth();
   const { getTotalItems } = useCart();
-  const { items: wishlistItems } = useWishlist();
-  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  // Handle scroll effect with throttling for performance
+  // Categories data structure for mega menu
+  const categories = {
+    566: {
+      name: "Promos",
+      icon: Star,
+      count: 150,
+      description: "Special offers and discounts on selected items",
+      subcategories: [
+        {
+          name: "Flash Deals",
+          items: [
+            { name: "Electronics Sale", slug: "electronics-sale" },
+            { name: "Fashion Week", slug: "fashion-week" },
+            { name: "Home & Garden", slug: "home-garden" }
+          ]
+        },
+        {
+          name: "Seasonal Offers",
+          items: [
+            { name: "Summer Collection", slug: "summer-collection" },
+            { name: "Back to School", slug: "back-to-school" },
+            { name: "Holiday Specials", slug: "holiday-specials" }
+          ]
+        },
+        {
+          name: "Bundle Deals",
+          items: [
+            { name: "Tech Bundles", slug: "tech-bundles" },
+            { name: "Beauty Sets", slug: "beauty-sets" },
+            { name: "Family Packs", slug: "family-packs" }
+          ]
+        }
+      ]
+    },
+    2138: {
+      name: "Food Cupboard",
+      icon: Package,
+      count: 500,
+      description: "Pantry essentials, snacks, and non-perishable items",
+      subcategories: [
+        {
+          name: "Grains & Cereals",
+          items: [
+            { name: "Rice", slug: "rice" },
+            { name: "Wheat Flour", slug: "wheat-flour" },
+            { name: "Oats", slug: "oats" },
+            { name: "Quinoa", slug: "quinoa" }
+          ]
+        },
+        {
+          name: "Canned Goods",
+          items: [
+            { name: "Tomatoes", slug: "canned-tomatoes" },
+            { name: "Beans", slug: "canned-beans" },
+            { name: "Tuna", slug: "canned-tuna" },
+            { name: "Corn", slug: "canned-corn" }
+          ]
+        },
+        {
+          name: "Snacks",
+          items: [
+            { name: "Chips", slug: "chips" },
+            { name: "Cookies", slug: "cookies" },
+            { name: "Nuts", slug: "nuts" },
+            { name: "Crackers", slug: "crackers" }
+          ]
+        },
+        {
+          name: "Beverages",
+          items: [
+            { name: "Coffee", slug: "coffee" },
+            { name: "Tea", slug: "tea" },
+            { name: "Juice", slug: "juice" },
+            { name: "Soda", slug: "soda" }
+          ]
+        },
+        {
+          name: "Condiments",
+          items: [
+            { name: "Ketchup", slug: "ketchup" },
+            { name: "Mustard", slug: "mustard" },
+            { name: "Olive Oil", slug: "olive-oil" },
+            { name: "Vinegar", slug: "vinegar" }
+          ]
+        }
+      ]
+    },
+    3245: {
+      name: "Fresh Food",
+      icon: Apple,
+      count: 200,
+      description: "Fresh fruits, vegetables, meat, and dairy products",
+      subcategories: [
+        {
+          name: "Fruits",
+          items: [
+            { name: "Apples", slug: "apples" },
+            { name: "Bananas", slug: "bananas" },
+            { name: "Oranges", slug: "oranges" },
+            { name: "Berries", slug: "berries" }
+          ]
+        },
+        {
+          name: "Vegetables",
+          items: [
+            { name: "Spinach", slug: "spinach" },
+            { name: "Carrots", slug: "carrots" },
+            { name: "Broccoli", slug: "broccoli" },
+            { name: "Tomatoes", slug: "fresh-tomatoes" }
+          ]
+        },
+        {
+          name: "Meat & Poultry",
+          items: [
+            { name: "Chicken", slug: "chicken" },
+            { name: "Beef", slug: "beef" },
+            { name: "Pork", slug: "pork" },
+            { name: "Fish", slug: "fish" }
+          ]
+        },
+        {
+          name: "Dairy",
+          items: [
+            { name: "Milk", slug: "milk" },
+            { name: "Cheese", slug: "cheese" },
+            { name: "Yogurt", slug: "yogurt" },
+            { name: "Butter", slug: "butter" }
+          ]
+        },
+        {
+          name: "Bakery",
+          items: [
+            { name: "Bread", slug: "bread" },
+            { name: "Pastries", slug: "pastries" },
+            { name: "Cakes", slug: "cakes" },
+            { name: "Muffins", slug: "muffins" }
+          ]
+        }
+      ]
+    },
+    4567: {
+      name: "Electronics",
+      icon: Smartphone,
+      count: 300,
+      description: "Latest gadgets, computers, and electronic devices",
+      subcategories: [
+        {
+          name: "Smartphones",
+          items: [
+            { name: "iPhone", slug: "iphone" },
+            { name: "Samsung Galaxy", slug: "samsung-galaxy" },
+            { name: "Google Pixel", slug: "google-pixel" },
+            { name: "OnePlus", slug: "oneplus" }
+          ]
+        },
+        {
+          name: "Computers",
+          items: [
+            { name: "Laptops", slug: "laptops" },
+            { name: "Desktops", slug: "desktops" },
+            { name: "Tablets", slug: "tablets" },
+            { name: "Accessories", slug: "computer-accessories" }
+          ]
+        },
+        {
+          name: "Audio",
+          items: [
+            { name: "Headphones", slug: "headphones" },
+            { name: "Speakers", slug: "speakers" },
+            { name: "Earbuds", slug: "earbuds" },
+            { name: "Sound Systems", slug: "sound-systems" }
+          ]
+        },
+        {
+          name: "Gaming",
+          items: [
+            { name: "PlayStation", slug: "playstation" },
+            { name: "Xbox", slug: "xbox" },
+            { name: "Nintendo", slug: "nintendo" },
+            { name: "PC Gaming", slug: "pc-gaming" }
+          ]
+        },
+        {
+          name: "Smart Home",
+          items: [
+            { name: "Smart TV", slug: "smart-tv" },
+            { name: "Smart Lights", slug: "smart-lights" },
+            { name: "Security Cameras", slug: "security-cameras" },
+            { name: "Smart Speakers", slug: "smart-speakers" }
+          ]
+        }
+      ]
+    },
+    5678: {
+      name: "Fashion",
+      icon: Shirt,
+      count: 400,
+      description: "Clothing, shoes, and accessories for all occasions",
+      subcategories: [
+        {
+          name: "Men's Clothing",
+          items: [
+            { name: "Shirts", slug: "mens-shirts" },
+            { name: "Pants", slug: "mens-pants" },
+            { name: "Suits", slug: "mens-suits" },
+            { name: "Casual Wear", slug: "mens-casual" }
+          ]
+        },
+        {
+          name: "Women's Clothing",
+          items: [
+            { name: "Dresses", slug: "womens-dresses" },
+            { name: "Tops", slug: "womens-tops" },
+            { name: "Skirts", slug: "womens-skirts" },
+            { name: "Formal Wear", slug: "womens-formal" }
+          ]
+        },
+        {
+          name: "Shoes",
+          items: [
+            { name: "Sneakers", slug: "sneakers" },
+            { name: "Formal Shoes", slug: "formal-shoes" },
+            { name: "Boots", slug: "boots" },
+            { name: "Sandals", slug: "sandals" }
+          ]
+        },
+        {
+          name: "Accessories",
+          items: [
+            { name: "Bags", slug: "bags" },
+            { name: "Watches", slug: "watches" },
+            { name: "Jewelry", slug: "jewelry" },
+            { name: "Belts", slug: "belts" }
+          ]
+        },
+        {
+          name: "Kids Fashion",
+          items: [
+            { name: "Boys Clothing", slug: "boys-clothing" },
+            { name: "Girls Clothing", slug: "girls-clothing" },
+            { name: "Kids Shoes", slug: "kids-shoes" },
+            { name: "School Uniforms", slug: "school-uniforms" }
+          ]
+        }
+      ]
+    },
+    6789: {
+      name: "Home & Garden",
+      icon: Home,
+      count: 350,
+      description: "Everything for your home, garden, and outdoor spaces",
+      subcategories: [
+        {
+          name: "Furniture",
+          items: [
+            { name: "Living Room", slug: "living-room-furniture" },
+            { name: "Bedroom", slug: "bedroom-furniture" },
+            { name: "Dining Room", slug: "dining-room-furniture" },
+            { name: "Office", slug: "office-furniture" }
+          ]
+        },
+        {
+          name: "Home Decor",
+          items: [
+            { name: "Wall Art", slug: "wall-art" },
+            { name: "Lighting", slug: "lighting" },
+            { name: "Rugs", slug: "rugs" },
+            { name: "Curtains", slug: "curtains" }
+          ]
+        },
+        {
+          name: "Kitchen",
+          items: [
+            { name: "Cookware", slug: "cookware" },
+            { name: "Appliances", slug: "kitchen-appliances" },
+            { name: "Utensils", slug: "kitchen-utensils" },
+            { name: "Storage", slug: "kitchen-storage" }
+          ]
+        },
+        {
+          name: "Garden",
+          items: [
+            { name: "Plants", slug: "plants" },
+            { name: "Garden Tools", slug: "garden-tools" },
+            { name: "Outdoor Furniture", slug: "outdoor-furniture" },
+            { name: "Fertilizers", slug: "fertilizers" }
+          ]
+        },
+        {
+          name: "Cleaning",
+          items: [
+            { name: "Cleaning Supplies", slug: "cleaning-supplies" },
+            { name: "Laundry", slug: "laundry" },
+            { name: "Vacuum Cleaners", slug: "vacuum-cleaners" },
+            { name: "Storage Solutions", slug: "storage-solutions" }
+          ]
+        }
+      ]
+    }
+  };
+
+  // Map navItems to shop route with filter
+  const navItems = [
+    { name: 'Promos', path: '/shop?filter=promos', icon: Star },
+    { name: 'Food & Cupboard', path: '/shop?filter=food-cupboard', icon: Package },
+    { name: 'Electronics', path: '/shop?filter=electronics', icon: Smartphone },
+    { name: 'Home & Garden', path: '/shop?filter=home-garden', icon: Home },
+    { name: 'Voucher', path: '/shop?filter=voucher', icon: Gift },
+  ];
+
+  // Handle scroll effect
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -43,13 +349,16 @@ const Header = () => {
       if (e.key === 'Escape') {
         setIsMobileMenuOpen(false);
         setShowUserMenu(false);
-        setIsSearchOpen(false);
+        setShowCategoriesMenu(false);
       }
     };
 
     const handleClickOutside = (e) => {
       if (!e.target.closest('[data-menu]')) {
         setShowUserMenu(false);
+      }
+      if (!e.target.closest('[data-categories-menu]')) {
+        setShowCategoriesMenu(false);
       }
     };
 
@@ -61,14 +370,14 @@ const Header = () => {
     };
   }, []);
 
-  // Handle search with debouncing
+  // Handle search
   const handleSearch = async (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setSearchLoading(true);
       try {
-        const results = await ProductService.searchProducts(searchQuery);
-        setSearchResults(results || []);
+        // Replace with your actual search service
+        // const results = await ProductService.searchProducts(searchQuery);
         navigate(`/shop?search=${encodeURIComponent(searchQuery)}`);
       } catch (err) {
         console.error('Search error:', err);
@@ -85,372 +394,757 @@ const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-    setIsSearchOpen(false);
+  // Example address payload (replace with actual data from account context or props)
+  const addressPayload = {
+    success: true,
+    addresses: [
+      {
+        type: "shipping",
+        firstName: "hillary",
+        lastName: "bett",
+        address: "10300",
+        city: "Nairobi",
+        state: "Kutus",
+        zipCode: "10300",
+        country: "United States",
+        isDefault: true,
+        _id: "68790093f3e1dff7e88a538b"
+      }
+    ]
   };
 
-  const navItems = [
-    { name: 'Home', path: '/', badge: null },
-    { name: 'Shop', path: '/shop', badge: 'New' },
-    { name: 'Categories', path: '/categories', badge: null },
-    { name: 'About', path: '/about', badge: null },
-    { name: 'Contact', path: '/contact', badge: null },
-    { name: 'Blog', path: '/blog', badge: 'Hot' },
-  ];
+  // Get default shipping address
+  const defaultAddress = addressPayload.addresses?.find(a => a.isDefault && a.type === "shipping");
+  const deliverToLocation = defaultAddress
+    ? `${defaultAddress.state}, ${defaultAddress.country}`
+    : "Nairobi, Kenya";
 
   return (
     <>
       <header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled 
-            ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-200/20 dark:border-gray-700/20' 
-            : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-md'
+            ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg' 
+            : 'bg-white dark:bg-gray-900 shadow-md'
         }`}
         role="banner"
       >
-        <div className="w-full max-w-none px-3 sm:px-4 lg:px-6 xl:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-18 md:h-20">
-            
-            {/* Enhanced Logo - Responsive */}
-            <Link 
-              to="/" 
-              className="flex items-center space-x-2 sm:space-x-3 group shrink-0"
-              aria-label="E-Shop Home"
-            >
-              <div className="relative">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-                  <span className="text-white font-bold text-sm sm:text-lg md:text-xl">E</span>
-                  <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                    <Sparkles className="h-1.5 w-1.5 sm:h-2 sm:w-2 text-yellow-800" />
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
-              </div>
-              <div className="hidden xs:block">
-                <span className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+        {/* Mobile Header (only visible on small screens) */}
+        <div className="lg:hidden bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+          {/* Top Row */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            {/* Hamburger + Brand */}
+            <div className="flex items-center">
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-2 text-gray-700 dark:text-gray-300"
+                aria-label="Menu"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+              <Link to="/" className="ml-2">
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                   E-Shop
                 </span>
-                <div className="text-xs text-gray-500 dark:text-gray-400 -mt-1 hidden sm:block">Premium Store</div>
-              </div>
-            </Link>
-
-            {/* Desktop Navigation - Hidden on tablet and below */}
-            <nav className="hidden xl:flex items-center space-x-1" role="navigation">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className="relative px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 group"
-                >
-                  <span className="relative z-10">{item.name}</span>
-                  {item.badge && (
-                    <span className={`absolute -top-1 -right-1 px-1.5 py-0.5 text-xs font-bold rounded-full ${
-                      item.badge === 'New' 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-red-500 text-white animate-pulse'
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                </Link>
-              ))}
-            </nav>
-
-            {/* Desktop Search Bar - Responsive width */}
-            <div className="hidden md:flex items-center flex-1 max-w-xs lg:max-w-md xl:max-w-lg 2xl:max-w-xl mx-4 lg:mx-6 xl:mx-8">
-              <form onSubmit={handleSearch} className="relative w-full group">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full px-4 py-2 lg:px-6 lg:py-3 pl-10 lg:pl-12 pr-16 lg:pr-20 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg lg:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 hover:shadow-md focus:shadow-lg text-sm lg:text-base"
-                  aria-label="Search products"
-                />
-                <Search className="absolute left-3 lg:left-4 top-2.5 lg:top-3.5 h-4 w-4 lg:h-5 lg:w-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
-                <button
-                  type="submit"
-                  className="absolute right-1 lg:right-2 top-1 lg:top-2 px-2 lg:px-3 py-1 lg:py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md lg:rounded-lg text-xs lg:text-sm font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
-                  disabled={searchLoading}
-                  aria-label="Search"
-                >
-                  {searchLoading ? 'Searching...' : 'Search'}
-                </button>
-              </form>
+              </Link>
             </div>
+            
+            {/* User Icon */}
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="p-2 text-gray-700 dark:text-gray-300"
+              aria-label="Account"
+            >
+              <User className="h-6 w-6" />
+            </button>
+          </div>
 
-            {/* Action Buttons - Responsive */}
-            <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-              
-              {/* Mobile Search Button */}
-              <button
-                onClick={() => {
-                  setIsSearchOpen(!isSearchOpen);
-                  setIsMobileMenuOpen(false);
-                }}
-                className="md:hidden p-2 sm:p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg sm:rounded-xl transition-all duration-300"
-                aria-label="Search"
-              >
-                <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
+          {/* Location Row */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium">Deliver to {deliverToLocation}</span>
+            </div>
+            <button className="text-sm text-blue-600">Change</button>
+          </div>
 
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 sm:p-3 text-gray-700 dark:text-gray-300 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg sm:rounded-xl transition-all duration-300 group"
-                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {isDark ? (
-                  <Sun className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-180 transition-transform duration-500" />
-                ) : (
-                  <Moon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-12 transition-transform duration-300" />
-                )}
-              </button>
+          {/* Search Row */}
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search for products..."
+                className="w-full px-4 py-2 pl-10 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
+              />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            </form>
+          </div>
 
-              {/* Notifications - Hidden on smallest screens */}
-              <button
-                className="hidden xs:block relative p-2 sm:p-3 text-gray-700 dark:text-gray-300 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg sm:rounded-xl transition-all duration-300"
-                onClick={() => navigate('/notifications')}
-                type="button"
-                aria-label="Notifications"
-              >
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-ping"></span>
-                <span className="absolute top-1 right-1 w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></span>
-              </button>
+          {/* Wallet + Cart Row */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+            <Link to="/wallet" className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg">
+              <Wallet className="h-5 w-5" />
+              <span className="text-sm font-medium">KES 0.00</span>
+            </Link>
+            
+            <Link to="/cart" className="relative p-2 text-gray-700 dark:text-gray-300">
+              <ShoppingCart className="h-6 w-6" />
+              {getTotalItems() > 0 && (
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {getTotalItems()}
+                </span>
+              )}
+            </Link>
+          </div>
+        </div>
 
-              {/* Wishlist */}
-              <Link
-                to="/wishlist"
-                className="relative p-2 sm:p-3 text-gray-700 dark:text-gray-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg sm:rounded-xl transition-all duration-300 group"
-                aria-label="Wishlist"
-              >
-                <Heart className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />
-                {wishlistItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full h-4 w-4 sm:h-6 sm:w-6 flex items-center justify-center font-bold shadow-lg animate-bounce min-w-[16px] sm:min-w-[24px]">
-                    {wishlistItems.length > 99 ? '99+' : wishlistItems.length}
-                  </span>
-                )}
-              </Link>
-
-              {/* Cart */}
-              <Link
-                to="/cart"
-                className="relative p-2 sm:p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg sm:rounded-xl transition-all duration-300 group"
-                aria-label="Shopping cart"
-              >
-                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />
-                {getTotalItems() > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs rounded-full h-4 w-4 sm:h-6 sm:w-6 flex items-center justify-center font-bold shadow-lg animate-pulse min-w-[16px] sm:min-w-[24px]">
-                    {getTotalItems() > 99 ? '99+' : getTotalItems()}
-                  </span>
-                )}
-              </Link>
-
-              {/* User Menu */}
-              {isAuthenticated ? (
-                <div className="relative" data-menu>
-                  <button
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-1 sm:space-x-2 p-2 sm:p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg sm:rounded-xl transition-all duration-300 group"
-                    aria-label="User menu"
-                    aria-expanded={showUserMenu}
-                  >
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-md sm:rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                      {user?.name?.charAt(0)?.toUpperCase()}
+        {/* Desktop Header (hidden on mobile) */}
+        <div className="hidden lg:block">
+          {/* Top Row */}
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <div className="max-w-7xl mx-auto px-2">
+              <div className="flex items-center justify-between h-16 lg:h-20">
+                
+                {/* Brand Logo and Name */}
+                <Link 
+                  to="/" 
+                  className="flex items-center space-x-3 group shrink-0"
+                  aria-label="E-Shop Home"
+                >
+                  <div className="relative">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                      <span className="text-white font-bold text-lg lg:text-xl">E</span>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                        <Sparkles className="h-2 w-2 text-yellow-800" />
+                      </div>
                     </div>
-                    <span className="hidden lg:inline font-medium text-sm truncate max-w-[100px] xl:max-w-none">
-                      {user?.name}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
+                  </div>
+                  <div>
+                    <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      E-Shop
                     </span>
-                    <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
+                    <div className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Premium Store</div>
+                  </div>
+                </Link>
+
+                {/* Search Bar */}
+                <div className="flex-1 max-w-2xl mx-8 hidden md:block">
+                  <form onSubmit={handleSearch} className="relative group">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search for products, brands and more..."
+                      className="w-full px-6 py-3 pl-12 pr-20 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 hover:shadow-md focus:shadow-lg"
+                      aria-label="Search products"
+                    />
+                    <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+                      disabled={searchLoading}
+                      aria-label="Search"
+                    >
+                      {searchLoading ? 'Searching...' : 'Search'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Right Section - Account, Cart, etc. */}
+                <div className="hidden lg:flex items-center space-x-6">
+                  {/* Deliver To Section */}
+                  <div className="flex items-center space-x-2 text-sm">
+  <MapPin className="h-4 w-4 text-gray-500" />
+  <div>
+    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+      Deliver to
+      <Link
+        to="/profile?tab=addresses"
+        className="text-[10px] font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
+      >
+        Change
+      </Link>
+    </div>
+    <div className="font-medium text-gray-900 dark:text-white">
+      {deliverToLocation}
+    </div>
+  </div>
+  
+</div>
+
+
+
+                  {/* Welcome User / User Menu */}
+                  <div className="relative" data-menu>
+                    {isAuthenticated ? (
+                      <button
+                        onClick={() => setShowUserMenu(!showUserMenu)}
+                        className="flex items-center space-x-2 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
+                        aria-label="User menu"
+                        aria-expanded={showUserMenu}
+                      >
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                          {user?.name?.charAt(0)?.toUpperCase() || 'L'}
+                        </div>
+                        <div className="text-sm">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Welcome</div>
+                          <div className="font-medium text-gray-900 dark:text-white">{user?.name || 'Larry'}</div>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowUserMenu(!showUserMenu)}
+                        className="flex items-center space-x-2 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
+                        aria-label="Account menu"
+                        aria-expanded={showUserMenu}
+                      >
+                        <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-lg flex items-center justify-center text-white">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <div className="text-sm">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Account</div>
+                          <div className="font-medium text-gray-900 dark:text-white">Sign In</div>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
+                      </button>
+                    )}
+                    
+                    {showUserMenu && (
+                      <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50">
+                        {isAuthenticated ? (
+                          <>
+                            <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white font-bold">
+                                  {user?.name?.charAt(0)?.toUpperCase() || 'L'}
+                                </div>
+                                <div>
+                                  <p className="font-semibold">{user?.name || 'Larry'}</p>
+                                  <p className="text-blue-100 text-sm">{user?.email || 'user@example.com'}</p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="p-2">
+                              <Link
+                                to="/profile"
+                                onClick={() => setShowUserMenu(false)}
+                                className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
+                              >
+                                <User className="h-5 w-5" />
+                                <span>My Profile</span>
+                              </Link>
+                              <Link
+                                to="/orders"
+                                onClick={() => setShowUserMenu(false)}
+                                className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
+                              >
+                                <ShoppingCart className="h-5 w-5" />
+                                <span>My Orders</span>
+                              </Link>
+                              <Link
+                                to="/wallet"
+                                onClick={() => setShowUserMenu(false)}
+                                className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
+                              >
+                                <Wallet className="h-5 w-5" />
+                                <span>My Wallet</span>
+                              </Link>
+                              <hr className="my-2 border-gray-200 dark:border-gray-700" />
+                              <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
+                              >
+                                <X className="h-5 w-5" />
+                                <span>Sign Out</span>
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="p-4">
+                            <div className="space-y-2">
+                              <Link
+                                to="/login"
+                                onClick={() => setShowUserMenu(false)}
+                                className="block w-full px-4 py-3 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
+                              >
+                                Sign In
+                              </Link>
+                              <Link
+                                to="/register"
+                                onClick={() => setShowUserMenu(false)}
+                                className="block w-full px-4 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300"
+                              >
+                                Get Started
+                              </Link>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                                Sign in to access your account, orders, and saved items
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Cart */}
+                  <Link
+                    to="/cart"
+                    className="relative flex items-center space-x-2 p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all duration-300 group"
+                    aria-label="Shopping cart"
+                  >
+                    <ShoppingCart className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="text-sm">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Cart</div>
+                      <div className="font-medium">{getTotalItems()} items</div>
+                    </div>
+                    {getTotalItems() > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg animate-pulse min-w-[24px]">
+                        {getTotalItems() > 99 ? '99+' : getTotalItems()}
+                      </span>
+                    )}
+                  </Link>
+                </div>
+
+                {/* Mobile Menu Toggle */}
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="lg:hidden p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
+                  aria-label="Menu"
+                  aria-expanded={isMobileMenuOpen}
+                >
+                  {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row - Navigation with Categories Only */}
+          {/* Bottom Row - Navigation with Categories Only */}
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <div className="max-w-7xl mx-auto px-2">
+              <div className="flex items-center justify-between h-16 relative">
+                
+                {/* Left side - Categories Button */}
+                <div 
+                  className="relative flex-shrink-0" 
+                  data-categories-menu
+                  onMouseEnter={() => setShowCategoriesMenu(true)} 
+                  onMouseLeave={() => setShowCategoriesMenu(false)}
+                >
+                  <button
+                    className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-300 font-medium text-sm tracking-widest"
+                    aria-label="Categories"
+                    aria-expanded={showCategoriesMenu}
+                  >
+                    <Grid3X3 className="h-5 w-5" />
+                    <span className="uppercase">Categories</span>
+                    <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${showCategoriesMenu ? 'rotate-180' : ''}`} />
                   </button>
-                  
-                  {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 animate-in slide-in-from-top-2 z-50">
-                      <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                        <div className="flex items-center space-x-2 sm:space-x-3">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center text-white font-bold">
-                            {user?.name?.charAt(0)?.toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm sm:text-base truncate">{user?.name}</p>
-                            <p className="text-blue-100 text-xs sm:text-sm truncate">{user?.email}</p>
-                          </div>
+                </div>
+
+                {/* Center - Navigation Menu */}
+                <nav className="hidden lg:flex items-center space-x-6 flex-1 justify-center" role="navigation">
+                  {navItems.map((item) => (
+                    <div
+                      key={item.name}
+                      className="relative"
+                      onMouseEnter={() => setActiveNavTab(item.name)}
+                      onMouseLeave={() => setActiveNavTab(null)}
+                    >
+                      <Link
+                        to={item.path}
+                        className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="uppercase text-xs">{item.name}</span>
+                        <ChevronDown className="h-3 w-3 opacity-60" />
+                      </Link>
+                    </div>
+                  ))}
+                  {/* Fashion with its own mega menu */}
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setActiveNavTab('Fashion')}
+                    onMouseLeave={() => setActiveNavTab(null)}
+                  >
+                    <Link
+                      to="/shop?filter=fashion"
+                      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                    >
+                      <Shirt className="h-4 w-4" />
+                      <span className="uppercase text-xs">Fashion</span>
+                      <ChevronDown className="h-3 w-3 opacity-60" />
+                    </Link>
+                  </div>
+                </nav>
+
+                {/* Right side - Wallet Section */}
+                <div className="hidden lg:block flex-shrink-0">
+                  <Link
+                    to="/wallet"
+                    className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-all duration-300 group"
+                    aria-label="Wallet"
+                  >
+                    <Wallet className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="text-xs">
+                      <div className="text-[10px] text-green-600 dark:text-green-500">Wallet</div>
+                      <div className="font-semibold">KES 0.00</div>
+                    </div>
+                  </Link>
+                </div>
+
+                {/* Mega Menu Dropdown - positioned at container level */}
+                {showCategoriesMenu && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                    <div className="flex">
+                      {/* Left Sidebar - Category Tabs */}
+                      <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+                        <div className="space-y-2">
+                          {Object.entries(categories).map(([id, category]) => (
+                            <button
+                              key={id}
+                              onMouseOver={() => setActiveTab(parseInt(id))}
+                              className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
+                                activeTab === parseInt(id)
+                                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <category.icon className="h-5 w-5" />
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm">{category.name}</div>
+                                <div className="text-xs text-gray-500">{category.count} items</div>
+                              </div>
+                            </button>
+                          ))}
                         </div>
                       </div>
-                      
-                      <div className="p-1 sm:p-2">
-                        <Link
-                          to="/profile"
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg sm:rounded-xl transition-all duration-300 text-sm"
-                        >
-                          <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span>My Profile</span>
-                        </Link>
-                        <Link
-                          to="/orders"
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg sm:rounded-xl transition-all duration-300 text-sm"
-                        >
-                          <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span>My Orders</span>
-                        </Link>
-                        <Link
-                          to="/wishlist"
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg sm:rounded-xl transition-all duration-300 text-sm"
-                        >
-                          <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span>Wishlist</span>
-                        </Link>
-                        {user?.role === 'admin' && (
-                          <Link
-                            to="/admin"
-                            onClick={() => setShowUserMenu(false)}
-                            className="flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg sm:rounded-xl transition-all duration-300 text-sm"
+
+                      {/* Right Content - Category Items */}
+                      <div className="flex-1 p-6">
+                        {Object.entries(categories).map(([id, category]) => (
+                          <div
+                            key={id}
+                            className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
                           >
-                            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-                            <span>Admin Dashboard</span>
-                          </Link>
-                        )}
-                        <hr className="my-1 sm:my-2 border-gray-200 dark:border-gray-700" />
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg sm:rounded-xl transition-all duration-300 text-sm"
-                        >
-                          <X className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span>Sign Out</span>
-                        </button>
+                            <div className="mb-4">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                {category.name}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {category.description}
+                              </p>
+                            </div>
+                            
+                            {/* Masonry Grid Layout */}
+                            <ul className="masonry" style={{columnCount: 5}}>
+                              {category.subcategories.map((subcategory, index) => (
+                                <li key={index} className="mb-3 break-inside-avoid">
+                                  <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                    {subcategory.name}
+                                  </div>
+                                  <ul className="space-y-1">
+                                    {subcategory.items.map((item, itemIndex) => (
+                                      <li key={itemIndex} className="py-1">
+                                        <Link
+                                          to={`/category/${item.slug}`}
+                                          className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                          onClick={() => setShowCategoriesMenu(false)}
+                                        >
+                                          {item.name}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {/* Navigation Mega Menus */}
+                {activeNavTab && navItems.find(item => item.name === activeNavTab) && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                    <div className="p-6">
+                      {/* Get category data based on nav item */}
+                      {(() => {
+                        let categoryData;
+                        if (activeNavTab === 'Promos') categoryData = categories[566];
+                        else if (activeNavTab === 'Food & Cupboard') categoryData = categories[2138];
+                        else if (activeNavTab === 'Electronics') categoryData = categories[4567];
+                        else if (activeNavTab === 'Home & Garden') categoryData = categories[6789];
+                        else if (activeNavTab === 'Voucher') {
+                          categoryData = {
+                            name: "Vouchers & Gift Cards",
+                            description: "Digital vouchers and gift cards for all occasions",
+                            subcategories: [
+                              {
+                                name: "Shopping Vouchers",
+                                items: [
+                                  { name: "Electronics Vouchers", slug: "electronics-vouchers" },
+                                  { name: "Fashion Vouchers", slug: "fashion-vouchers" },
+                                  { name: "Food Vouchers", slug: "food-vouchers" },
+                                  { name: "General Shopping", slug: "general-vouchers" }
+                                ]
+                              },
+                              {
+                                name: "Gift Cards",
+                                items: [
+                                  { name: "Birthday Cards", slug: "birthday-cards" },
+                                  { name: "Holiday Cards", slug: "holiday-cards" },
+                                  { name: "Anniversary Cards", slug: "anniversary-cards" },
+                                  { name: "Custom Cards", slug: "custom-cards" }
+                                ]
+                              },
+                              {
+                                name: "Digital Codes",
+                                items: [
+                                  { name: "Gaming Codes", slug: "gaming-codes" },
+                                  { name: "App Store Credits", slug: "app-store-credits" },
+                                  { name: "Streaming Services", slug: "streaming-vouchers" },
+                                  { name: "Online Services", slug: "online-services" }
+                                ]
+                              }
+                            ]
+                          };
+                        }
+
+                        return categoryData ? (
+                          <>
+                            <div className="mb-4">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                {categoryData.name}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {categoryData.description}
+                              </p>
+                            </div>
+                            
+                            {/* Masonry Grid Layout */}
+                            <ul className="masonry" style={{columnCount: 5}}>
+                              {categoryData.subcategories.map((subcategory, index) => (
+                                <li key={index} className="mb-3 break-inside-avoid">
+                                  <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                    {subcategory.name}
+                                  </div>
+                                  <ul className="space-y-1">
+                                    {subcategory.items.map((subItem, itemIndex) => (
+                                      <li key={itemIndex} className="py-1">
+                                        <Link
+                                          to={`/category/${subItem.slug}`}
+                                          className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                          onClick={() => setActiveNavTab(null)}
+                                        >
+                                          {subItem.name}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fashion Mega Menu */}
+                {activeNavTab === 'Fashion' && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          {categories[5678].name}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {categories[5678].description}
+                        </p>
+                      </div>
+                      
+                      {/* Fashion Masonry Layout */}
+                      <ul className="masonry" style={{columnCount: 5}}>
+                        {categories[5678].subcategories.map((subcategory, index) => (
+                          <li key={index} className="mb-3 break-inside-avoid">
+                            <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                              {subcategory.name}
+                            </div>
+                            <ul className="space-y-1">
+                              {subcategory.items.map((item, itemIndex) => (
+                                <li key={itemIndex} className="py-1">
+                                  <Link
+                                    to={`/category/${item.slug}`}
+                                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                    onClick={() => setActiveNavTab(null)}
+                                  >
+                                    {item.name}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-y-auto">
+            {/* Menu Header */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold">Menu</h2>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 text-gray-700 dark:text-gray-300"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Categories Section */}
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-3">Shop Categories</h3>
+              <div className="space-y-1">
+                {Object.entries(categories).map(([id, category]) => (
+                  <div key={id} className="border-l-2 border-blue-200 pl-3">
+                    <button
+                      onClick={() => setActiveTab(activeTab === parseInt(id) ? null : parseInt(id))}
+                      className="flex items-center justify-between w-full py-2"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <category.icon className="h-5 w-5 text-blue-600" />
+                        <span>{category.name}</span>
+                      </div>
+                      <ChevronDown className={`h-5 w-5 transition-transform ${activeTab === parseInt(id) ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {activeTab === parseInt(id) && (
+                      <div className="ml-8 mt-1 space-y-2">
+                        {category.subcategories.map((subcategory, subIdx) => (
+                          <div key={subIdx} className="pt-1">
+                            <h4 className="font-medium text-sm pb-1">{subcategory.name}</h4>
+                            <ul className="ml-3 space-y-1.5">
+                              {subcategory.items.map((item, itemIdx) => (
+                                <li key={itemIdx}>
+                                  <Link
+                                    to={`/category/${item.slug}`}
+                                    className="block py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                  >
+                                    {item.name}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <nav className="space-y-1">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                ))}
+                {/* Fashion for mobile */}
+                <Link
+                  to="/shop?filter=fashion"
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Shirt className="h-5 w-5" />
+                  <span>Fashion</span>
+                </Link>
+              </nav>
+            </div>
+
+            {/* User Section */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              {isAuthenticated ? (
+                <>
+                  <div className="flex items-center space-x-3 px-3 py-2.5">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
+                      {user?.name?.charAt(0)?.toUpperCase() || 'L'}
+                    </div>
+                    <div>
+                      <p className="font-medium">{user?.name || 'Larry'}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email || 'user@example.com'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full mt-3 px-3 py-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-left"
+                  >
+                    Sign Out
+                  </button>
+                </>
               ) : (
-                <div className="flex items-center space-x-1 sm:space-x-2">
+                <div className="space-y-2">
                   <Link
                     to="/login"
-                    className="hidden sm:inline-block px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 transition-colors duration-300"
+                    className="block w-full px-3 py-2.5 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/register"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-purple-700"
+                    className="block w-full px-3 py-2.5 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <span className="hidden sm:inline">Get Started</span>
-                    <span className="sm:hidden">Join</span>
+                    Create Account
                   </Link>
                 </div>
               )}
-
-              {/* Mobile Menu Toggle */}
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(!isMobileMenuOpen);
-                  setIsSearchOpen(false);
-                }}
-                className="xl:hidden p-2 sm:p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg sm:rounded-xl transition-all duration-300"
-                aria-label="Menu"
-                aria-expanded={isMobileMenuOpen}
-              >
-                {isMobileMenuOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
-              </button>
             </div>
           </div>
-
-          {/* Mobile Search */}
-          {isSearchOpen && (
-            <div className="md:hidden py-3 px-3 sm:px-4 border-t border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-2">
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full px-4 py-3 pl-10 pr-16 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
-                  autoFocus
-                  aria-label="Search products"
-                />
-                <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md text-xs font-medium transition-all duration-300"
-                  disabled={searchLoading}
-                  aria-label="Search"
-                >
-                  {searchLoading ? '...' : 'Go'}
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* Mobile Navigation */}
-          {isMobileMenuOpen && (
-            <div className="xl:hidden py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-4">
-              <nav className="space-y-1" role="navigation">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
-                    onClick={closeMobileMenu}
-                  >
-                    <span className="font-medium text-sm sm:text-base">{item.name}</span>
-                    {item.badge && (
-                      <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                        item.badge === 'New' 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-red-500 text-white'
-                      }`}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-                
-                {/* Mobile Auth Buttons */}
-                {!isAuthenticated && (
-                  <div className="pt-3 space-y-2 border-t border-gray-200 dark:border-gray-700 mt-3">
-                    <Link
-                      to="/login"
-                      className="block w-full px-3 sm:px-4 py-2 sm:py-3 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-sm"
-                      onClick={closeMobileMenu}
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      to="/register"
-                      className="block w-full px-3 sm:px-4 py-2 sm:py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300 text-sm"
-                      onClick={closeMobileMenu}
-                    >
-                      Get Started
-                    </Link>
-                  </div>
-                )}
-              </nav>
-            </div>
-          )}
-        </div>
+        )}
       </header>
+
+      {/* Backdrop for mobile menu */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" 
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
       {/* Backdrop for user menu */}
       {showUserMenu && (
         <div 
           className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm" 
           onClick={() => setShowUserMenu(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Backdrop for mobile menu */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm xl:hidden" 
-          onClick={closeMobileMenu}
-          aria-hidden="true"
         />
       )}
     </>

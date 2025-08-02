@@ -3,9 +3,11 @@ import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2 } from 'lu
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import userService from '../services/userService'; // Add this import if not present
+import { useLocation } from 'react-router-dom';
 
 const Profile = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +50,14 @@ const Profile = () => {
       .catch(() => setAddresses([]));
     // Optionally, fetch profile data from backend and update profileData here if needed
   }, []);
+
+  // Open addresses tab if navigated with /profile?tab=addresses
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('tab') === 'addresses') {
+      setActiveTab('addresses');
+    }
+  }, [location.search]);
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
