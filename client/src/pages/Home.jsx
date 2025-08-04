@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, Truck, Shield, Headphones, Award, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { ArrowRight, Star, Truck, Shield, Headphones, Award, ChevronLeft, ChevronRight, Play, Pause, ShoppingCart, Heart } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -11,6 +11,8 @@ import PromoModalManager from '../components/common/PromoModalManager';
 import ExitIntentModal from '../components/common/ExitIntentModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useCategories } from '../contexts/CategoryContext';
+import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import toast from 'react-hot-toast';
 
 // Updated Visa Promo Banner component with better spacing and visibility
@@ -42,6 +44,8 @@ const Home = () => {
   const newArrivalsSwiperRef = useRef(null);
   const [checkThisOutProducts, setCheckThisOutProducts] = useState([]);
   const checkThisOutSwiperRef = useRef(null);
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   // Banner data (replace heroSlides)
   const banners = [
@@ -157,6 +161,20 @@ const Home = () => {
       // Error toast handled in context
     }
     setNewsletterLoading(false);
+  };
+
+  // Add these handler functions to actually use the context methods
+  const handleAddToCart = (product) => {
+    addToCart(product);
+  };
+
+  const handleWishlistToggle = (product) => {
+    if (isInWishlist(product._id || product.id)) {
+      removeFromWishlist(product._id || product.id);
+    } else {
+      // Pass the product object with an 'id' property as expected by the context
+      addToWishlist({ id: product._id || product.id });
+    }
   };
 
   if (loading) {
@@ -340,17 +358,16 @@ const Home = () => {
      
 
       {/* Enhanced Featured Products */}
-    <section className="py-12 sm:py-14 md:py-18">
+    <section className="py-4 sm:py-6 md:py-8">
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-<div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
-
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
         Featured Products
       </h2>
       <div className="flex space-x-2">
         <button
-          className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+          className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
           onClick={() => swiperRef.current?.slidePrev()}
           type="button"
         >
@@ -359,7 +376,7 @@ const Home = () => {
           </svg>
         </button>
         <button
-          className="rounded-full p-2 bg-blue-600 hover:bg-blue-700"
+          className="rounded-full p-2 bg-blue-600 hover:bg-blue-700 transition-colors"
           onClick={() => swiperRef.current?.slideNext()}
           type="button"
         >
@@ -385,88 +402,91 @@ const Home = () => {
       onSwiper={(swiper) => {
         swiperRef.current = swiper;
       }}
-      pagination={{ clickable: true }}
-      className="px-1 pb-10"
+      className="pb-8"
     >
       {featuredProducts.map((product) => (
-        <SwiperSlide key={product._id || product.id} className="h-full">
-          <div className="h-full flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 group hover:-translate-y-1.5">
-            <Link to={`/product/${product._id || product.id}`} className="flex flex-col h-full">
-              {/* Image */}
-              <div className="aspect-square overflow-hidden relative">
-                <img
-                  src={product.images?.[0]?.url || product.images?.[0] || ''}
-                  alt={product.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                {product.salePrice && (
-                  <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-semibold">
-                    -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-              </div>
+        <SwiperSlide key={product._id || product.id}>
+          {/* Product Card - Matching Just For You Style */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+            {/* Product Image */}
+            <div className="aspect-square overflow-hidden relative">
+              <img 
+                src={product.images?.[0]?.url || product.images?.[0] || ''}
+                alt={product.title}
+                className="w-full h-48 object-cover rounded-t-lg"
+              />
+              {/* Featured Badge */}
+              {product.salePrice && (
+                <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                </div>
+              )}
+            </div>
 
-              {/* Content */}
-              <div className="p-4 flex flex-col flex-1 justify-between">
-                <div>
-                  <span className="text-[10px] sm:text-[11px] text-blue-600 dark:text-blue-400 uppercase font-medium tracking-wide">
-                    {typeof product.brand === 'object' ? product.brand.name : product.brand}
-                  </span>
+            {/* Product Details */}
+            <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
+              {/* Product Name - Two lines with second line truncation */}
+              <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                <span className="line-clamp-2">
+                  {product.title}
+                </span>
+              </h3>
 
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {product.title}
-                  </h3>
-
-                  <div className="flex items-center space-x-1 mb-2">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3.5 h-3.5 ${i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                        />
-                      ))}
-                      <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-1">
-                        {product.rating}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                      ({product.reviewCount})
+              {/* Price Section - Reduced top margin */}
+              <div className="mt-1">
+                <div className="flex items-baseline">
+                  <p className="text-red-600 font-bold text-base">
+                    KES {product.salePrice || product.price}
+                  </p>
+                  {product.salePrice && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                      KES {product.price}
                     </span>
-                  </div>
+                  )}
                 </div>
-
-                {/* Price + Arrow */}
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center space-x-1">
-                    {product.salePrice ? (
-                      <>
-                        <span className="text-sm font-bold text-red-600">Ksh {product.salePrice}</span>
-                        <span className="text-xs text-gray-500 line-through">Ksh {product.price}</span>
-                      </>
-                    ) : (
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
-                    )}
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <ArrowRight className="w-4 h-4 text-blue-600" />
-                  </div>
-                </div>
+                {product.salePrice && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                    Save KES {Math.floor(product.price - product.salePrice)}
+                  </p>
+                )}
               </div>
-            </Link>
+
+              {/* Spacer to maintain consistent height */}
+              <div className="flex-grow"></div>
+
+              {/* Button Group - Reduced top margin */}
+              <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                <button
+                  onClick={() => handleAddToCart(product)}
+                  className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                >
+                  <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-xs sm:text-sm">Add to Cart</span>
+                </button>
+                <button
+                  onClick={() => handleWishlistToggle(product)}
+                  className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                    isInWishlist(product._id)
+                      ? 'bg-red-50 border-red-200 text-red-600'
+                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  } flex items-center justify-center`}
+                >
+                  <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+            </div>
           </div>
         </SwiperSlide>
       ))}
     </Swiper>
 
     {/* View All Button */}
-    <div className="text-center mt-12">
+    <div className="text-center mt-8">
       <Link
         to="/shop"
-        className="inline-flex items-center space-x-2 px-5 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg text-sm"
+        className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
       >
-        <span>View All</span>
-        <ArrowRight className="w-4 h-4" />
+        View All Products
       </Link>
     </div>
   </div>
@@ -562,16 +582,16 @@ const Home = () => {
   </div>
 </section>
 
-<section className="py-0 sm:py-2 md:py-3">
+<section className="py-4 sm:py-6 md:py-8">
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-<div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
         New Arrivals
       </h2>
       <div className="flex space-x-2">
         <button
-          className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+          className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
           onClick={() => newArrivalsSwiperRef.current?.slidePrev()}
           type="button"
         >
@@ -580,7 +600,7 @@ const Home = () => {
           </svg>
         </button>
         <button
-          className="rounded-full p-2 bg-blue-600 hover:bg-blue-700"
+          className="rounded-full p-2 bg-blue-600 hover:bg-blue-700 transition-colors"
           onClick={() => newArrivalsSwiperRef.current?.slideNext()}
           type="button"
         >
@@ -606,88 +626,91 @@ const Home = () => {
       onSwiper={(swiper) => {
         newArrivalsSwiperRef.current = swiper;
       }}
-      pagination={{ clickable: true }}
-      className="px-1 pb-10"
+      className="pb-8"
     >
       {newArrivalProducts.map((product) => (
-        <SwiperSlide key={product._id || product.id} className="h-full">
-          <div className="h-full flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 group hover:-translate-y-1.5">
-            <Link to={`/product/${product._id || product.id}`} className="flex flex-col h-full">
-              {/* Image */}
-              <div className="aspect-square overflow-hidden relative">
-                <img
-                  src={product.images?.[0]?.url || product.images?.[0] || ''}
-                  alt={product.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                {product.salePrice && (
-                  <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-semibold">
-                    -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-              </div>
+        <SwiperSlide key={product._id || product.id}>
+          {/* Product Card - Matching Just For You Style */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+            {/* Product Image */}
+            <div className="aspect-square overflow-hidden relative">
+              <img 
+                src={product.images?.[0]?.url || product.images?.[0] || ''}
+                alt={product.title}
+                className="w-full h-48 object-cover rounded-t-lg"
+              />
+              {/* New Arrival Badge */}
+              {product.salePrice && (
+                <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                </div>
+              )}
+            </div>
 
-              {/* Content */}
-              <div className="p-4 flex flex-col flex-1 justify-between">
-                <div>
-                  <span className="text-[10px] sm:text-[11px] text-blue-600 dark:text-blue-400 uppercase font-medium tracking-wide">
-                    {typeof product.brand === 'object' ? product.brand.name : product.brand}
-                  </span>
+            {/* Product Details */}
+            <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
+              {/* Product Name - Two lines with second line truncation */}
+              <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                <span className="line-clamp-2">
+                  {product.title}
+                </span>
+              </h3>
 
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {product.title}
-                  </h3>
-
-                  <div className="flex items-center space-x-1 mb-2">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3.5 h-3.5 ${i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                        />
-                      ))}
-                      <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-1">
-                        {product.rating}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                      ({product.reviewCount})
+              {/* Price Section - Reduced top margin */}
+              <div className="mt-1">
+                <div className="flex items-baseline">
+                  <p className="text-red-600 font-bold text-base">
+                    KES {product.salePrice || product.price}
+                  </p>
+                  {product.salePrice && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                      KES {product.price}
                     </span>
-                  </div>
+                  )}
                 </div>
-
-                {/* Price + Arrow */}
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center space-x-1">
-                    {product.salePrice ? (
-                      <>
-                        <span className="text-sm font-bold text-red-600">Ksh {product.salePrice}</span>
-                        <span className="text-xs text-gray-500 line-through">Ksh {product.price}</span>
-                      </>
-                    ) : (
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
-                    )}
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <ArrowRight className="w-4 h-4 text-blue-600" />
-                  </div>
-                </div>
+                {product.salePrice && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                    Save KES {Math.floor(product.price - product.salePrice)}
+                  </p>
+                )}
               </div>
-            </Link>
+
+              {/* Spacer to maintain consistent height */}
+              <div className="flex-grow"></div>
+
+              {/* Button Group - Reduced top margin */}
+              <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                <button
+                  onClick={() => handleAddToCart(product)}
+                  className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                >
+                  <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-xs sm:text-sm">Add to Cart</span>
+                </button>
+                <button
+                  onClick={() => handleWishlistToggle(product)}
+                  className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                    isInWishlist(product._id)
+                      ? 'bg-red-50 border-red-200 text-red-600'
+                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  } flex items-center justify-center`}
+                >
+                  <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+            </div>
           </div>
         </SwiperSlide>
       ))}
     </Swiper>
 
     {/* View All Button */}
-    <div className="text-center mt-12">
+    <div className="text-center mt-8">
       <Link
         to="/shop?sort=newest"
-        className="inline-flex items-center space-x-2 px-5 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg text-sm"
+        className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
       >
-        <span>View All</span>
-        <ArrowRight className="w-4 h-4" />
+        View All Products
       </Link>
     </div>
   </div>
@@ -700,19 +723,16 @@ const Home = () => {
 
 
       {/* Trending Products with Enhanced Design */}
-<section className="py-0 sm:py-2 md:py-3">
-
-
+<section className="py-4 sm:py-6 md:py-8">
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-<div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
-
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-      Just For You
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+        Just For You
       </h2>
       <div className="flex space-x-2">
         <button
-          className="trending-swiper-prev rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+          className="just-for-you-swiper-prev rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
           aria-label="Previous"
         >
           <svg className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -720,7 +740,7 @@ const Home = () => {
           </svg>
         </button>
         <button
-          className="trending-swiper-next rounded-full p-2 bg-blue-600 hover:bg-blue-700"
+          className="just-for-you-swiper-next rounded-full p-2 bg-blue-600 hover:bg-blue-700 transition-colors"
           aria-label="Next"
         >
           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -734,8 +754,8 @@ const Home = () => {
     <Swiper
       modules={[Navigation]}
       navigation={{
-        nextEl: '.trending-swiper-next',
-        prevEl: '.trending-swiper-prev',
+        nextEl: '.just-for-you-swiper-next',
+        prevEl: '.just-for-you-swiper-prev',
       }}
       spaceBetween={16}
       slidesPerView={2}
@@ -746,78 +766,91 @@ const Home = () => {
         1024: { slidesPerView: 5 },
         1280: { slidesPerView: 6 },
       }}
-      className="px-1 pb-10"
+      className="pb-8"
     >
       {trendingProducts.map((product, index) => (
-        <SwiperSlide key={product._id || product.id} className="h-full">
-          <div className="h-full flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 group hover:-translate-y-1.5 relative">
-            {/* Badge */}
-            <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold z-10">
-              #{index + 1} Trending
+        <SwiperSlide key={product._id || product.id}>
+          {/* Product Card - Matching Check This Out Style */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+            {/* Product Image */}
+            <div className="aspect-square overflow-hidden relative">
+              <img 
+                src={product.images?.[0]?.url || product.images?.[0] || ''}
+                alt={product.title}
+                className="w-full h-48 object-cover rounded-t-lg"
+              />
+              {/* Trending Badge */}
+              <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                #{index + 1} Trending
+              </div>
             </div>
 
-            <Link to={`/product/${product._id || product.id}`} className="flex flex-col h-full">
-              {/* Image */}
-              <div className="aspect-square overflow-hidden relative">
-                <img
-                  src={product.images?.[0]?.url || product.images?.[0] || ''}
-                  alt={product.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-              </div>
+            {/* Product Details */}
+            <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
+              {/* Product Name - Two lines with second line truncation */}
+              <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                <span className="line-clamp-2">
+                  {product.title}
+                </span>
+              </h3>
 
-              {/* Content */}
-              <div className="p-4 flex flex-col flex-1 justify-between">
-                <div>
-                  <span className="text-[10px] sm:text-[11px] text-blue-600 dark:text-blue-400 uppercase font-medium tracking-wide">
-                    {typeof product.brand === 'object' ? product.brand.name : product.brand}
-                  </span>
-
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {product.title}
-                  </h3>
-
-                  <div className="flex items-center space-x-1 mb-2">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3.5 h-3.5 ${i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                        />
-                      ))}
-                      <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-1">
-                        {product.rating}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                      ({product.reviewCount})
+              {/* Price Section - Reduced top margin */}
+              <div className="mt-1">
+                <div className="flex items-baseline">
+                  <p className="text-red-600 font-bold text-base">
+                    KES {product.salePrice || product.price}
+                  </p>
+                  {product.salePrice && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                      KES {product.price}
                     </span>
-                  </div>
+                  )}
                 </div>
-
-                {/* Price + Arrow */}
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center space-x-1">
-                    {product.salePrice ? (
-                      <>
-                        <span className="text-sm font-bold text-red-600">Ksh {product.salePrice}</span>
-                        <span className="text-xs text-gray-500 line-through">Ksh {product.price}</span>
-                      </>
-                    ) : (
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
-                    )}
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <ArrowRight className="w-4 h-4 text-blue-600" />
-                  </div>
-                </div>
+                {product.salePrice && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                    Save KES {Math.floor(product.price - product.salePrice)}
+                  </p>
+                )}
               </div>
-            </Link>
+
+              {/* Spacer to maintain consistent height */}
+              <div className="flex-grow"></div>
+
+              {/* Button Group - Reduced top margin */}
+              <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                <button
+                  onClick={() => handleAddToCart(product)}
+                  className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                >
+                  <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-xs sm:text-sm">Add to Cart</span>
+                </button>
+                <button
+                  onClick={() => handleWishlistToggle(product)}
+                  className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                    isInWishlist(product._id)
+                      ? 'bg-red-50 border-red-200 text-red-600'
+                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  } flex items-center justify-center`}
+                >
+                  <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+            </div>
           </div>
         </SwiperSlide>
       ))}
     </Swiper>
+
+    {/* View All Button */}
+    <div className="text-center mt-8">
+      <Link
+        to="/shop?sort=just-for-you"
+        className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
+      >
+        View All Products
+      </Link>
+    </div>
   </div>
 </section>
 
@@ -836,17 +869,16 @@ const Home = () => {
   </div>
 </section>
 
-<section className="py-0 sm:py-2 md:py-3">
-
+ <section className="py-4 sm:py-6 md:py-8">
   <div className="container mx-auto px-4">
     {/* Header + Navigation */}
-  <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
-    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
         Check This Out
       </h2>
       <div className="flex space-x-2">
         <button
-          className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+          className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
           onClick={() => checkThisOutSwiperRef.current?.slidePrev()}
           type="button"
         >
@@ -855,7 +887,7 @@ const Home = () => {
           </svg>
         </button>
         <button
-          className="rounded-full p-2 bg-blue-600 hover:bg-blue-700"
+          className="rounded-full p-2 bg-blue-600 hover:bg-blue-700 transition-colors"
           onClick={() => checkThisOutSwiperRef.current?.slideNext()}
           type="button"
         >
@@ -881,88 +913,94 @@ const Home = () => {
       onSwiper={(swiper) => {
         checkThisOutSwiperRef.current = swiper;
       }}
-      pagination={{ clickable: true }}
-      className="px-1 pb-10"
+      className="pb-8"
     >
-      {checkThisOutProducts.map((product) => (
-        <SwiperSlide key={product._id || product.id} className="h-full">
-          <div className="h-full flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 group hover:-translate-y-1.5">
-            <Link to={`/product/${product._id || product.id}`} className="flex flex-col h-full">
-              {/* Image */}
+      {checkThisOutProducts.map((product) => {
+        // Log the payload for each product card
+        console.log('Check This Out product payload:', product);
+        return (
+          <SwiperSlide key={product._id || product.id}>
+            {/* Product Card - Matching Naivas Style */}
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+              {/* Product Image */}
               <div className="aspect-square overflow-hidden relative">
-                <img
+                <img 
                   src={product.images?.[0]?.url || product.images?.[0] || ''}
                   alt={product.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-48 object-cover rounded-t-lg"
                 />
+                {/* Discount Badge */}
                 {product.salePrice && (
-                  <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-semibold">
+                  <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
                     -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
               </div>
 
-              {/* Content */}
-              <div className="p-4 flex flex-col flex-1 justify-between">
-                <div>
-                  <span className="text-[10px] sm:text-[11px] text-blue-600 dark:text-blue-400 uppercase font-medium tracking-wide">
-                    {typeof product.brand === 'object' ? product.brand.name : product.brand}
-                  </span>
+              {/* Product Details */}
+              <div className="p-4 flex flex-col" style={{ minHeight: '160px' }}>
+                {/* Product Name */}
+                <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                  {product.title}
+                </h3>
 
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {product.title}
-                  </h3>
-
-                  <div className="flex items-center space-x-1 mb-2">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3.5 h-3.5 ${i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                        />
-                      ))}
-                      <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-1">
-                        {product.rating}
+                {/* Price Section */}
+                <div className="mt-2">
+                  <div className="flex items-baseline">
+                    <p className="text-red-600 font-bold">
+                      KES {product.salePrice || product.price}
+                    </p>
+                    {product.salePrice && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                        KES {product.price}
                       </span>
-                    </div>
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                      ({product.reviewCount})
-                    </span>
-                  </div>
-                </div>
-
-                {/* Price + Arrow */}
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center space-x-1">
-                    {product.salePrice ? (
-                      <>
-                        <span className="text-sm font-bold text-red-600">Ksh {product.salePrice}</span>
-                        <span className="text-xs text-gray-500 line-through">Ksh {product.price}</span>
-                      </>
-                    ) : (
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
                     )}
                   </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <ArrowRight className="w-4 h-4 text-blue-600" />
-                  </div>
+                  {product.salePrice && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      Save KES {Math.floor(product.price - product.salePrice)}
+                    </p>
+                  )}
                 </div>
+
+                {/* Spacer to maintain consistent height */}
+                <div className="flex-grow"></div>
+
+                {/* Add to Cart Button */}
+                {/* Button Group - Adjusted spacing and widths */}
+<div className="flex items-center gap-0.5 sm:gap-1 mt-2 pt-1">
+  <button
+    onClick={() => handleAddToCart(product)}
+    className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+  >
+    <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+    <span className="text-xs sm:text-sm">Add to Cart</span>
+  </button>
+  <button
+    onClick={() => handleWishlistToggle(product)}
+    className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+      isInWishlist(product._id)
+        ? 'bg-red-50 border-red-200 text-red-600'
+        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+    } flex items-center justify-center`}
+  >
+    <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+  </button>
+</div>
               </div>
-            </Link>
-          </div>
-        </SwiperSlide>
-      ))}
+            </div>
+          </SwiperSlide>
+        );
+      })}
     </Swiper>
 
     {/* View All Button */}
-    <div className="text-center mt-12">
+    <div className="text-center mt-8">
       <Link
         to="/shop?sort=check-this-out"
-        className="inline-flex items-center space-x-2 px-5 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg text-sm"
+        className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
       >
-        <span>View All</span>
-        <ArrowRight className="w-4 h-4" />
+        View All Products
       </Link>
     </div>
   </div>

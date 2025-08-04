@@ -434,74 +434,80 @@ const Shop = () => {
                 {filteredProducts.map(product => (
                   <div
                     key={product._id}
-                    className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow ${
-                      viewMode === 'list' ? 'flex' : 'flex flex-col'
+                    className={`border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white dark:bg-gray-900 ${
+                      viewMode === 'list' ? 'flex' : 'flex flex-col h-full'
                     }`}
                   >
-                    {/* Product Image (same as before) */}
+                    {/* Product Image */}
                     <Link to={`/product/${product._id}`} className={viewMode === 'list' ? 'flex-shrink-0' : ''}>
-                      <div className={`${viewMode === 'list' ? 'w-32 sm:w-48 aspect-square' : 'aspect-square'} overflow-hidden`}>
+                      <div className={`${viewMode === 'list' ? 'w-32 sm:w-48 aspect-square' : 'aspect-square'} overflow-hidden relative`}>
                         <img
                           src={product.images[0]?.url || 'https://via.placeholder.com/300'}
                           alt={product.title}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          className={`w-full ${viewMode === 'list' ? 'h-full' : 'h-48'} object-cover ${viewMode === 'grid' ? 'rounded-t-lg' : ''}`}
                         />
+                        {/* Discount Badge */}
+                        {product.salePrice && (
+                          <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                            -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                          </div>
+                        )}
                       </div>
                     </Link>
                     
                     {/* Product Info + Buttons Container */}
-                    <div className={`p-3 md:p-4 flex flex-col h-full ${
-                      viewMode === 'list' ? 'flex-1' : ''
-                    }`}>
+                    <div className={`p-3 flex flex-col ${
+                      viewMode === 'list' ? 'flex-1' : 'h-full'
+                    }`} style={viewMode === 'grid' ? { minHeight: '160px' } : {}}>
                       {/* Product Details */}
                       <div className="flex-grow">
                         <Link to={`/product/${product._id}`}>
-                          <h3 className="font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 transition-colors line-clamp-2">
-                            {product.title}
+                          {/* Product Name - Two lines with second line truncation */}
+                          <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden hover:text-blue-600 transition-colors mb-1">
+                            <span className="line-clamp-2">
+                              {product.title}
+                            </span>
                           </h3>
                         </Link>
-                        <div className="flex items-center space-x-2 mb-2">
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
-                              {product.rating || 0}
-                            </span>
-                          </div>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            ({product.reviewCount || 0})
-                          </span>
-                        </div>
 
-                        <div className="flex items-center space-x-2 mb-3">
-                          {product.salePrice ? (
-                            <>
-                              <span className="text-lg font-bold text-red-600">Ksh {product.salePrice}</span>
-                              <span className="text-gray-500 line-through">Ksh {product.price}</span>
-                            </>
-                          ) : (
-                            <span className="text-lg font-bold text-gray-900 dark:text-white">Ksh {product.price}</span>
+                        {/* Price Section - Reduced top margin */}
+                        <div className="mt-1">
+                          <div className="flex items-baseline">
+                            <p className="text-red-600 font-bold text-base">
+                              KES {product.salePrice || product.price}
+                            </p>
+                            {product.salePrice && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                                KES {product.price}
+                              </span>
+                            )}
+                          </div>
+                          {product.salePrice && (
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                              Save KES {Math.floor(product.price - product.salePrice)}
+                            </p>
                           )}
                         </div>
                       </div>
 
                       {/* Buttons Container */}
-                      <div className="flex items-center space-x-1 sm:space-x-2 mt-auto pt-2">
+                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
                         <button
                           onClick={() => handleAddToCart(product)}
-                          className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
                         >
                           <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           <span className="text-xs sm:text-sm">Add to Cart</span>
                         </button>
                         <button
                           onClick={() => handleWishlistToggle(product)}
-                          className={`p-2 rounded-lg border transition-colors ${
+                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
                             isInWishlist(product._id)
                               ? 'bg-red-50 border-red-200 text-red-600'
                               : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                          }`}
+                          } flex items-center justify-center`}
                         >
-                          <Heart className={`h-4 w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                          <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
                         </button>
                       </div>
                     </div>

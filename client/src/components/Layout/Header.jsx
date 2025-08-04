@@ -357,9 +357,7 @@ const Header = () => {
       if (!e.target.closest('[data-menu]')) {
         setShowUserMenu(false);
       }
-      if (!e.target.closest('[data-categories-menu]')) {
-        setShowCategoriesMenu(false);
-      }
+      // Removed categories menu click outside handler since we're using pure hover
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -557,25 +555,22 @@ const Header = () => {
                 <div className="hidden lg:flex items-center space-x-6">
                   {/* Deliver To Section */}
                   <div className="flex items-center space-x-2 text-sm">
-  <MapPin className="h-4 w-4 text-gray-500" />
-  <div>
-    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-      Deliver to
-      <Link
-        to="/profile?tab=addresses"
-        className="text-[10px] font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
-      >
-        Change
-      </Link>
-    </div>
-    <div className="font-medium text-gray-900 dark:text-white">
-      {deliverToLocation}
-    </div>
-  </div>
-  
-</div>
-
-
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                        Deliver to
+                        <Link
+                          to="/profile?tab=addresses"
+                          className="text-[10px] font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
+                        >
+                          Change
+                        </Link>
+                      </div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {deliverToLocation}
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Welcome User / User Menu */}
                   <div className="relative" data-menu>
@@ -726,18 +721,17 @@ const Header = () => {
           </div>
 
           {/* Bottom Row - Navigation with Categories Only */}
-          {/* Bottom Row - Navigation with Categories Only */}
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="max-w-7xl mx-auto px-2">
               <div className="flex items-center justify-between h-16 relative">
                 
-                {/* Left side - Categories Button */}
+                {/* Categories Button + Dropdown Wrapper - FIXED HOVER BEHAVIOR */}
                 <div 
-                  className="relative flex-shrink-0" 
-                  data-categories-menu
-                  onMouseEnter={() => setShowCategoriesMenu(true)} 
+                  className="relative flex-shrink-0"
+                  onMouseEnter={() => setShowCategoriesMenu(true)}
                   onMouseLeave={() => setShowCategoriesMenu(false)}
                 >
+                  {/* Categories Button */}
                   <button
                     className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-300 font-medium text-sm tracking-widest"
                     aria-label="Categories"
@@ -747,43 +741,260 @@ const Header = () => {
                     <span className="uppercase">Categories</span>
                     <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${showCategoriesMenu ? 'rotate-180' : ''}`} />
                   </button>
+
+                  {/* Mega Menu Dropdown */}
+                  {showCategoriesMenu && (
+                    <div 
+                      className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                      style={{ width: 'calc(100vw - 4rem)', left: '-2rem' }}
+                      onMouseEnter={() => setShowCategoriesMenu(true)}
+                      onMouseLeave={() => setShowCategoriesMenu(false)}
+                    >
+                      <div className="flex">
+                        {/* Left Sidebar - Category Tabs */}
+                        <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+                          <div className="space-y-2">
+                            {Object.entries(categories).map(([id, category]) => (
+                              <button
+                                key={id}
+                                onMouseOver={() => setActiveTab(parseInt(id))}
+                                className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
+                                  activeTab === parseInt(id)
+                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                }`}
+                              >
+                                <category.icon className="h-5 w-5" />
+                                <div className="min-w-0">
+                                  <div className="font-medium text-sm">{category.name}</div>
+                                  <div className="text-xs text-gray-500">{category.count} items</div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Right Content - Category Items */}
+                        <div className="flex-1 p-6">
+                          {Object.entries(categories).map(([id, category]) => (
+                            <div
+                              key={id}
+                              className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
+                            >
+                              <div className="mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                  {category.name}
+                                </h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {category.description}
+                                </p>
+                              </div>
+                              
+                              {/* Masonry Grid Layout */}
+                              <ul className="masonry" style={{columnCount: 5}}>
+                                {category.subcategories.map((subcategory, index) => (
+                                  <li key={index} className="mb-3 break-inside-avoid">
+                                    <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                      {subcategory.name}
+                                    </div>
+                                    <ul className="space-y-1">
+                                      {subcategory.items.map((item, itemIndex) => (
+                                        <li key={itemIndex} className="py-1">
+                                          <Link
+                                            to={`/category/${item.slug}`}
+                                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                            onClick={() => setShowCategoriesMenu(false)}
+                                          >
+                                            {item.name}
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Center - Navigation Menu */}
-                <nav className="hidden lg:flex items-center space-x-6 flex-1 justify-center" role="navigation">
-                  {navItems.map((item) => (
-                    <div
-                      key={item.name}
-                      className="relative"
-                      onMouseEnter={() => setActiveNavTab(item.name)}
-                      onMouseLeave={() => setActiveNavTab(null)}
-                    >
-                      <Link
-                        to={item.path}
-                        className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span className="uppercase text-xs">{item.name}</span>
-                        <ChevronDown className="h-3 w-3 opacity-60" />
-                      </Link>
-                    </div>
-                  ))}
-                  {/* Fashion with its own mega menu */}
-                  <div
-                    className="relative"
-                    onMouseEnter={() => setActiveNavTab('Fashion')}
-                    onMouseLeave={() => setActiveNavTab(null)}
-                  >
-                    <Link
-                      to="/shop?filter=fashion"
-                      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
-                    >
-                      <Shirt className="h-4 w-4" />
-                      <span className="uppercase text-xs">Fashion</span>
-                      <ChevronDown className="h-3 w-3 opacity-60" />
-                    </Link>
+                {/* Center - Navigation Menu */}
+<nav className="hidden lg:flex items-center space-x-6 flex-1 justify-center" role="navigation">
+  {navItems.map((item) => (
+    <div
+      key={item.name}
+      className="relative"
+      onMouseEnter={() => setActiveNavTab(item.name)}
+      onMouseLeave={() => setActiveNavTab(null)}
+    >
+      <Link
+        to={item.path}
+        className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+      >
+        <item.icon className="h-4 w-4" />
+        <span className="uppercase text-xs">{item.name}</span>
+        <ChevronDown className="h-3 w-3 opacity-60" />
+      </Link>
+
+      {/* Individual Nav Item Mega Menu - Now Full Width */}
+      {activeNavTab === item.name && (
+        <div 
+          className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+          style={{ width: 'calc(100vw - 4rem)', left: '-2rem' }}
+          onMouseEnter={() => setActiveNavTab(item.name)}
+          onMouseLeave={() => setActiveNavTab(null)}
+        >
+          <div className="p-6">
+            {/* Get category data based on nav item */}
+            {(() => {
+              let categoryData;
+              if (item.name === 'Promos') categoryData = categories[566];
+              else if (item.name === 'Food & Cupboard') categoryData = categories[2138];
+              else if (item.name === 'Electronics') categoryData = categories[4567];
+              else if (item.name === 'Home & Garden') categoryData = categories[6789];
+              else if (item.name === 'Voucher') {
+                categoryData = {
+                  name: "Vouchers & Gift Cards",
+                  description: "Digital vouchers and gift cards for all occasions",
+                  subcategories: [
+                    {
+                      name: "Shopping Vouchers",
+                      items: [
+                        { name: "Electronics Vouchers", slug: "electronics-vouchers" },
+                        { name: "Fashion Vouchers", slug: "fashion-vouchers" },
+                        { name: "Food Vouchers", slug: "food-vouchers" },
+                        { name: "General Shopping", slug: "general-vouchers" }
+                      ]
+                    },
+                    {
+                      name: "Gift Cards",
+                      items: [
+                        { name: "Birthday Cards", slug: "birthday-cards" },
+                        { name: "Holiday Cards", slug: "holiday-cards" },
+                        { name: "Anniversary Cards", slug: "anniversary-cards" },
+                        { name: "Custom Cards", slug: "custom-cards" }
+                      ]
+                    },
+                    {
+                      name: "Digital Codes",
+                      items: [
+                        { name: "Gaming Codes", slug: "gaming-codes" },
+                        { name: "App Store Credits", slug: "app-store-credits" },
+                        { name: "Streaming Services", slug: "streaming-vouchers" },
+                        { name: "Online Services", slug: "online-services" }
+                      ]
+                    }
+                  ]
+                };
+              }
+
+              return categoryData ? (
+                <>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      {categoryData.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {categoryData.description}
+                    </p>
                   </div>
-                </nav>
+                  
+                  {/* Masonry Grid Layout - Now 5 columns like categories */}
+                  <ul className="masonry" style={{columnCount: 5}}>
+                    {categoryData.subcategories.map((subcategory, index) => (
+                      <li key={index} className="mb-3 break-inside-avoid">
+                        <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                          {subcategory.name}
+                        </div>
+                        <ul className="space-y-1">
+                          {subcategory.items.map((subItem, itemIndex) => (
+                            <li key={itemIndex} className="py-1">
+                              <Link
+                                to={`/category/${subItem.slug}`}
+                                className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                onClick={() => setActiveNavTab(null)}
+                              >
+                                {subItem.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null;
+            })()}
+          </div>
+        </div>
+      )}
+    </div>
+  ))}
+  
+  {/* Fashion Mega Menu - Now Full Width */}
+  <div
+    className="relative"
+    onMouseEnter={() => setActiveNavTab('Fashion')}
+    onMouseLeave={() => setActiveNavTab(null)}
+  >
+    <Link
+      to="/shop?filter=fashion"
+      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+    >
+      <Shirt className="h-4 w-4" />
+      <span className="uppercase text-xs">Fashion</span>
+      <ChevronDown className="h-3 w-3 opacity-60" />
+    </Link>
+
+    {activeNavTab === 'Fashion' && (
+      <div 
+        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+        style={{ width: 'calc(100vw - 4rem)', left: '-2rem' }}
+        onMouseEnter={() => setActiveNavTab('Fashion')}
+        onMouseLeave={() => setActiveNavTab(null)}
+      >
+        <div className="p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              {categories[5678].name}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {categories[5678].description}
+            </p>
+          </div>
+          
+          {/* Fashion Masonry Layout - Now 5 columns */}
+          <ul className="masonry" style={{columnCount: 5}}>
+            {categories[5678].subcategories.map((subcategory, index) => (
+              <li key={index} className="mb-3 break-inside-avoid">
+                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                  {subcategory.name}
+                </div>
+                <ul className="space-y-1">
+                  {subcategory.items.map((item, itemIndex) => (
+                    <li key={itemIndex} className="py-1">
+                      <Link
+                        to={`/category/${item.slug}`}
+                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                        onClick={() => setActiveNavTab(null)}
+                      >
+                        {item.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    )}
+  </div>
+</nav>
 
                 {/* Right side - Wallet Section */}
                 <div className="hidden lg:block flex-shrink-0">
@@ -799,207 +1010,6 @@ const Header = () => {
                     </div>
                   </Link>
                 </div>
-
-                {/* Mega Menu Dropdown - positioned at container level */}
-                {showCategoriesMenu && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
-                    <div className="flex">
-                      {/* Left Sidebar - Category Tabs */}
-                      <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
-                        <div className="space-y-2">
-                          {Object.entries(categories).map(([id, category]) => (
-                            <button
-                              key={id}
-                              onMouseOver={() => setActiveTab(parseInt(id))}
-                              className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
-                                activeTab === parseInt(id)
-                                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                              }`}
-                            >
-                              <category.icon className="h-5 w-5" />
-                              <div className="min-w-0">
-                                <div className="font-medium text-sm">{category.name}</div>
-                                <div className="text-xs text-gray-500">{category.count} items</div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Right Content - Category Items */}
-                      <div className="flex-1 p-6">
-                        {Object.entries(categories).map(([id, category]) => (
-                          <div
-                            key={id}
-                            className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
-                          >
-                            <div className="mb-4">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                {category.name}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {category.description}
-                              </p>
-                            </div>
-                            
-                            {/* Masonry Grid Layout */}
-                            <ul className="masonry" style={{columnCount: 5}}>
-                              {category.subcategories.map((subcategory, index) => (
-                                <li key={index} className="mb-3 break-inside-avoid">
-                                  <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                    {subcategory.name}
-                                  </div>
-                                  <ul className="space-y-1">
-                                    {subcategory.items.map((item, itemIndex) => (
-                                      <li key={itemIndex} className="py-1">
-                                        <Link
-                                          to={`/category/${item.slug}`}
-                                          className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                          onClick={() => setShowCategoriesMenu(false)}
-                                        >
-                                          {item.name}
-                                        </Link>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Navigation Mega Menus */}
-                {activeNavTab && navItems.find(item => item.name === activeNavTab) && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
-                    <div className="p-6">
-                      {/* Get category data based on nav item */}
-                      {(() => {
-                        let categoryData;
-                        if (activeNavTab === 'Promos') categoryData = categories[566];
-                        else if (activeNavTab === 'Food & Cupboard') categoryData = categories[2138];
-                        else if (activeNavTab === 'Electronics') categoryData = categories[4567];
-                        else if (activeNavTab === 'Home & Garden') categoryData = categories[6789];
-                        else if (activeNavTab === 'Voucher') {
-                          categoryData = {
-                            name: "Vouchers & Gift Cards",
-                            description: "Digital vouchers and gift cards for all occasions",
-                            subcategories: [
-                              {
-                                name: "Shopping Vouchers",
-                                items: [
-                                  { name: "Electronics Vouchers", slug: "electronics-vouchers" },
-                                  { name: "Fashion Vouchers", slug: "fashion-vouchers" },
-                                  { name: "Food Vouchers", slug: "food-vouchers" },
-                                  { name: "General Shopping", slug: "general-vouchers" }
-                                ]
-                              },
-                              {
-                                name: "Gift Cards",
-                                items: [
-                                  { name: "Birthday Cards", slug: "birthday-cards" },
-                                  { name: "Holiday Cards", slug: "holiday-cards" },
-                                  { name: "Anniversary Cards", slug: "anniversary-cards" },
-                                  { name: "Custom Cards", slug: "custom-cards" }
-                                ]
-                              },
-                              {
-                                name: "Digital Codes",
-                                items: [
-                                  { name: "Gaming Codes", slug: "gaming-codes" },
-                                  { name: "App Store Credits", slug: "app-store-credits" },
-                                  { name: "Streaming Services", slug: "streaming-vouchers" },
-                                  { name: "Online Services", slug: "online-services" }
-                                ]
-                              }
-                            ]
-                          };
-                        }
-
-                        return categoryData ? (
-                          <>
-                            <div className="mb-4">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                {categoryData.name}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {categoryData.description}
-                              </p>
-                            </div>
-                            
-                            {/* Masonry Grid Layout */}
-                            <ul className="masonry" style={{columnCount: 5}}>
-                              {categoryData.subcategories.map((subcategory, index) => (
-                                <li key={index} className="mb-3 break-inside-avoid">
-                                  <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                    {subcategory.name}
-                                  </div>
-                                  <ul className="space-y-1">
-                                    {subcategory.items.map((subItem, itemIndex) => (
-                                      <li key={itemIndex} className="py-1">
-                                        <Link
-                                          to={`/category/${subItem.slug}`}
-                                          className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                          onClick={() => setActiveNavTab(null)}
-                                        >
-                                          {subItem.name}
-                                        </Link>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </li>
-                              ))}
-                            </ul>
-                          </>
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
-                )}
-
-                {/* Fashion Mega Menu */}
-                {activeNavTab === 'Fashion' && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
-                    <div className="p-6">
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                          {categories[5678].name}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {categories[5678].description}
-                        </p>
-                      </div>
-                      
-                      {/* Fashion Masonry Layout */}
-                      <ul className="masonry" style={{columnCount: 5}}>
-                        {categories[5678].subcategories.map((subcategory, index) => (
-                          <li key={index} className="mb-3 break-inside-avoid">
-                            <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                              {subcategory.name}
-                            </div>
-                            <ul className="space-y-1">
-                              {subcategory.items.map((item, itemIndex) => (
-                                <li key={itemIndex} className="py-1">
-                                  <Link
-                                    to={`/category/${item.slug}`}
-                                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                    onClick={() => setActiveNavTab(null)}
-                                  >
-                                    {item.name}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
