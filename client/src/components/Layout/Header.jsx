@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Beef, Home, Shirt, Smartphone, Book, Gift, Star, Wallet, CreditCard } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 
@@ -13,6 +13,7 @@ const Header = () => {
   const [showCategoriesMenu, setShowCategoriesMenu] = useState(false);
   const [activeTab, setActiveTab] = useState(566); // Default to Promos
   const [activeNavTab, setActiveNavTab] = useState(null); // For navigation mega menus
+  const [mouseInsideNavDropdown, setMouseInsideNavDropdown] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const { getTotalItems } = useCart();
   const navigate = useNavigate();
@@ -350,6 +351,8 @@ const Header = () => {
         setIsMobileMenuOpen(false);
         setShowUserMenu(false);
         setShowCategoriesMenu(false);
+        setActiveNavTab(null);
+        setMouseInsideNavDropdown(false);
       }
     };
 
@@ -357,7 +360,6 @@ const Header = () => {
       if (!e.target.closest('[data-menu]')) {
         setShowUserMenu(false);
       }
-      // Removed categories menu click outside handler since we're using pure hover
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -374,8 +376,6 @@ const Header = () => {
     if (searchQuery.trim()) {
       setSearchLoading(true);
       try {
-        // Replace with your actual search service
-        // const results = await ProductService.searchProducts(searchQuery);
         navigate(`/shop?search=${encodeURIComponent(searchQuery)}`);
       } catch (err) {
         console.error('Search error:', err);
@@ -392,7 +392,7 @@ const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Example address payload (replace with actual data from account context or props)
+  // Example address payload
   const addressPayload = {
     success: true,
     addresses: [
@@ -417,6 +417,26 @@ const Header = () => {
     ? `${defaultAddress.state}, ${defaultAddress.country}`
     : "Nairobi, Kenya";
 
+  // Handler for nav mouse leave with delay
+  const handleNavMouseLeave = () => {
+    setTimeout(() => {
+      if (!mouseInsideNavDropdown) {
+        setActiveNavTab(null);
+      }
+    }, 150);
+  };
+
+  // Handlers for dropdown mouse events
+  const handleDropdownMouseEnter = (tabName) => {
+    setMouseInsideNavDropdown(true);
+    setActiveNavTab(tabName);
+  };
+
+  const handleDropdownMouseLeave = () => {
+    setMouseInsideNavDropdown(false);
+    setActiveNavTab(null);
+  };
+
   return (
     <>
       <header 
@@ -431,7 +451,6 @@ const Header = () => {
         <div className="lg:hidden bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
           {/* Top Row */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            {/* Hamburger + Brand */}
             <div className="flex items-center">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
@@ -446,8 +465,6 @@ const Header = () => {
                 </span>
               </Link>
             </div>
-            
-            {/* User Icon */}
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="p-2 text-gray-700 dark:text-gray-300"
@@ -486,7 +503,6 @@ const Header = () => {
               <Wallet className="h-5 w-5" />
               <span className="text-sm font-medium">KES 0.00</span>
             </Link>
-            
             <Link to="/cart" className="relative p-2 text-gray-700 dark:text-gray-300">
               <ShoppingCart className="h-6 w-6" />
               {getTotalItems() > 0 && (
@@ -504,8 +520,6 @@ const Header = () => {
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="max-w-7xl mx-auto px-2">
               <div className="flex items-center justify-between h-16 lg:h-20">
-                
-                {/* Brand Logo and Name */}
                 <Link 
                   to="/" 
                   className="flex items-center space-x-3 group shrink-0"
@@ -553,7 +567,6 @@ const Header = () => {
 
                 {/* Right Section - Account, Cart, etc. */}
                 <div className="hidden lg:flex items-center space-x-6">
-                  {/* Deliver To Section */}
                   <div className="flex items-center space-x-2 text-sm">
                     <MapPin className="h-4 w-4 text-gray-500" />
                     <div>
@@ -572,7 +585,6 @@ const Header = () => {
                     </div>
                   </div>
 
-                  {/* Welcome User / User Menu */}
                   <div className="relative" data-menu>
                     {isAuthenticated ? (
                       <button
@@ -623,7 +635,6 @@ const Header = () => {
                                 </div>
                               </div>
                             </div>
-                            
                             <div className="p-2">
                               <Link
                                 to="/profile"
@@ -688,7 +699,6 @@ const Header = () => {
                     )}
                   </div>
 
-                  {/* Cart */}
                   <Link
                     to="/cart"
                     className="relative flex items-center space-x-2 p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all duration-300 group"
@@ -707,7 +717,6 @@ const Header = () => {
                   </Link>
                 </div>
 
-                {/* Mobile Menu Toggle */}
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="lg:hidden p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
@@ -720,18 +729,15 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Bottom Row - Navigation with Categories Only */}
+          {/* Bottom Row - Navigation with Categories */}
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="max-w-7xl mx-auto px-2">
+            <div className="max-w-7xl mx-auto px-2 relative">
               <div className="flex items-center justify-between h-16 relative">
-                
-                {/* Categories Button + Dropdown Wrapper - FIXED HOVER BEHAVIOR */}
                 <div 
-                  className="relative flex-shrink-0"
+                  className="flex-shrink-0 relative"
                   onMouseEnter={() => setShowCategoriesMenu(true)}
                   onMouseLeave={() => setShowCategoriesMenu(false)}
                 >
-                  {/* Categories Button */}
                   <button
                     className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-300 font-medium text-sm tracking-widest"
                     aria-label="Categories"
@@ -741,262 +747,40 @@ const Header = () => {
                     <span className="uppercase">Categories</span>
                     <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${showCategoriesMenu ? 'rotate-180' : ''}`} />
                   </button>
+                </div>
 
-                  {/* Mega Menu Dropdown */}
-                  {showCategoriesMenu && (
+                <nav className="hidden lg:flex items-center space-x-6 flex-1 justify-center" role="navigation">
+                  {navItems.map((item) => (
                     <div 
-                      className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
-                      style={{ width: 'calc(100vw - 4rem)', left: '-2rem' }}
-                      onMouseEnter={() => setShowCategoriesMenu(true)}
-                      onMouseLeave={() => setShowCategoriesMenu(false)}
+                      key={item.name}
+                      onMouseEnter={() => setActiveNavTab(item.name)}
+                      onMouseLeave={handleNavMouseLeave}
                     >
-                      <div className="flex">
-                        {/* Left Sidebar - Category Tabs */}
-                        <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
-                          <div className="space-y-2">
-                            {Object.entries(categories).map(([id, category]) => (
-                              <button
-                                key={id}
-                                onMouseOver={() => setActiveTab(parseInt(id))}
-                                className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
-                                  activeTab === parseInt(id)
-                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                                }`}
-                              >
-                                <category.icon className="h-5 w-5" />
-                                <div className="min-w-0">
-                                  <div className="font-medium text-sm">{category.name}</div>
-                                  <div className="text-xs text-gray-500">{category.count} items</div>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Right Content - Category Items */}
-                        <div className="flex-1 p-6">
-                          {Object.entries(categories).map(([id, category]) => (
-                            <div
-                              key={id}
-                              className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
-                            >
-                              <div className="mb-4">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                  {category.name}
-                                </h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {category.description}
-                                </p>
-                              </div>
-                              
-                              {/* Masonry Grid Layout */}
-                              <ul className="masonry" style={{columnCount: 5}}>
-                                {category.subcategories.map((subcategory, index) => (
-                                  <li key={index} className="mb-3 break-inside-avoid">
-                                    <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                      {subcategory.name}
-                                    </div>
-                                    <ul className="space-y-1">
-                                      {subcategory.items.map((item, itemIndex) => (
-                                        <li key={itemIndex} className="py-1">
-                                          <Link
-                                            to={`/category/${item.slug}`}
-                                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                            onClick={() => setShowCategoriesMenu(false)}
-                                          >
-                                            {item.name}
-                                          </Link>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Center - Navigation Menu */}
-                {/* Center - Navigation Menu */}
-<nav className="hidden lg:flex items-center space-x-6 flex-1 justify-center" role="navigation">
-  {navItems.map((item) => (
-    <div
-      key={item.name}
-      className="relative"
-      onMouseEnter={() => setActiveNavTab(item.name)}
-      onMouseLeave={() => setActiveNavTab(null)}
-    >
-      <Link
-        to={item.path}
-        className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
-      >
-        <item.icon className="h-4 w-4" />
-        <span className="uppercase text-xs">{item.name}</span>
-        <ChevronDown className="h-3 w-3 opacity-60" />
-      </Link>
-
-      {/* Individual Nav Item Mega Menu - Now Full Width */}
-      {activeNavTab === item.name && (
-        <div 
-          className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
-          style={{ width: 'calc(100vw - 4rem)', left: '-2rem' }}
-          onMouseEnter={() => setActiveNavTab(item.name)}
-          onMouseLeave={() => setActiveNavTab(null)}
-        >
-          <div className="p-6">
-            {/* Get category data based on nav item */}
-            {(() => {
-              let categoryData;
-              if (item.name === 'Promos') categoryData = categories[566];
-              else if (item.name === 'Food & Cupboard') categoryData = categories[2138];
-              else if (item.name === 'Electronics') categoryData = categories[4567];
-              else if (item.name === 'Home & Garden') categoryData = categories[6789];
-              else if (item.name === 'Voucher') {
-                categoryData = {
-                  name: "Vouchers & Gift Cards",
-                  description: "Digital vouchers and gift cards for all occasions",
-                  subcategories: [
-                    {
-                      name: "Shopping Vouchers",
-                      items: [
-                        { name: "Electronics Vouchers", slug: "electronics-vouchers" },
-                        { name: "Fashion Vouchers", slug: "fashion-vouchers" },
-                        { name: "Food Vouchers", slug: "food-vouchers" },
-                        { name: "General Shopping", slug: "general-vouchers" }
-                      ]
-                    },
-                    {
-                      name: "Gift Cards",
-                      items: [
-                        { name: "Birthday Cards", slug: "birthday-cards" },
-                        { name: "Holiday Cards", slug: "holiday-cards" },
-                        { name: "Anniversary Cards", slug: "anniversary-cards" },
-                        { name: "Custom Cards", slug: "custom-cards" }
-                      ]
-                    },
-                    {
-                      name: "Digital Codes",
-                      items: [
-                        { name: "Gaming Codes", slug: "gaming-codes" },
-                        { name: "App Store Credits", slug: "app-store-credits" },
-                        { name: "Streaming Services", slug: "streaming-vouchers" },
-                        { name: "Online Services", slug: "online-services" }
-                      ]
-                    }
-                  ]
-                };
-              }
-
-              return categoryData ? (
-                <>
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      {categoryData.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {categoryData.description}
-                    </p>
-                  </div>
-                  
-                  {/* Masonry Grid Layout - Now 5 columns like categories */}
-                  <ul className="masonry" style={{columnCount: 5}}>
-                    {categoryData.subcategories.map((subcategory, index) => (
-                      <li key={index} className="mb-3 break-inside-avoid">
-                        <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                          {subcategory.name}
-                        </div>
-                        <ul className="space-y-1">
-                          {subcategory.items.map((subItem, itemIndex) => (
-                            <li key={itemIndex} className="py-1">
-                              <Link
-                                to={`/category/${subItem.slug}`}
-                                className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                onClick={() => setActiveNavTab(null)}
-                              >
-                                {subItem.name}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : null;
-            })()}
-          </div>
-        </div>
-      )}
-    </div>
-  ))}
-  
-  {/* Fashion Mega Menu - Now Full Width */}
-  <div
-    className="relative"
-    onMouseEnter={() => setActiveNavTab('Fashion')}
-    onMouseLeave={() => setActiveNavTab(null)}
-  >
-    <Link
-      to="/shop?filter=fashion"
-      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
-    >
-      <Shirt className="h-4 w-4" />
-      <span className="uppercase text-xs">Fashion</span>
-      <ChevronDown className="h-3 w-3 opacity-60" />
-    </Link>
-
-    {activeNavTab === 'Fashion' && (
-      <div 
-        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
-        style={{ width: 'calc(100vw - 4rem)', left: '-2rem' }}
-        onMouseEnter={() => setActiveNavTab('Fashion')}
-        onMouseLeave={() => setActiveNavTab(null)}
-      >
-        <div className="p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              {categories[5678].name}
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {categories[5678].description}
-            </p>
-          </div>
-          
-          {/* Fashion Masonry Layout - Now 5 columns */}
-          <ul className="masonry" style={{columnCount: 5}}>
-            {categories[5678].subcategories.map((subcategory, index) => (
-              <li key={index} className="mb-3 break-inside-avoid">
-                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                  {subcategory.name}
-                </div>
-                <ul className="space-y-1">
-                  {subcategory.items.map((item, itemIndex) => (
-                    <li key={itemIndex} className="py-1">
                       <Link
-                        to={`/category/${item.slug}`}
-                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                        onClick={() => setActiveNavTab(null)}
+                        to={item.path}
+                        className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
                       >
-                        {item.name}
+                        <item.icon className="h-4 w-4" />
+                        <span className="uppercase text-xs">{item.name}</span>
+                        <ChevronDown className="h-3 w-3 opacity-60" />
                       </Link>
-                    </li>
+                    </div>
                   ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    )}
-  </div>
-</nav>
+                  <div
+                    onMouseEnter={() => setActiveNavTab('Fashion')}
+                    onMouseLeave={handleNavMouseLeave}
+                  >
+                    <Link
+                      to="/shop?filter=fashion"
+                      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                    >
+                      <Shirt className="h-4 w-4" />
+                      <span className="uppercase text-xs">Fashion</span>
+                      <ChevronDown className="h-3 w-3 opacity-60" />
+                    </Link>
+                  </div>
+                </nav>
 
-                {/* Right side - Wallet Section */}
                 <div className="hidden lg:block flex-shrink-0">
                   <Link
                     to="/wallet"
@@ -1011,135 +795,221 @@ const Header = () => {
                   </Link>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-y-auto">
-            {/* Menu Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-              <h2 className="text-xl font-bold">Menu</h2>
-              <button 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 text-gray-700 dark:text-gray-300"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Categories Section */}
-            <div className="p-4">
-              <h3 className="text-lg font-semibold mb-3">Shop Categories</h3>
-              <div className="space-y-1">
-                {Object.entries(categories).map(([id, category]) => (
-                  <div key={id} className="border-l-2 border-blue-200 pl-3">
-                    <button
-                      onClick={() => setActiveTab(activeTab === parseInt(id) ? null : parseInt(id))}
-                      className="flex items-center justify-between w-full py-2"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <category.icon className="h-5 w-5 text-blue-600" />
-                        <span>{category.name}</span>
-                      </div>
-                      <ChevronDown className={`h-5 w-5 transition-transform ${activeTab === parseInt(id) ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {activeTab === parseInt(id) && (
-                      <div className="ml-8 mt-1 space-y-2">
-                        {category.subcategories.map((subcategory, subIdx) => (
-                          <div key={subIdx} className="pt-1">
-                            <h4 className="font-medium text-sm pb-1">{subcategory.name}</h4>
-                            <ul className="ml-3 space-y-1.5">
-                              {subcategory.items.map((item, itemIdx) => (
-                                <li key={itemIdx}>
-                                  <Link
-                                    to={`/category/${item.slug}`}
-                                    className="block py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                  >
-                                    {item.name}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
+              {/* Categories Mega Menu Dropdown */}
+              {showCategoriesMenu && (
+                <div 
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                  style={{ marginTop: '-1px' }}
+                  onMouseEnter={() => setShowCategoriesMenu(true)}
+                  onMouseLeave={() => setShowCategoriesMenu(false)}
+                >
+                  <div className="flex">
+                    <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+                      <div className="space-y-2">
+                        {Object.entries(categories).map(([id, category]) => (
+                          <button
+                            key={id}
+                            onMouseOver={() => setActiveTab(parseInt(id))}
+                            className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
+                              activeTab === parseInt(id)
+                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <category.icon className="h-5 w-5" />
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm">{category.name}</div>
+                              <div className="text-xs text-gray-500">{category.count} items</div>
+                            </div>
+                          </button>
                         ))}
                       </div>
-                    )}
+                    </div>
+                    <div className="flex-1 p-6">
+                      {Object.entries(categories).map(([id, category]) => (
+                        <div
+                          key={id}
+                          className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
+                        >
+                          <div className="mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                              {category.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {category.description}
+                            </p>
+                          </div>
+                          <ul className="masonry" style={{ columnCount: 5 }}>
+                            {category.subcategories.map((subcategory, index) => (
+                              <li key={index} className="mb-3 break-inside-avoid">
+                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                  {subcategory.name}
+                                </div>
+                                <ul className="space-y-1">
+                                  {subcategory.items.map((item, itemIndex) => (
+                                    <li key={itemIndex} className="py-1">
+                                      <Link
+                                        to={`/category/${item.slug}`}
+                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                        onClick={() => setShowCategoriesMenu(false)}
+                                      >
+                                        {item.name}
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
 
-            {/* Navigation Links */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <nav className="space-y-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </Link>
-                ))}
-                {/* Fashion for mobile */}
-                <Link
-                  to="/shop?filter=fashion"
-                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  onClick={() => setIsMobileMenuOpen(false)}
+              {/* Nav Items Mega Menu Dropdowns */}
+              {activeNavTab && activeNavTab !== 'Fashion' && (
+                <div 
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                  style={{ marginTop: '-1px' }}
+                  onMouseEnter={() => handleDropdownMouseEnter(activeNavTab)}
+                  onMouseLeave={handleDropdownMouseLeave}
                 >
-                  <Shirt className="h-5 w-5" />
-                  <span>Fashion</span>
-                </Link>
-              </nav>
-            </div>
+                  <div className="p-6">
+                    {(() => {
+                      let categoryData;
+                      if (activeNavTab === 'Promos') categoryData = categories[566];
+                      else if (activeNavTab === 'Food & Cupboard') categoryData = categories[2138];
+                      else if (activeNavTab === 'Electronics') categoryData = categories[4567];
+                      else if (activeNavTab === 'Home & Garden') categoryData = categories[6789];
+                      else if (activeNavTab === 'Voucher') {
+                        categoryData = {
+                          name: "Vouchers & Gift Cards",
+                          description: "Digital vouchers and gift cards for all occasions",
+                          subcategories: [
+                            {
+                              name: "Shopping Vouchers",
+                              items: [
+                                { name: "Electronics Vouchers", slug: "electronics-vouchers" },
+                                { name: "Fashion Vouchers", slug: "fashion-vouchers" },
+                                { name: "Food Vouchers", slug: "food-vouchers" },
+                                { name: "General Shopping", slug: "general-vouchers" }
+                              ]
+                            },
+                            {
+                              name: "Gift Cards",
+                              items: [
+                                { name: "Birthday Cards", slug: "birthday-cards" },
+                                { name: "Holiday Cards", slug: "holiday-cards" },
+                                { name: "Anniversary Cards", slug: "anniversary-cards" },
+                                { name: "Custom Cards", slug: "custom-cards" }
+                              ]
+                            },
+                            {
+                              name: "Digital Codes",
+                              items: [
+                                { name: "Gaming Codes", slug: "gaming-codes" },
+                                { name: "App Store Credits", slug: "app-store-credits" },
+                                { name: "Streaming Services", slug: "streaming-vouchers" },
+                                { name: "Online Services", slug: "online-services" }
+                              ]
+                            }
+                          ]
+                        };
+                      }
 
-            {/* User Section */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              {isAuthenticated ? (
-                <>
-                  <div className="flex items-center space-x-3 px-3 py-2.5">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
-                      {user?.name?.charAt(0)?.toUpperCase() || 'L'}
-                    </div>
-                    <div>
-                      <p className="font-medium">{user?.name || 'Larry'}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email || 'user@example.com'}</p>
-                    </div>
+                      return categoryData ? (
+                        <>
+                          <div className="mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                              {categoryData.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {categoryData.description}
+                            </p>
+                          </div>
+                          <ul className="masonry" style={{ columnCount: 5 }}>
+                            {categoryData.subcategories.map((subcategory, index) => (
+                              <li key={index} className="mb-3 break-inside-avoid">
+                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                  {subcategory.name}
+                                </div>
+                                <ul className="space-y-1">
+                                  {subcategory.items.map((subItem, itemIndex) => (
+                                    <li key={itemIndex} className="py-1">
+                                      <Link
+                                        to={`/category/${subItem.slug}`}
+                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                        onClick={() => {
+                                          setActiveNavTab(null);
+                                          setMouseInsideNavDropdown(false);
+                                        }}
+                                      >
+                                        {subItem.name}
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : null;
+                    })()}
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full mt-3 px-3 py-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-left"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <div className="space-y-2">
-                  <Link
-                    to="/login"
-                    className="block w-full px-3 py-2.5 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="block w-full px-3 py-2.5 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Create Account
-                  </Link>
+                </div>
+              )}
+
+              {/* Fashion Mega Menu Dropdown */}
+              {activeNavTab === 'Fashion' && (
+                <div 
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                  style={{ marginTop: '-1px' }}
+                  onMouseEnter={() => handleDropdownMouseEnter('Fashion')}
+                  onMouseLeave={handleDropdownMouseLeave}
+                >
+                  <div className="p-6">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        {categories[5678].name}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {categories[5678].description}
+                      </p>
+                    </div>
+                    <ul className="masonry" style={{ columnCount: 5 }}>
+                      {categories[5678].subcategories.map((subcategory, index) => (
+                        <li key={index} className="mb-3 break-inside-avoid">
+                          <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                            {subcategory.name}
+                          </div>
+                          <ul className="space-y-1">
+                            {subcategory.items.map((item, itemIndex) => (
+                              <li key={itemIndex} className="py-1">
+                                <Link
+                                  to={`/category/${item.slug}`}
+                                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                  onClick={() => {
+                                    setActiveNavTab(null);
+                                    setMouseInsideNavDropdown(false);
+                                  }}
+                                >
+                                  {item.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               )}
             </div>
           </div>
-        )}
+        </div>
       </header>
 
       {/* Backdrop for mobile menu */}

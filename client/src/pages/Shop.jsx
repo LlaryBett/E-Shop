@@ -182,7 +182,7 @@ const Shop = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-36 lg:pt-24">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -190,15 +190,15 @@ const Shop = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-36 lg:pt-24">
         <div className="text-red-500 text-lg">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
+      <div className="container mx-auto px-4 py-4">
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 lg:mb-0">Shop</h1>
@@ -224,55 +224,52 @@ const Shop = () => {
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             <div className="flex items-center flex-wrap gap-2 w-full">
               <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-  <div className="flex items-center space-x-4 flex-wrap">
-    {/* Updated Select with width-controlling container */}
-    <div className="flex-1 min-w-0">
-      <select
-        value={`${sortBy.field}-${sortBy.direction}`}
-        onChange={(e) => {
-          const [field, direction] = e.target.value.split('-');
-          setSortBy({ field, direction });
-        }}
-        className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white w-full"
-      >
-        <option value="createdAt-desc">Newest First</option>
-        <option value="createdAt-asc">Oldest First</option>
-        <option value="price-asc">Price: Low to High</option>
-        <option value="price-desc">Price: High to Low</option>
-        <option value="rating-desc">Highest Rated</option>
-        <option value="title-asc">Name: A to Z</option>
-      </select>
-    </div>
+                <div className="flex items-center space-x-4 flex-wrap">
+                  {/* Updated Select with width-controlling container */}
+                  <div className="flex-1 min-w-0">
+                    <select
+                      value={`${sortBy.field}-${sortBy.direction}`}
+                      onChange={(e) => {
+                        const [field, direction] = e.target.value.split('-');
+                        setSortBy({ field, direction });
+                      }}
+                      className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white w-full"
+                    >
+                      <option value="createdAt-desc">Newest First</option>
+                      <option value="createdAt-asc">Oldest First</option>
+                      <option value="price-asc">Price: Low to High</option>
+                      <option value="price-desc">Price: High to Low</option>
+                      <option value="rating-desc">Highest Rated</option>
+                      <option value="title-asc">Name: A to Z</option>
+                    </select>
+                  </div>
 
-    <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shrink-0">
-      <button
-        onClick={() => setViewMode('grid')}
-        className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
-      >
-        <Grid className="h-4 w-4" />
-      </button>
-      <button
-        onClick={() => setViewMode('list')}
-        className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
-      >
-        <List className="h-4 w-4" />
-      </button>
-    </div>
+                  <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shrink-0">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+                    >
+                      <Grid className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                  </div>
 
-    <button
-      onClick={() => setShowFilters(!showFilters)}
-      className="lg:hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 shrink-0"
-      aria-expanded={showFilters}
-      aria-controls="filter-sidebar"
-    >
-      <Filter className="h-4 w-4" />
-      <span>Filters</span>
-    </button>
-  </div>
-</div>
-
-
-              
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="lg:hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 shrink-0"
+                    aria-expanded={showFilters}
+                    aria-controls="filter-sidebar"
+                  >
+                    <Filter className="h-4 w-4" />
+                    <span>Filters</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

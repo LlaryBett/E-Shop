@@ -48,7 +48,7 @@ class ProductService {
   }
 
   async getRelatedProducts(productId, categoryId) {
-    const response = await api.get(`/products?category=${categoryId}&exclude=${productId}&limit=4`);
+    const response = await api.get(`/products?category=${categoryId}&exclude=${productId}&limit=12`);
     return response.data.products;
   }
 
