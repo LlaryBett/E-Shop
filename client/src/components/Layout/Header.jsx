@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet, Heart } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet, Heart, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 
@@ -14,6 +14,10 @@ const Header = () => {
   const [activeTab, setActiveTab] = useState(566); // Default to Promos
   const [activeNavTab, setActiveNavTab] = useState(null); // For navigation mega menus
   const [mouseInsideNavDropdown, setMouseInsideNavDropdown] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.classList.contains('dark') || 
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
   const { user, logout, isAuthenticated } = useAuth();
   const { getTotalItems } = useCart();
   const navigate = useNavigate();
@@ -437,6 +441,28 @@ const Header = () => {
     setActiveNavTab(null);
   };
 
+  const toggleDarkMode = () => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark');
+      localStorage.theme = 'light';
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.theme = 'dark';
+    }
+    setIsDarkMode(!isDarkMode);
+  };
+
+  useEffect(() => {
+    // On initial load, set the theme based on localStorage or system preference
+    if (localStorage.theme === 'dark' || (!localStorage.theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      setIsDarkMode(true);
+    } else {
+      document.documentElement.classList.remove('dark');
+      setIsDarkMode(false);
+    }
+  }, []);
+
   return (
     <>
       <header 
@@ -465,13 +491,22 @@ const Header = () => {
                 </span>
               </Link>
             </div>
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="p-2 text-gray-700 dark:text-gray-300"
-              aria-label="Account"
-            >
-              <User className="h-6 w-6" />
-            </button>
+            <div className="flex items-center">
+              <button
+                onClick={toggleDarkMode}
+                className="p-2 text-gray-700 dark:text-gray-300 mr-2"
+                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="p-2 text-gray-700 dark:text-gray-300"
+                aria-label="Account"
+              >
+                <User className="h-6 w-6" />
+              </button>
+            </div>
           </div>
 
           {/* Location Row */}
@@ -567,6 +602,17 @@ const Header = () => {
 
       {/* Right Section - Account, Cart, etc. */}
       <div className="hidden lg:flex items-center space-x-3">
+        <button
+          onClick={toggleDarkMode}
+          className="p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200"
+          aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {isDarkMode ? 
+            <Sun className="h-5 w-5 text-yellow-500" /> : 
+            <Moon className="h-5 w-5 text-blue-600" />
+          }
+        </button>
+
         <div className="flex items-center space-x-2 text-base">
           <MapPin className="h-4 w-4 text-gray-500" />
           <div>
