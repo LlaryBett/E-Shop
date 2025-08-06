@@ -79,7 +79,7 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
-      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 flex items-center justify-center py-12">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 flex items-center justify-center py-12">
         <div className="w-full max-w-4xl">
           <div className="lg:flex lg:space-x-8">
             {/* Left side - Create account section (shown only on lg screens) */}

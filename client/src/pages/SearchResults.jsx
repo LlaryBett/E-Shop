@@ -122,7 +122,7 @@ const SearchResults = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
-      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-4">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-4">
         {/* Breadcrumb Navigation */}
         <nav className="mb-4 overflow-x-auto py-1">
           <ol className="flex items-center space-x-2 text-xs md:text-sm whitespace-nowrap">

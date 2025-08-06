@@ -138,7 +138,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
-      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-4">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-4">
         <nav className="mb-8">
           <ol className="flex items-center space-x-2 text-sm">
             <li><Link to="/" className="text-gray-500 hover:text-gray-700">Home</Link></li>

@@ -174,7 +174,7 @@ const FAQ = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
       {/* Hero Section - Updated to match banner styling */}
       <section className="relative overflow-hidden my-0 sm:my-1 md:my-2">
-        <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
+        <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
           <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-r from-blue-600 to-purple-700 text-white" style={{ aspectRatio: '4.6875 / 1' }}>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
               <HelpCircle className="h-16 w-16 mx-auto mb-4 text-blue-200" />
@@ -187,7 +187,7 @@ const FAQ = () => {
         </div>
       </section>
 
-      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-4">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-4">
         {/* Search and Filters */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -224,7 +224,7 @@ const FAQ = () => {
           <div className="lg:col-span-3">
             {filteredFAQs.length === 0 ? (
               <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-44 lg:pt-32">
-                <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-4">
+                <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-4">
                   <div className="text-center py-12">
                     <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No FAQs found</h3>

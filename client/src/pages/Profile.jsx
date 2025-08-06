@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2, Bell } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationsContext'; // Add the .jsx extension
 import toast from 'react-hot-toast';
-import userService from '../services/userService'; // Add this import if not present
+import userService from '../services/userService';
 import { useLocation } from 'react-router-dom';
 
 const Profile = () => {
@@ -11,6 +12,16 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+
+  // Define the tabs array that was missing
+  const tabs = [
+    { id: 'profile', label: 'Profile Information', icon: User },
+    { id: 'addresses', label: 'Addresses', icon: MapPin },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'security', label: 'Security', icon: Edit3 },
+  ];
 
   // Initialize from user context, but update from backend on mount
   const [profileData, setProfileData] = useState({
@@ -28,8 +39,19 @@ const Profile = () => {
     confirmPassword: '',
   });
 
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
+  // Replace local notifications state with context
+  const { 
+    getFilteredNotifications, 
+    markAsRead, 
+    markAllAsRead, 
+    deleteNotification, 
+    loading: notificationsLoading, 
+    filter, 
+    setFilter,
+    sortBy,
+    setSortBy,
+    refresh: refreshNotifications
+  } = useNotifications();
 
   useEffect(() => {
     // If user context is updated after refresh, update state
@@ -58,6 +80,16 @@ const Profile = () => {
       setActiveTab('addresses');
     }
   }, [location.search]);
+
+  useEffect(() => {
+    // Fetch notifications if notifications tab is active
+    if (activeTab === 'notifications') {
+      refreshNotifications();
+      // Add debugging logs
+      console.log('Filter:', filter);
+      console.log('Raw notifications:', getFilteredNotifications());
+    }
+  }, [activeTab, refreshNotifications]);
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -132,15 +164,50 @@ const Profile = () => {
     }
   };
 
-  const tabs = [
-    { id: 'profile', label: 'Profile Information', icon: User },
-    { id: 'addresses', label: 'Addresses', icon: MapPin },
-    { id: 'security', label: 'Security', icon: Edit3 },
-  ];
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'order':
+        return <div className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg></div>;
+      case 'system':
+        return <div className="p-2 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>;
+      case 'price':
+        return <div className="p-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>;
+      default:
+        return <div className="p-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded-full"><Bell className="w-5 h-5" /></div>;
+    }
+  };
+
+  // Format time utility function
+  const formatNotificationTime = (timestamp) => {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diff = now - date;
+    
+    // Less than an hour
+    if (diff < 3600000) {
+      const minutes = Math.floor(diff / 60000);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    }
+    
+    // Less than a day
+    if (diff < 86400000) {
+      const hours = Math.floor(diff / 3600000);
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    }
+    
+    // Less than a week
+    if (diff < 86400000 * 7) {
+      const days = Math.floor(diff / 86400000);
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
+    }
+    
+    // Format as date
+    return date.toLocaleDateString();
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">My Account</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -358,6 +425,130 @@ const Profile = () => {
                 )}
               </div>
             )}
+
+            {/* Notifications */}
+            {activeTab === 'notifications' && (
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-6">
+    <div className="mb-4 sm:mb-6">
+      <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
+        Notifications
+      </h2>
+      
+      {/* Mobile-responsive controls */}
+      <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-2 flex-1 min-w-0">
+            <label htmlFor="notification-filter" className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+              Filter:
+            </label>
+            <select 
+              id="notification-filter"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="flex-1 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md py-1.5 px-2 dark:bg-gray-700 dark:text-white min-w-0"
+            >
+              <option value="all">All</option>
+              <option value="unread">Unread</option>
+              <option value="order">Orders</option>
+              <option value="system">System</option>
+              <option value="price">Price Alerts</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center space-x-1 sm:space-x-2 flex-1 min-w-0">
+            <label htmlFor="notification-sort" className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+              Sort:
+            </label>
+            <select 
+              id="notification-sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="flex-1 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md py-1.5 px-2 dark:bg-gray-700 dark:text-white min-w-0"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="unread">Unread first</option>
+            </select>
+          </div>
+        </div>
+        
+        <button
+          onClick={markAllAsRead}
+          className="w-full sm:w-auto text-xs sm:text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 sm:py-0 text-center sm:text-left"
+        >
+          Mark all as read
+        </button>
+      </div>
+    </div>
+
+    {notificationsLoading ? (
+      <div className="flex justify-center py-6 sm:py-8">
+        <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
+      </div>
+    ) : getFilteredNotifications().length === 0 ? (
+      <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400">
+        <Bell className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-gray-400" />
+        <p className="text-sm sm:text-base">You don't have any notifications yet.</p>
+      </div>
+    ) : (
+      <div className="space-y-3 sm:space-y-4">
+        {getFilteredNotifications().map(notification => (
+          <div 
+            key={notification.id} 
+            className={`flex p-3 sm:p-4 border ${
+              notification.isRead 
+                ? 'border-gray-200 dark:border-gray-700' 
+                : 'border-blue-100 dark:border-blue-900/30 bg-blue-50 dark:bg-blue-900/10'
+            } rounded-lg transition-all`}
+          >
+            {/* Icon - hidden on very small screens */}
+            <div className="hidden xs:block mr-3 sm:mr-4 flex-shrink-0">
+              {getNotificationIcon(notification.type)}
+            </div>
+            
+            {/* Content */}
+            <div className="flex-grow min-w-0 pr-2">
+              <p className={`text-xs sm:text-sm ${
+                notification.isRead 
+                  ? 'text-gray-600 dark:text-gray-300' 
+                  : 'text-gray-900 dark:text-white font-medium'
+              } leading-relaxed break-words`}>
+                {notification.message}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-1">
+                {formatNotificationTime(notification.timestamp)}
+              </p>
+            </div>
+            
+            {/* Actions - stacked vertically on mobile */}
+            <div className="flex flex-col xs:flex-row items-center space-y-1 xs:space-y-0 xs:space-x-1 sm:space-x-2 flex-shrink-0">
+              {!notification.isRead && (
+                <button 
+                  onClick={() => markAsRead(notification.id)}
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-1"
+                  title="Mark as read"
+                  aria-label="Mark as read"
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              )}
+              <button 
+                onClick={() => deleteNotification(notification.id)}
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
+                title="Delete notification"
+                aria-label="Delete notification"
+              >
+                <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
             {/* Security */}
             {activeTab === 'security' && (

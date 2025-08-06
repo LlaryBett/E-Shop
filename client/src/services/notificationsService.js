@@ -36,9 +36,12 @@ class NotificationsService {
   async getNotifications(params = {}) {
     try {
       const data = await this._makeAuthRequest('get', '/notifications', null, params);
-      return data?.notifications || [];
+      // Fix: Extract notifications from the nested structure you showed in the API response
+      console.log('API response structure:', data);
+      return data?.data?.notifications || [];
     } catch (error) {
       if (error.isAuthError) throw error;
+      console.error('Failed to get notifications:', error);
       return []; // Return empty array on other errors
     }
   }

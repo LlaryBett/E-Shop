@@ -185,7 +185,7 @@ const Login = () => {
         </div>
       )}
 
-      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 flex items-center justify-center py-12">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 flex items-center justify-center py-12">
         <div className="w-full max-w-4xl">
           <div className="lg:flex lg:space-x-8">
             {/* Left side - Welcome section (shown only on lg screens) */}

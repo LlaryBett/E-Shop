@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet, Heart, Sun, Moon } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 
@@ -14,10 +14,6 @@ const Header = () => {
   const [activeTab, setActiveTab] = useState(566); // Default to Promos
   const [activeNavTab, setActiveNavTab] = useState(null); // For navigation mega menus
   const [mouseInsideNavDropdown, setMouseInsideNavDropdown] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(
-    document.documentElement.classList.contains('dark') || 
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-  );
   const { user, logout, isAuthenticated } = useAuth();
   const { getTotalItems } = useCart();
   const navigate = useNavigate();
@@ -441,28 +437,6 @@ const Header = () => {
     setActiveNavTab(null);
   };
 
-  const toggleDarkMode = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-      localStorage.theme = 'light';
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.theme = 'dark';
-    }
-    setIsDarkMode(!isDarkMode);
-  };
-
-  useEffect(() => {
-    // On initial load, set the theme based on localStorage or system preference
-    if (localStorage.theme === 'dark' || (!localStorage.theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-      setIsDarkMode(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      setIsDarkMode(false);
-    }
-  }, []);
-
   return (
     <>
       <header 
@@ -491,22 +465,13 @@ const Header = () => {
                 </span>
               </Link>
             </div>
-            <div className="flex items-center">
-              <button
-                onClick={toggleDarkMode}
-                className="p-2 text-gray-700 dark:text-gray-300 mr-2"
-                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="p-2 text-gray-700 dark:text-gray-300"
-                aria-label="Account"
-              >
-                <User className="h-6 w-6" />
-              </button>
-            </div>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="p-2 text-gray-700 dark:text-gray-300"
+              aria-label="Account"
+            >
+              <User className="h-6 w-6" />
+            </button>
           </div>
 
           {/* Location Row */}
@@ -553,7 +518,7 @@ const Header = () => {
         <div className="hidden lg:block">
           {/* Top Row */}
           <div className="border-b border-gray-200 dark:border-gray-700 shadow-sm">
-  <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
+  <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
     <div className="flex items-center justify-between h-16 lg:h-20">
       <Link 
         to="/" 
@@ -602,17 +567,6 @@ const Header = () => {
 
       {/* Right Section - Account, Cart, etc. */}
       <div className="hidden lg:flex items-center space-x-3">
-        <button
-          onClick={toggleDarkMode}
-          className="p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200"
-          aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {isDarkMode ? 
-            <Sun className="h-5 w-5 text-yellow-500" /> : 
-            <Moon className="h-5 w-5 text-blue-600" />
-          }
-        </button>
-
         <div className="flex items-center space-x-2 text-base">
           <MapPin className="h-4 w-4 text-gray-500" />
           <div>
@@ -620,7 +574,7 @@ const Header = () => {
               Deliver to
               <Link
                 to="/profile?tab=addresses"
-                className="text-sm font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
+                className="text-xs font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
               >
                 Change
               </Link>
@@ -697,14 +651,6 @@ const Header = () => {
                     >
                       <ShoppingCart className="h-5 w-5" />
                       <span className="text-base">My Orders</span>
-                    </Link>
-                    <Link
-                      to="/wishlist"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
-                    >
-                      <Heart className="h-5 w-5" />
-                      <span className="text-base">My Wishlist</span>
                     </Link>
                     <Link
                       to="/wallet"
@@ -785,7 +731,7 @@ const Header = () => {
 
           {/* Bottom Row - Navigation with Categories */}
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
+            <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
               <div className="flex items-center justify-between h-16 relative">
                 <div 
                   className="flex-shrink-0 relative"
@@ -812,10 +758,10 @@ const Header = () => {
                     >
                       <Link
                         to={item.path}
-                        className="flex items-center space-x-2 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                        className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
                       >
                         <item.icon className="h-4 w-4" />
-                        <span className="uppercase text-sm">{item.name}</span>
+                        <span className="uppercase text-xs">{item.name}</span>
                         <ChevronDown className="h-3 w-3 opacity-60" />
                       </Link>
                     </div>
@@ -826,10 +772,10 @@ const Header = () => {
                   >
                     <Link
                       to="/shop?filter=fashion"
-                      className="flex items-center space-x-2 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
                     >
                       <Shirt className="h-4 w-4" />
-                      <span className="uppercase text-sm">Fashion</span>
+                      <span className="uppercase text-xs">Fashion</span>
                       <ChevronDown className="h-3 w-3 opacity-60" />
                     </Link>
                   </div>
@@ -844,7 +790,7 @@ const Header = () => {
                     <Wallet className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
                     <div className="text-sm">
   <div className="text-xs text-green-600 dark:text-green-500">Wallet Bal</div>
-  <div className="font-semibold text-base">KES 18000.00</div>
+  <div className="font-semibold text-base">KES 0.00</div>
 </div>
 
                   </Link>
@@ -853,75 +799,72 @@ const Header = () => {
 
               {/* Categories Mega Menu Dropdown */}
               {showCategoriesMenu && (
-                <div className="absolute top-full left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700">
-                  <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
-                    <div 
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-xl shadow-2xl overflow-hidden"
-                      onMouseEnter={() => setShowCategoriesMenu(true)}
-                      onMouseLeave={() => setShowCategoriesMenu(false)}
-                    >
-                      <div className="flex">
-                        <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
-                          <div className="space-y-2">
-                            {Object.entries(categories).map(([id, category]) => (
-                              <button
-                                key={id}
-                                onMouseOver={() => setActiveTab(parseInt(id))}
-                                className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
-                                  activeTab === parseInt(id)
-                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                                }`}
-                              >
-                                <category.icon className="h-5 w-5" />
-                                <div className="min-w-0">
-                                  <div className="font-medium text-sm">{category.name}</div>
-                                  <div className="text-xs text-gray-500">{category.count} items</div>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex-1 p-6">
-                          {Object.entries(categories).map(([id, category]) => (
-                            <div
-                              key={id}
-                              className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
-                            >
-                              <div className="mb-4">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                  {category.name}
-                                </h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {category.description}
-                                </p>
-                              </div>
-                              <ul className="masonry" style={{ columnCount: 5 }}>
-                                {category.subcategories.map((subcategory, index) => (
-                                  <li key={index} className="mb-3 break-inside-avoid">
-                                    <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                      {subcategory.name}
-                                    </div>
-                                    <ul className="space-y-1">
-                                      {subcategory.items.map((item, itemIndex) => (
-                                        <li key={itemIndex} className="py-1">
-                                          <Link
-                                            to={`/category/${item.slug}`}
-                                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                            onClick={() => setShowCategoriesMenu(false)}
-                                          >
-                                            {item.name}
-                                          </Link>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </li>
-                                ))}
-                              </ul>
+                <div 
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                  style={{ marginTop: '-1px' }}
+                  onMouseEnter={() => setShowCategoriesMenu(true)}
+                  onMouseLeave={() => setShowCategoriesMenu(false)}
+                >
+                  <div className="flex">
+                    <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+                      <div className="space-y-2">
+                        {Object.entries(categories).map(([id, category]) => (
+                          <button
+                            key={id}
+                            onMouseOver={() => setActiveTab(parseInt(id))}
+                            className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
+                              activeTab === parseInt(id)
+                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <category.icon className="h-5 w-5" />
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm">{category.name}</div>
+                              <div className="text-xs text-gray-500">{category.count} items</div>
                             </div>
-                          ))}
-                        </div>
+                          </button>
+                        ))}
                       </div>
+                    </div>
+                    <div className="flex-1 p-6">
+                      {Object.entries(categories).map(([id, category]) => (
+                        <div
+                          key={id}
+                          className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
+                        >
+                          <div className="mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                              {category.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {category.description}
+                            </p>
+                          </div>
+                          <ul className="masonry" style={{ columnCount: 5 }}>
+                            {category.subcategories.map((subcategory, index) => (
+                              <li key={index} className="mb-3 break-inside-avoid">
+                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                  {subcategory.name}
+                                </div>
+                                <ul className="space-y-1">
+                                  {subcategory.items.map((item, itemIndex) => (
+                                    <li key={itemIndex} className="py-1">
+                                      <Link
+                                        to={`/category/${item.slug}`}
+                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                        onClick={() => setShowCategoriesMenu(false)}
+                                      >
+                                        {item.name}
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -929,145 +872,139 @@ const Header = () => {
 
               {/* Nav Items Mega Menu Dropdowns */}
               {activeNavTab && activeNavTab !== 'Fashion' && (
-                <div className="absolute top-full left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700">
-                  <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
-                    <div 
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-xl shadow-2xl overflow-hidden"
-                      onMouseEnter={() => handleDropdownMouseEnter(activeNavTab)}
-                      onMouseLeave={handleDropdownMouseLeave}
-                    >
-                      <div className="p-6">
-                        {(() => {
-                          let categoryData;
-                          if (activeNavTab === 'Promos') categoryData = categories[566];
-                          else if (activeNavTab === 'Food & Cupboard') categoryData = categories[2138];
-                          else if (activeNavTab === 'Electronics') categoryData = categories[4567];
-                          else if (activeNavTab === 'Home & Garden') categoryData = categories[6789];
-                          else if (activeNavTab === 'Voucher') {
-                            categoryData = {
-                              name: "Vouchers & Gift Cards",
-                              description: "Digital vouchers and gift cards for all occasions",
-                              subcategories: [
-                                {
-                                  name: "Shopping Vouchers",
-                                  items: [
-                                    { name: "Electronics Vouchers", slug: "electronics-vouchers" },
-                                    { name: "Fashion Vouchers", slug: "fashion-vouchers" },
-                                    { name: "Food Vouchers", slug: "food-vouchers" },
-                                    { name: "General Shopping", slug: "general-vouchers" }
-                                  ]
-                                },
-                                {
-                                  name: "Gift Cards",
-                                  items: [
-                                    { name: "Birthday Cards", slug: "birthday-cards" },
-                                    { name: "Holiday Cards", slug: "holiday-cards" },
-                                    { name: "Anniversary Cards", slug: "anniversary-cards" },
-                                    { name: "Custom Cards", slug: "custom-cards" }
-                                  ]
-                                },
-                                {
-                                  name: "Digital Codes",
-                                  items: [
-                                    { name: "Gaming Codes", slug: "gaming-codes" },
-                                    { name: "App Store Credits", slug: "app-store-credits" },
-                                    { name: "Streaming Services", slug: "streaming-vouchers" },
-                                    { name: "Online Services", slug: "online-services" }
-                                  ]
-                                }
+                <div 
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                  style={{ marginTop: '-1px' }}
+                  onMouseEnter={() => handleDropdownMouseEnter(activeNavTab)}
+                  onMouseLeave={handleDropdownMouseLeave}
+                >
+                  <div className="p-6">
+                    {(() => {
+                      let categoryData;
+                      if (activeNavTab === 'Promos') categoryData = categories[566];
+                      else if (activeNavTab === 'Food & Cupboard') categoryData = categories[2138];
+                      else if (activeNavTab === 'Electronics') categoryData = categories[4567];
+                      else if (activeNavTab === 'Home & Garden') categoryData = categories[6789];
+                      else if (activeNavTab === 'Voucher') {
+                        categoryData = {
+                          name: "Vouchers & Gift Cards",
+                          description: "Digital vouchers and gift cards for all occasions",
+                          subcategories: [
+                            {
+                              name: "Shopping Vouchers",
+                              items: [
+                                { name: "Electronics Vouchers", slug: "electronics-vouchers" },
+                                { name: "Fashion Vouchers", slug: "fashion-vouchers" },
+                                { name: "Food Vouchers", slug: "food-vouchers" },
+                                { name: "General Shopping", slug: "general-vouchers" }
                               ]
-                            };
-                          }
+                            },
+                            {
+                              name: "Gift Cards",
+                              items: [
+                                { name: "Birthday Cards", slug: "birthday-cards" },
+                                { name: "Holiday Cards", slug: "holiday-cards" },
+                                { name: "Anniversary Cards", slug: "anniversary-cards" },
+                                { name: "Custom Cards", slug: "custom-cards" }
+                              ]
+                            },
+                            {
+                              name: "Digital Codes",
+                              items: [
+                                { name: "Gaming Codes", slug: "gaming-codes" },
+                                { name: "App Store Credits", slug: "app-store-credits" },
+                                { name: "Streaming Services", slug: "streaming-vouchers" },
+                                { name: "Online Services", slug: "online-services" }
+                              ]
+                            }
+                          ]
+                        };
+                      }
 
-                          return categoryData ? (
-                            <>
-                              <div className="mb-4">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                  {categoryData.name}
-                                </h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {categoryData.description}
-                                </p>
-                              </div>
-                              <ul className="masonry" style={{ columnCount: 5 }}>
-                                {categoryData.subcategories.map((subcategory, index) => (
-                                  <li key={index} className="mb-3 break-inside-avoid">
-                                    <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                      {subcategory.name}
-                                    </div>
-                                    <ul className="space-y-1">
-                                      {subcategory.items.map((subItem, itemIndex) => (
-                                        <li key={itemIndex} className="py-1">
-                                          <Link
-                                            to={`/category/${subItem.slug}`}
-                                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                            onClick={() => {
-                                              setActiveNavTab(null);
-                                              setMouseInsideNavDropdown(false);
-                                            }}
-                                          >
-                                            {subItem.name}
-                                          </Link>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </li>
-                                ))}
-                              </ul>
-                            </>
-                          ) : null;
-                        })()}
-                      </div>
-                    </div>
+                      return categoryData ? (
+                        <>
+                          <div className="mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                              {categoryData.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {categoryData.description}
+                            </p>
+                          </div>
+                          <ul className="masonry" style={{ columnCount: 5 }}>
+                            {categoryData.subcategories.map((subcategory, index) => (
+                              <li key={index} className="mb-3 break-inside-avoid">
+                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                  {subcategory.name}
+                                </div>
+                                <ul className="space-y-1">
+                                  {subcategory.items.map((subItem, itemIndex) => (
+                                    <li key={itemIndex} className="py-1">
+                                      <Link
+                                        to={`/category/${subItem.slug}`}
+                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                        onClick={() => {
+                                          setActiveNavTab(null);
+                                          setMouseInsideNavDropdown(false);
+                                        }}
+                                      >
+                                        {subItem.name}
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               )}
 
               {/* Fashion Mega Menu Dropdown */}
               {activeNavTab === 'Fashion' && (
-                <div className="absolute top-full left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700">
-                  <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
-                    <div 
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-xl shadow-2xl overflow-hidden"
-                      onMouseEnter={() => handleDropdownMouseEnter('Fashion')}
-                      onMouseLeave={handleDropdownMouseLeave}
-                    >
-                      <div className="p-6">
-                        <div className="mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            {categories[5678].name}
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {categories[5678].description}
-                          </p>
-                        </div>
-                        <ul className="masonry" style={{ columnCount: 5 }}>
-                          {categories[5678].subcategories.map((subcategory, index) => (
-                            <li key={index} className="mb-3 break-inside-avoid">
-                              <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                {subcategory.name}
-                              </div>
-                              <ul className="space-y-1">
-                                {subcategory.items.map((item, itemIndex) => (
-                                  <li key={itemIndex} className="py-1">
-                                    <Link
-                                      to={`/category/${item.slug}`}
-                                      className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                      onClick={() => {
-                                        setActiveNavTab(null);
-                                        setMouseInsideNavDropdown(false);
-                                      }}
-                                    >
-                                      {item.name}
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                <div 
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                  style={{ marginTop: '-1px' }}
+                  onMouseEnter={() => handleDropdownMouseEnter('Fashion')}
+                  onMouseLeave={handleDropdownMouseLeave}
+                >
+                  <div className="p-6">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        {categories[5678].name}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {categories[5678].description}
+                      </p>
                     </div>
+                    <ul className="masonry" style={{ columnCount: 5 }}>
+                      {categories[5678].subcategories.map((subcategory, index) => (
+                        <li key={index} className="mb-3 break-inside-avoid">
+                          <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                            {subcategory.name}
+                          </div>
+                          <ul className="space-y-1">
+                            {subcategory.items.map((item, itemIndex) => (
+                              <li key={itemIndex} className="py-1">
+                                <Link
+                                  to={`/category/${item.slug}`}
+                                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                  onClick={() => {
+                                    setActiveNavTab(null);
+                                    setMouseInsideNavDropdown(false);
+                                  }}
+                                >
+                                  {item.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               )}

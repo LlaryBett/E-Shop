@@ -132,7 +132,7 @@ const Wishlist = () => {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
-        <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-16">
+        <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-16">
           <div className="text-center">
             <Heart className="h-24 w-24 text-gray-400 mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Your wishlist is empty</h1>
@@ -154,7 +154,7 @@ const Wishlist = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
-      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-8">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             My Wishlist ({items.length} items)

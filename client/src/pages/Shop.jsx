@@ -198,7 +198,7 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
-      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-4">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-4">
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 lg:mb-0">Shop</h1>
