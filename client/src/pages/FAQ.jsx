@@ -7,7 +7,6 @@ const FAQ = () => {
   const [openItems, setOpenItems] = useState([]);
 
   const faqData = [
-    // Ordering & Payment
     {
       id: '1',
       question: 'How do I place an order?',
@@ -32,8 +31,6 @@ const FAQ = () => {
       answer: 'Yes, you can checkout as a guest without creating an account. However, creating an account allows you to track orders, save addresses, and access your order history.',
       category: 'Ordering & Payment',
     },
-
-    // Shipping & Delivery
     {
       id: '5',
       question: 'What are your shipping options?',
@@ -58,8 +55,6 @@ const FAQ = () => {
       answer: 'If your package is lost or arrives damaged, contact us immediately. We\'ll work with the shipping carrier to resolve the issue and ensure you receive your order in perfect condition.',
       category: 'Shipping & Delivery',
     },
-
-    // Returns & Refunds
     {
       id: '9',
       question: 'What is your return policy?',
@@ -84,8 +79,6 @@ const FAQ = () => {
       answer: 'Yes, you can exchange items for a different size or color if available. The exchange process is similar to returns, and we\'ll ship the new item once we receive the original.',
       category: 'Returns & Refunds',
     },
-
-    // Account & Security
     {
       id: '13',
       question: 'How do I create an account?',
@@ -110,8 +103,6 @@ const FAQ = () => {
       answer: 'Yes, we use industry-standard encryption and security measures to protect your personal information. We never share your data with third parties without your consent.',
       category: 'Account & Security',
     },
-
-    // Products & Inventory
     {
       id: '17',
       question: 'How do I know if an item is in stock?',
@@ -180,21 +171,25 @@ const FAQ = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <HelpCircle className="h-16 w-16 mx-auto mb-4 text-blue-200" />
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Frequently Asked Questions</h1>
-          <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-            Find quick answers to common questions about our products, services, and policies.
-          </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
+      {/* Hero Section - Updated to match banner styling */}
+      <section className="relative overflow-hidden my-0 sm:my-1 md:my-2">
+        <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
+          <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-r from-blue-600 to-purple-700 text-white" style={{ aspectRatio: '4.6875 / 1' }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+              <HelpCircle className="h-16 w-16 mx-auto mb-4 text-blue-200" />
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2">Frequently Asked Questions</h1>
+              <p className="text-lg text-blue-100 max-w-2xl mx-auto">
+                Find quick answers to common questions about our products, services, and policies.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-4">
         {/* Search and Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-12">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -228,12 +223,16 @@ const FAQ = () => {
           {/* FAQ Content */}
           <div className="lg:col-span-3">
             {filteredFAQs.length === 0 ? (
-              <div className="text-center py-12">
-                <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No FAQs found</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Try adjusting your search terms or browse different categories.
-                </p>
+              <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-44 lg:pt-32">
+                <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-4">
+                  <div className="text-center py-12">
+                    <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No FAQs found</h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Try adjusting your search terms or browse different categories.
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -276,22 +275,22 @@ const FAQ = () => {
           <div className="lg:col-span-1 space-y-8">
             {/* Quick Stats */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h3>
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{faqData.length}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Total FAQs</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{categories.length - 1}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Categories</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">24/7</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Support Available</div>
-                </div>
-              </div>
-            </div>
+  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h3>
+  <div className="flex flex-row sm:flex-col gap-2 sm:gap-6">
+    <div className="flex-1 sm:flex-none text-center">
+      <div className="text-lg sm:text-2xl font-bold text-blue-600">{faqData.length}</div>
+      <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total FAQs</div>
+    </div>
+    <div className="flex-1 sm:flex-none text-center">
+      <div className="text-lg sm:text-2xl font-bold text-green-600">{categories.length - 1}</div>
+      <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Categories</div>
+    </div>
+    <div className="flex-1 sm:flex-none text-center">
+      <div className="text-lg sm:text-2xl font-bold text-purple-600">24/7</div>
+      <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Support Available</div>
+    </div>
+  </div>
+</div>
 
             {/* Contact Support */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">

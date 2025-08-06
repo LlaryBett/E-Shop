@@ -1,17 +1,94 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Trash2, Star, Share2 } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
+import ProductService from '../services/productService';
 import toast from 'react-hot-toast';
 
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+
 const Wishlist = () => {
-  const { items, removeFromWishlist, clearWishlist } = useWishlist();
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  
+  const { items, removeFromWishlist, clearWishlist, addToWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
+
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (!items.length) return;
+      
+      try {
+        setLoadingRelated(true);
+        
+        // Try different ways to access category information
+        const categoryIds = [];
+        
+        // Try to extract category from different possible structures
+        items.forEach(item => {
+          const product = item.product;
+          
+          // Try different ways the category ID might be stored
+          if (product.category?._id) {
+            categoryIds.push(product.category._id);
+          } else if (product.category?.id) {
+            categoryIds.push(product.category.id);
+          } else if (product.categoryId) {
+            categoryIds.push(product.categoryId);
+          } else if (typeof product.category === 'string') {
+            categoryIds.push(product.category);
+          }
+        });
+        
+        // Use the first category ID to fetch related products
+        if (categoryIds.length > 0) {
+          // Get the first product ID to exclude it from results
+          const excludeProductId = items[0].product._id || items[0].product.id;
+          
+          // As a fallback, if we can't get related products by category, use a hardcoded category
+          const products = await ProductService.getRelatedProducts(
+            excludeProductId, 
+            categoryIds[0] || "electronics" // Fallback to a default category
+          );
+          
+          setRelatedProducts(products || []);
+        } else {
+          // Fallback to get some products using a default category
+          const defaultCategory = "electronics";
+          const excludeProductId = items[0].product._id || items[0].product.id;
+          const products = await ProductService.getRelatedProducts(excludeProductId, defaultCategory);
+          
+          setRelatedProducts(products || []);
+        }
+      } catch (error) {
+        // Silently handle errors
+        setRelatedProducts([]);
+      } finally {
+        setLoadingRelated(false);
+      }
+    };
+
+    fetchRelatedProducts();
+  }, [items]);
 
   const handleAddToCart = (product) => {
     addToCart(product);
     toast.success('Added to cart!');
+  };
+
+  const handleWishlistToggle = (product) => {
+    if (isInWishlist(product._id || product.id)) {
+      removeFromWishlist(product._id || product.id);
+      toast.success('Removed from wishlist');
+    } else {
+      addToWishlist(product);
+      toast.success('Added to wishlist!');
+    }
   };
 
   const handleRemoveFromWishlist = (id) => {
@@ -37,10 +114,25 @@ const Wishlist = () => {
     }
   };
 
+  const handleAddRelatedToCart = (product) => {
+    addToCart(product);
+    toast.success('Added to cart!');
+  };
+  
+  const handleRelatedWishlistToggle = (product) => {
+    if (isInWishlist(product._id || product.id)) {
+      removeFromWishlist(product._id || product.id);
+      toast.success('Removed from wishlist');
+    } else {
+      addToWishlist(product);
+      toast.success('Added to wishlist!');
+    }
+  };
+
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto px-4 py-16">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
+        <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-16">
           <div className="text-center">
             <Heart className="h-24 w-24 text-gray-400 mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Your wishlist is empty</h1>
@@ -61,8 +153,8 @@ const Wishlist = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
+      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             My Wishlist ({items.length} items)
@@ -75,27 +167,25 @@ const Wishlist = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {items.map((item) => {
             const product = item.product;
             return (
               <div
                 key={product.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group"
+                className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900"
               >
-                <div className="relative">
+                <div className="h-40 overflow-hidden relative">
                   <Link to={`/product/${product.id}`}>
-                    <div className="aspect-square overflow-hidden">
-                      <img
-                        src={product.images[0]?.url}
-                        alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
+                    <img 
+                      src={product.images?.[0]?.url || product.images?.[0] || ''}
+                      alt={product.title}
+                      className="w-full h-full object-cover rounded-t-lg"
+                    />
                   </Link>
-                  
+                  {/* Discount Badge */}
                   {product.salePrice && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
+                    <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
                       -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
                     </div>
                   )}
@@ -108,59 +198,54 @@ const Wishlist = () => {
                   </button>
                 </div>
 
-                <div className="p-4">
-                  <Link to={`/product/${product.id}`}>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 transition-colors line-clamp-2">
-                      {product.title}
-                    </h3>
-                  </Link>
-
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    Brand: {product.brand}
-                  </p>
-
-                  <div className="flex items-center space-x-2 mb-3">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">
-                        {product.rating}
+                <div className="px-3 pb-3 flex flex-col" style={{ minHeight: '120px' }}>
+                  <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-8 overflow-hidden">
+                    <Link to={`/product/${product.id}`} className="hover:text-blue-600 transition-colors">
+                      <span className="line-clamp-2">
+                        {product.title}
                       </span>
-                    </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      ({product.reviewCount})
-                    </span>
-                  </div>
+                    </Link>
+                  </h3>
 
-                  <div className="flex items-center space-x-2 mb-4">
-                    {product.salePrice ? (
-                      <>
-                        <span className="text-lg font-bold text-red-600">${product.salePrice}</span>
-                        <span className="text-gray-500 line-through">${product.price}</span>
-                      </>
-                    ) : (
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">${product.price}</span>
+                  {/* Price Section */}
+                  <div className="mt-1">
+                    <div className="flex items-baseline">
+                      <p className="text-red-600 font-bold text-base">
+                        KES {product.salePrice || product.price}
+                      </p>
+                      {product.salePrice && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                          KES {product.price}
+                        </span>
+                      )}
+                    </div>
+                    {product.salePrice && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                        Save KES {Math.floor(product.price - product.salePrice)}
+                      </p>
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex-grow"></div>
+                  
+                  {/* Buttons Container */}
+                  <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
                     <button
                       onClick={() => handleAddToCart(product)}
-                      className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                      className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
                     >
-                      <ShoppingCart className="h-4 w-4" />
-                      <span>Add to Cart</span>
+                      <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="text-xs sm:text-sm">Add to Cart</span>
                     </button>
                     <button
-                      onClick={() => handleShare(product)}
-                      className="p-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      onClick={() => handleWishlistToggle(product)}
+                      className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                        isInWishlist(product._id || product.id)
+                          ? 'bg-red-50 border-red-200 text-red-600'
+                          : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                      } flex items-center justify-center`}
                     >
-                      <Share2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleRemoveFromWishlist(product.id)}
-                      className="p-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
+                      <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id || product.id) ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 </div>
@@ -170,36 +255,167 @@ const Wishlist = () => {
         </div>
 
         {/* Wishlist Actions */}
-        <div className="mt-12 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Wishlist Actions</h2>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={() => {
-                items.forEach(item => addToCart(item.product));
-                toast.success('All items added to cart!');
-              }}
-              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              <span>Add All to Cart</span>
-            </button>
-            <button
-              onClick={() => handleShare({ title: 'My Wishlist', description: 'Check out my wishlist!' })}
-              className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center space-x-2"
-            >
-              <Share2 className="h-5 w-5" />
-              <span>Share Wishlist</span>
-            </button>
-          </div>
-        </div>
+        <div className="mt-12 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+  <h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white mb-4">Wishlist Actions</h2>
+  <div className="flex flex-wrap gap-3 sm:gap-4">
+    <button
+      onClick={() => {
+        items.forEach(item => addToCart(item.product));
+        toast.success('All items added to cart!');
+      }}
+      className="flex-1 basis-[45%] px-3 py-2 text-[13px] sm:px-5 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+    >
+      <ShoppingCart className="h-4 w-4" />
+      <span>Add All to Cart</span>
+    </button>
+    <button
+      onClick={() =>
+        handleShare({
+          title: 'My Wishlist',
+          description: 'Check out my wishlist!',
+        })
+      }
+      className="flex-1 basis-[45%] px-3 py-2 text-[13px] sm:px-5 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+    >
+      <Share2 className="h-4 w-4" />
+      <span>Share Wishlist</span>
+    </button>
+  </div>
+</div>
 
-        {/* Recently Viewed */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">You might also like</h2>
-          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-            <p>Recommended products based on your wishlist would appear here</p>
+        {/* You might also like - Swiper Section */}
+        <section className="py-4 sm:py-6 md:py-8 mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              You might also like
+            </h2>
+            <div className="flex space-x-2">
+              <button
+                className="related-products-swiper-prev rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Previous"
+              >
+                <svg className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                className="related-products-swiper-next rounded-full p-2 bg-blue-600 hover:bg-blue-700 transition-colors"
+                aria-label="Next"
+              >
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
+
+          {loadingRelated ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : relatedProducts.length > 0 ? (
+            <Swiper
+              modules={[Navigation]}
+              navigation={{
+                nextEl: '.related-products-swiper-next',
+                prevEl: '.related-products-swiper-prev',
+              }}
+              spaceBetween={16}
+              slidesPerView={2}
+              breakpoints={{
+                480: { slidesPerView: 2.5 },
+                640: { slidesPerView: 3 },
+                768: { slidesPerView: 4 },
+                1024: { slidesPerView: 5 },
+                1280: { slidesPerView: 6 },
+              }}
+              className="pb-8"
+            >
+              {relatedProducts.map((product) => (
+                <SwiperSlide key={product._id || product.id}>
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+                    <Link to={`/product/${product._id || product.id}`}>
+                      <div className="aspect-square overflow-hidden relative">
+                        <img 
+                          src={product.images?.[0]?.url || 'https://via.placeholder.com/300'}
+                          alt={product.title}
+                          className="w-full h-48 object-cover rounded-t-lg hover:scale-105 transition-transform duration-300"
+                        />
+                        {product.salePrice && (
+                          <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                            -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    
+                    <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
+                      <Link to={`/product/${product._id || product.id}`} className="hover:text-blue-600 transition-colors">
+                        <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                          <span className="line-clamp-2">
+                            {product.title}
+                          </span>
+                        </h3>
+                      </Link>
+
+                      <div className="mt-1">
+                        <div className="flex items-baseline">
+                          <p className="text-red-600 font-bold text-base">
+                            KES {product.salePrice || product.price}
+                          </p>
+                          {product.salePrice && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                              KES {product.price}
+                            </span>
+                          )}
+                        </div>
+                        {product.salePrice && (
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                            Save KES {Math.floor(product.price - product.salePrice)}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex-grow"></div>
+                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                        <button
+                          onClick={() => handleAddRelatedToCart(product)}
+                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <span className="text-xs sm:text-sm">Add to Cart</span>
+                        </button>
+                        <button
+                          onClick={() => handleRelatedWishlistToggle(product)}
+                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                            isInWishlist(product._id || product.id)
+                              ? 'bg-red-50 border-red-200 text-red-600'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                          } flex items-center justify-center`}
+                        >
+                          <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id || product.id) ? 'fill-current' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          ) : (
+            <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+              <p>No related products found</p>
+            </div>
+          )}
+
+          <div className="text-center mt-8">
+            <Link
+              to="/shop"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
+            >
+              View All Products
+            </Link>
+          </div>
+        </section>
       </div>
     </div>
   );

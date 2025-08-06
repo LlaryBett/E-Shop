@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet, Heart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 
@@ -376,7 +376,7 @@ const Header = () => {
     if (searchQuery.trim()) {
       setSearchLoading(true);
       try {
-        navigate(`/shop?search=${encodeURIComponent(searchQuery)}`);
+        navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
       } catch (err) {
         console.error('Search error:', err);
       } finally {
@@ -517,221 +517,229 @@ const Header = () => {
         {/* Desktop Header (hidden on mobile) */}
         <div className="hidden lg:block">
           {/* Top Row */}
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="max-w-7xl mx-auto px-2">
-              <div className="flex items-center justify-between h-16 lg:h-20">
-                <Link 
-                  to="/" 
-                  className="flex items-center space-x-3 group shrink-0"
-                  aria-label="E-Shop Home"
-                >
-                  <div className="relative">
-                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-                      <span className="text-white font-bold text-lg lg:text-xl">E</span>
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                        <Sparkles className="h-2 w-2 text-yellow-800" />
-                      </div>
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
-                  </div>
-                  <div>
-                    <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      E-Shop
-                    </span>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Premium Store</div>
-                  </div>
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-2xl mx-8 hidden md:block">
-                  <form onSubmit={handleSearch} className="relative group">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search for products, brands and more..."
-                      className="w-full px-6 py-3 pl-12 pr-20 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 hover:shadow-md focus:shadow-lg"
-                      aria-label="Search products"
-                    />
-                    <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
-                      disabled={searchLoading}
-                      aria-label="Search"
-                    >
-                      {searchLoading ? 'Searching...' : 'Search'}
-                    </button>
-                  </form>
-                </div>
-
-                {/* Right Section - Account, Cart, etc. */}
-                <div className="hidden lg:flex items-center space-x-6">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                        Deliver to
-                        <Link
-                          to="/profile?tab=addresses"
-                          className="text-[10px] font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
-                        >
-                          Change
-                        </Link>
-                      </div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {deliverToLocation}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative" data-menu>
-                    {isAuthenticated ? (
-                      <button
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center space-x-2 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
-                        aria-label="User menu"
-                        aria-expanded={showUserMenu}
-                      >
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                          {user?.name?.charAt(0)?.toUpperCase() || 'L'}
-                        </div>
-                        <div className="text-sm">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Welcome</div>
-                          <div className="font-medium text-gray-900 dark:text-white">{user?.name || 'Larry'}</div>
-                        </div>
-                        <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center space-x-2 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
-                        aria-label="Account menu"
-                        aria-expanded={showUserMenu}
-                      >
-                        <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-lg flex items-center justify-center text-white">
-                          <User className="h-4 w-4" />
-                        </div>
-                        <div className="text-sm">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Account</div>
-                          <div className="font-medium text-gray-900 dark:text-white">Sign In</div>
-                        </div>
-                        <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
-                      </button>
-                    )}
-                    
-                    {showUserMenu && (
-                      <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50">
-                        {isAuthenticated ? (
-                          <>
-                            <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white font-bold">
-                                  {user?.name?.charAt(0)?.toUpperCase() || 'L'}
-                                </div>
-                                <div>
-                                  <p className="font-semibold">{user?.name || 'Larry'}</p>
-                                  <p className="text-blue-100 text-sm">{user?.email || 'user@example.com'}</p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="p-2">
-                              <Link
-                                to="/profile"
-                                onClick={() => setShowUserMenu(false)}
-                                className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
-                              >
-                                <User className="h-5 w-5" />
-                                <span>My Profile</span>
-                              </Link>
-                              <Link
-                                to="/orders"
-                                onClick={() => setShowUserMenu(false)}
-                                className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
-                              >
-                                <ShoppingCart className="h-5 w-5" />
-                                <span>My Orders</span>
-                              </Link>
-                              <Link
-                                to="/wallet"
-                                onClick={() => setShowUserMenu(false)}
-                                className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
-                              >
-                                <Wallet className="h-5 w-5" />
-                                <span>My Wallet</span>
-                              </Link>
-                              <hr className="my-2 border-gray-200 dark:border-gray-700" />
-                              <button
-                                onClick={handleLogout}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
-                              >
-                                <X className="h-5 w-5" />
-                                <span>Sign Out</span>
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="p-4">
-                            <div className="space-y-2">
-                              <Link
-                                to="/login"
-                                onClick={() => setShowUserMenu(false)}
-                                className="block w-full px-4 py-3 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
-                              >
-                                Sign In
-                              </Link>
-                              <Link
-                                to="/register"
-                                onClick={() => setShowUserMenu(false)}
-                                className="block w-full px-4 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300"
-                              >
-                                Get Started
-                              </Link>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                                Sign in to access your account, orders, and saved items
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <Link
-                    to="/cart"
-                    className="relative flex items-center space-x-2 p-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all duration-300 group"
-                    aria-label="Shopping cart"
-                  >
-                    <ShoppingCart className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
-                    <div className="text-sm">
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Cart</div>
-                      <div className="font-medium">{getTotalItems()} items</div>
-                    </div>
-                    {getTotalItems() > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg animate-pulse min-w-[24px]">
-                        {getTotalItems() > 99 ? '99+' : getTotalItems()}
-                      </span>
-                    )}
-                  </Link>
-                </div>
-
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="lg:hidden p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
-                  aria-label="Menu"
-                  aria-expanded={isMobileMenuOpen}
-                >
-                  {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </button>
-              </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 shadow-sm">
+  <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
+    <div className="flex items-center justify-between h-16 lg:h-20">
+      <Link 
+        to="/" 
+        className="flex items-center space-x-2 group shrink-0"
+        aria-label="E-Shop Home"
+      >
+        <div className="relative">
+          <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+            <span className="text-white font-bold text-xl lg:text-2xl">E</span>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+              <Sparkles className="h-2 w-2 text-yellow-800" />
             </div>
           </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
+        </div>
+        <div>
+          <span className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            E-Shop
+          </span>
+          <div className="text-sm text-gray-500 dark:text-gray-400 -mt-1 font-medium">Premium Store</div>
+        </div>
+      </Link>
+
+      {/* Search Bar */}
+      <div className="flex-1 max-w-2xl mx-4 lg:mx-8 hidden md:block">
+        <form onSubmit={handleSearch} className="relative group">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search products..."
+            className="w-full px-6 py-3 pl-12 pr-24 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 hover:shadow-md focus:shadow-lg text-base"
+            aria-label="Search products"
+          />
+          <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
+          <button
+            type="submit"
+            className="absolute right-2 top-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-base font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+            disabled={searchLoading}
+            aria-label="Search"
+          >
+            {searchLoading ? 'Searching...' : 'Search'}
+          </button>
+        </form>
+      </div>
+
+      {/* Right Section - Account, Cart, etc. */}
+      <div className="hidden lg:flex items-center space-x-3">
+        <div className="flex items-center space-x-2 text-base">
+          <MapPin className="h-4 w-4 text-gray-500" />
+          <div>
+            <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+              Deliver to
+              <Link
+                to="/profile?tab=addresses"
+                className="text-sm font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
+              >
+                Change
+              </Link>
+            </div>
+            <div className="font-medium text-gray-900 dark:text-white text-base">
+              {deliverToLocation}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative" data-menu>
+          {isAuthenticated ? (
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200"
+              aria-label="User menu"
+              aria-expanded={showUserMenu}
+            >
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-base shadow-md">
+                {user?.name?.charAt(0)?.toUpperCase() || 'L'}
+              </div>
+              <div className="text-base">
+                <div className="text-sm text-gray-500 dark:text-gray-400">Welcome</div>
+                <div className="font-medium text-gray-900 dark:text-white">{user?.name || 'Larry'}</div>
+              </div>
+              <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200"
+              aria-label="Account menu"
+              aria-expanded={showUserMenu}
+            >
+              <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-lg flex items-center justify-center text-white shadow-md">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="text-base">
+                <div className="text-sm text-gray-500 dark:text-gray-400">Account</div>
+                <div className="font-medium text-gray-900 dark:text-white">Sign In</div>
+              </div>
+              <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+          
+          {showUserMenu && (
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50">
+              {isAuthenticated ? (
+                <>
+                  <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                        {user?.name?.charAt(0)?.toUpperCase() || 'L'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-base">{user?.name || 'Larry'}</p>
+                        <p className="text-blue-100 text-sm">{user?.email || 'user@example.com'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-2">
+                    <Link
+                      to="/profile"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
+                    >
+                      <User className="h-5 w-5" />
+                      <span className="text-base">My Profile</span>
+                    </Link>
+                    <Link
+                      to="/orders"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      <span className="text-base">My Orders</span>
+                    </Link>
+                    <Link
+                      to="/wishlist"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
+                    >
+                      <Heart className="h-5 w-5" />
+                      <span className="text-base">My Wishlist</span>
+                    </Link>
+                    <Link
+                      to="/wallet"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
+                    >
+                      <Wallet className="h-5 w-5" />
+                      <span className="text-base">My Wallet</span>
+                    </Link>
+                    <hr className="my-2 border-gray-200 dark:border-gray-700" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
+                    >
+                      <X className="h-5 w-5" />
+                      <span className="text-base">Sign Out</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="p-4">
+                  <div className="space-y-2">
+                    <Link
+                      to="/login"
+                      onClick={() => setShowUserMenu(false)}
+                      className="block w-full px-4 py-3 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-base"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setShowUserMenu(false)}
+                      className="block w-full px-4 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300 text-base"
+                    >
+                      Get Started
+                    </Link>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                      Sign in to access your account, orders, and saved items
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <Link
+          to="/cart"
+          className="relative flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 group border border-transparent hover:border-blue-200"
+          aria-label="Shopping cart"
+        >
+          <ShoppingCart className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
+          <div className="text-base">
+            <div className="text-sm text-gray-500 dark:text-gray-400">Cart</div>
+            <div className="font-medium">{getTotalItems()} items</div>
+          </div>
+          {getTotalItems() > 0 && (
+            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg animate-pulse min-w-[24px]">
+              {getTotalItems() > 99 ? '99+' : getTotalItems()}
+            </span>
+          )}
+        </Link>
+      </div>
+
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className="lg:hidden p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200"
+        aria-label="Menu"
+        aria-expanded={isMobileMenuOpen}
+      >
+        {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
+    </div>
+  </div>
+</div>
 
           {/* Bottom Row - Navigation with Categories */}
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="max-w-7xl mx-auto px-2 relative">
+            <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
               <div className="flex items-center justify-between h-16 relative">
                 <div 
                   className="flex-shrink-0 relative"
@@ -758,10 +766,10 @@ const Header = () => {
                     >
                       <Link
                         to={item.path}
-                        className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                        className="flex items-center space-x-2 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
                       >
                         <item.icon className="h-4 w-4" />
-                        <span className="uppercase text-xs">{item.name}</span>
+                        <span className="uppercase text-sm">{item.name}</span>
                         <ChevronDown className="h-3 w-3 opacity-60" />
                       </Link>
                     </div>
@@ -772,10 +780,10 @@ const Header = () => {
                   >
                     <Link
                       to="/shop?filter=fashion"
-                      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                      className="flex items-center space-x-2 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
                     >
                       <Shirt className="h-4 w-4" />
-                      <span className="uppercase text-xs">Fashion</span>
+                      <span className="uppercase text-sm">Fashion</span>
                       <ChevronDown className="h-3 w-3 opacity-60" />
                     </Link>
                   </div>
@@ -788,82 +796,86 @@ const Header = () => {
                     aria-label="Wallet"
                   >
                     <Wallet className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
-                    <div className="text-xs">
-                      <div className="text-[10px] text-green-600 dark:text-green-500">Wallet</div>
-                      <div className="font-semibold">KES 0.00</div>
-                    </div>
+                    <div className="text-sm">
+  <div className="text-xs text-green-600 dark:text-green-500">Wallet Bal</div>
+  <div className="font-semibold text-base">KES 18000.00</div>
+</div>
+
                   </Link>
                 </div>
               </div>
 
               {/* Categories Mega Menu Dropdown */}
               {showCategoriesMenu && (
-                <div 
-                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
-                  style={{ marginTop: '-1px' }}
-                  onMouseEnter={() => setShowCategoriesMenu(true)}
-                  onMouseLeave={() => setShowCategoriesMenu(false)}
-                >
-                  <div className="flex">
-                    <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
-                      <div className="space-y-2">
-                        {Object.entries(categories).map(([id, category]) => (
-                          <button
-                            key={id}
-                            onMouseOver={() => setActiveTab(parseInt(id))}
-                            className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
-                              activeTab === parseInt(id)
-                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            <category.icon className="h-5 w-5" />
-                            <div className="min-w-0">
-                              <div className="font-medium text-sm">{category.name}</div>
-                              <div className="text-xs text-gray-500">{category.count} items</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex-1 p-6">
-                      {Object.entries(categories).map(([id, category]) => (
-                        <div
-                          key={id}
-                          className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
-                        >
-                          <div className="mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                              {category.name}
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {category.description}
-                            </p>
-                          </div>
-                          <ul className="masonry" style={{ columnCount: 5 }}>
-                            {category.subcategories.map((subcategory, index) => (
-                              <li key={index} className="mb-3 break-inside-avoid">
-                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                  {subcategory.name}
+                <div className="absolute top-full left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700">
+                  <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
+                    <div 
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-xl shadow-2xl overflow-hidden"
+                      onMouseEnter={() => setShowCategoriesMenu(true)}
+                      onMouseLeave={() => setShowCategoriesMenu(false)}
+                    >
+                      <div className="flex">
+                        <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+                          <div className="space-y-2">
+                            {Object.entries(categories).map(([id, category]) => (
+                              <button
+                                key={id}
+                                onMouseOver={() => setActiveTab(parseInt(id))}
+                                className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
+                                  activeTab === parseInt(id)
+                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                }`}
+                              >
+                                <category.icon className="h-5 w-5" />
+                                <div className="min-w-0">
+                                  <div className="font-medium text-sm">{category.name}</div>
+                                  <div className="text-xs text-gray-500">{category.count} items</div>
                                 </div>
-                                <ul className="space-y-1">
-                                  {subcategory.items.map((item, itemIndex) => (
-                                    <li key={itemIndex} className="py-1">
-                                      <Link
-                                        to={`/category/${item.slug}`}
-                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                        onClick={() => setShowCategoriesMenu(false)}
-                                      >
-                                        {item.name}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </li>
+                              </button>
                             ))}
-                          </ul>
+                          </div>
                         </div>
-                      ))}
+                        <div className="flex-1 p-6">
+                          {Object.entries(categories).map(([id, category]) => (
+                            <div
+                              key={id}
+                              className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
+                            >
+                              <div className="mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                  {category.name}
+                                </h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {category.description}
+                                </p>
+                              </div>
+                              <ul className="masonry" style={{ columnCount: 5 }}>
+                                {category.subcategories.map((subcategory, index) => (
+                                  <li key={index} className="mb-3 break-inside-avoid">
+                                    <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                      {subcategory.name}
+                                    </div>
+                                    <ul className="space-y-1">
+                                      {subcategory.items.map((item, itemIndex) => (
+                                        <li key={itemIndex} className="py-1">
+                                          <Link
+                                            to={`/category/${item.slug}`}
+                                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                            onClick={() => setShowCategoriesMenu(false)}
+                                          >
+                                            {item.name}
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -871,139 +883,145 @@ const Header = () => {
 
               {/* Nav Items Mega Menu Dropdowns */}
               {activeNavTab && activeNavTab !== 'Fashion' && (
-                <div 
-                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
-                  style={{ marginTop: '-1px' }}
-                  onMouseEnter={() => handleDropdownMouseEnter(activeNavTab)}
-                  onMouseLeave={handleDropdownMouseLeave}
-                >
-                  <div className="p-6">
-                    {(() => {
-                      let categoryData;
-                      if (activeNavTab === 'Promos') categoryData = categories[566];
-                      else if (activeNavTab === 'Food & Cupboard') categoryData = categories[2138];
-                      else if (activeNavTab === 'Electronics') categoryData = categories[4567];
-                      else if (activeNavTab === 'Home & Garden') categoryData = categories[6789];
-                      else if (activeNavTab === 'Voucher') {
-                        categoryData = {
-                          name: "Vouchers & Gift Cards",
-                          description: "Digital vouchers and gift cards for all occasions",
-                          subcategories: [
-                            {
-                              name: "Shopping Vouchers",
-                              items: [
-                                { name: "Electronics Vouchers", slug: "electronics-vouchers" },
-                                { name: "Fashion Vouchers", slug: "fashion-vouchers" },
-                                { name: "Food Vouchers", slug: "food-vouchers" },
-                                { name: "General Shopping", slug: "general-vouchers" }
+                <div className="absolute top-full left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700">
+                  <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
+                    <div 
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-xl shadow-2xl overflow-hidden"
+                      onMouseEnter={() => handleDropdownMouseEnter(activeNavTab)}
+                      onMouseLeave={handleDropdownMouseLeave}
+                    >
+                      <div className="p-6">
+                        {(() => {
+                          let categoryData;
+                          if (activeNavTab === 'Promos') categoryData = categories[566];
+                          else if (activeNavTab === 'Food & Cupboard') categoryData = categories[2138];
+                          else if (activeNavTab === 'Electronics') categoryData = categories[4567];
+                          else if (activeNavTab === 'Home & Garden') categoryData = categories[6789];
+                          else if (activeNavTab === 'Voucher') {
+                            categoryData = {
+                              name: "Vouchers & Gift Cards",
+                              description: "Digital vouchers and gift cards for all occasions",
+                              subcategories: [
+                                {
+                                  name: "Shopping Vouchers",
+                                  items: [
+                                    { name: "Electronics Vouchers", slug: "electronics-vouchers" },
+                                    { name: "Fashion Vouchers", slug: "fashion-vouchers" },
+                                    { name: "Food Vouchers", slug: "food-vouchers" },
+                                    { name: "General Shopping", slug: "general-vouchers" }
+                                  ]
+                                },
+                                {
+                                  name: "Gift Cards",
+                                  items: [
+                                    { name: "Birthday Cards", slug: "birthday-cards" },
+                                    { name: "Holiday Cards", slug: "holiday-cards" },
+                                    { name: "Anniversary Cards", slug: "anniversary-cards" },
+                                    { name: "Custom Cards", slug: "custom-cards" }
+                                  ]
+                                },
+                                {
+                                  name: "Digital Codes",
+                                  items: [
+                                    { name: "Gaming Codes", slug: "gaming-codes" },
+                                    { name: "App Store Credits", slug: "app-store-credits" },
+                                    { name: "Streaming Services", slug: "streaming-vouchers" },
+                                    { name: "Online Services", slug: "online-services" }
+                                  ]
+                                }
                               ]
-                            },
-                            {
-                              name: "Gift Cards",
-                              items: [
-                                { name: "Birthday Cards", slug: "birthday-cards" },
-                                { name: "Holiday Cards", slug: "holiday-cards" },
-                                { name: "Anniversary Cards", slug: "anniversary-cards" },
-                                { name: "Custom Cards", slug: "custom-cards" }
-                              ]
-                            },
-                            {
-                              name: "Digital Codes",
-                              items: [
-                                { name: "Gaming Codes", slug: "gaming-codes" },
-                                { name: "App Store Credits", slug: "app-store-credits" },
-                                { name: "Streaming Services", slug: "streaming-vouchers" },
-                                { name: "Online Services", slug: "online-services" }
-                              ]
-                            }
-                          ]
-                        };
-                      }
+                            };
+                          }
 
-                      return categoryData ? (
-                        <>
-                          <div className="mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                              {categoryData.name}
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {categoryData.description}
-                            </p>
-                          </div>
-                          <ul className="masonry" style={{ columnCount: 5 }}>
-                            {categoryData.subcategories.map((subcategory, index) => (
-                              <li key={index} className="mb-3 break-inside-avoid">
-                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                  {subcategory.name}
-                                </div>
-                                <ul className="space-y-1">
-                                  {subcategory.items.map((subItem, itemIndex) => (
-                                    <li key={itemIndex} className="py-1">
-                                      <Link
-                                        to={`/category/${subItem.slug}`}
-                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                        onClick={() => {
-                                          setActiveNavTab(null);
-                                          setMouseInsideNavDropdown(false);
-                                        }}
-                                      >
-                                        {subItem.name}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </li>
-                            ))}
-                          </ul>
-                        </>
-                      ) : null;
-                    })()}
+                          return categoryData ? (
+                            <>
+                              <div className="mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                  {categoryData.name}
+                                </h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {categoryData.description}
+                                </p>
+                              </div>
+                              <ul className="masonry" style={{ columnCount: 5 }}>
+                                {categoryData.subcategories.map((subcategory, index) => (
+                                  <li key={index} className="mb-3 break-inside-avoid">
+                                    <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                      {subcategory.name}
+                                    </div>
+                                    <ul className="space-y-1">
+                                      {subcategory.items.map((subItem, itemIndex) => (
+                                        <li key={itemIndex} className="py-1">
+                                          <Link
+                                            to={`/category/${subItem.slug}`}
+                                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                            onClick={() => {
+                                              setActiveNavTab(null);
+                                              setMouseInsideNavDropdown(false);
+                                            }}
+                                          >
+                                            {subItem.name}
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </li>
+                                ))}
+                              </ul>
+                            </>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Fashion Mega Menu Dropdown */}
               {activeNavTab === 'Fashion' && (
-                <div 
-                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
-                  style={{ marginTop: '-1px' }}
-                  onMouseEnter={() => handleDropdownMouseEnter('Fashion')}
-                  onMouseLeave={handleDropdownMouseLeave}
-                >
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        {categories[5678].name}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {categories[5678].description}
-                      </p>
+                <div className="absolute top-full left-0 right-0 z-50 border-t border-gray-200 dark:border-gray-700">
+                  <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
+                    <div 
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-xl shadow-2xl overflow-hidden"
+                      onMouseEnter={() => handleDropdownMouseEnter('Fashion')}
+                      onMouseLeave={handleDropdownMouseLeave}
+                    >
+                      <div className="p-6">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            {categories[5678].name}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {categories[5678].description}
+                          </p>
+                        </div>
+                        <ul className="masonry" style={{ columnCount: 5 }}>
+                          {categories[5678].subcategories.map((subcategory, index) => (
+                            <li key={index} className="mb-3 break-inside-avoid">
+                              <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                {subcategory.name}
+                              </div>
+                              <ul className="space-y-1">
+                                {subcategory.items.map((item, itemIndex) => (
+                                  <li key={itemIndex} className="py-1">
+                                    <Link
+                                      to={`/category/${item.slug}`}
+                                      className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                      onClick={() => {
+                                        setActiveNavTab(null);
+                                        setMouseInsideNavDropdown(false);
+                                      }}
+                                    >
+                                      {item.name}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                    <ul className="masonry" style={{ columnCount: 5 }}>
-                      {categories[5678].subcategories.map((subcategory, index) => (
-                        <li key={index} className="mb-3 break-inside-avoid">
-                          <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                            {subcategory.name}
-                          </div>
-                          <ul className="space-y-1">
-                            {subcategory.items.map((item, itemIndex) => (
-                              <li key={itemIndex} className="py-1">
-                                <Link
-                                  to={`/category/${item.slug}`}
-                                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                  onClick={() => {
-                                    setActiveNavTab(null);
-                                    setMouseInsideNavDropdown(false);
-                                  }}
-                                >
-                                  {item.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </div>
               )}

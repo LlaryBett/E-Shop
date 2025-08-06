@@ -145,9 +145,9 @@ const Contact = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-44 lg:pt-32">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white py-8 overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative container mx-auto px-4 text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
@@ -174,10 +174,10 @@ const Contact = () => {
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-4">
         {/* Quick Support Cards */}
-        <div className="mb-16">
-          <div className="text-center mb-12">
+        <div className="mb-8">
+          <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Choose Your Support Method</h2>
             <p className="text-gray-600 dark:text-gray-300 text-lg">Get help the way that works best for you</p>
           </div>
@@ -354,8 +354,8 @@ const Contact = () => {
         </div>
 
         {/* FAQ Section */}
-        <div className="mt-20">
-          <div className="text-center mb-16">
+        <div className="mt-12">
+          <div className="text-center mb-8">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Frequently Asked Questions</h2>
             <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
               Find quick answers to common questions. Can't find what you're looking for? Contact us directly.
@@ -392,7 +392,7 @@ const Contact = () => {
         </div>
 
         {/* Map Section */}
-        <div className="mt-20">
+        <div className="mt-12">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
             <div className="p-8 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Visit Our Office</h3>

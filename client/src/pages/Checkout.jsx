@@ -312,8 +312,8 @@ const Checkout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
+      <div className="max-w-[1450px] mx-auto px-4 lg:px-6 py-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Checkout</h1>
 
         {/* Security Details Modal */}

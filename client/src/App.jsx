@@ -36,6 +36,7 @@ import PromoModalManager from './components/common/PromoModalManager';
 import ExitIntentModal from './components/common/ExitIntentModal';
 import Categories from './pages/Categories';
 import Shipping from './pages/Shipping';
+import SearchResults from './pages/SearchResults'; // Add this import
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
                         <Routes>
                           <Route path="/" element={<Home />} />
                           <Route path="/shop" element={<Shop />} />
+                          <Route path="/search" element={<SearchResults />} /> {/* Add this new route */}
                           <Route path="/shop/:category" element={<Shop />} />
                           <Route path="/product/:id" element={<ProductDetail />} />
                           <Route path="/cart" element={<Cart />} />

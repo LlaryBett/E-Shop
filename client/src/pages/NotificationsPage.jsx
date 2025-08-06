@@ -110,7 +110,7 @@ const NotificationsPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 sm:pt-24 pb-4 sm:pb-8 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24 pb-4 sm:pb-8 overflow-x-hidden">
       <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
         {/* Header */}
         <div className="mb-6 sm:mb-8">

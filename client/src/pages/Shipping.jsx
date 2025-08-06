@@ -98,53 +98,46 @@ const Shipping = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Navigation */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <Link 
-            to="/"
-            className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
+      
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <Truck className="h-10 w-10 text-white" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Fast & Reliable Shipping
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            We deliver your orders quickly and safely across Kenya with multiple shipping options to suit your needs.
-          </p>
-          <div className="flex flex-wrap justify-center gap-6 text-sm">
-            <div className="flex items-center text-green-600 dark:text-green-400">
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Free shipping on orders over Ksh 2,000
-            </div>
-            <div className="flex items-center text-green-600 dark:text-green-400">
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Real-time tracking included
-            </div>
-            <div className="flex items-center text-green-600 dark:text-green-400">
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Secure packaging guaranteed
+      <section className="relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900 py-8" style={{ aspectRatio: '4.6875 / 1' }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                <Truck className="h-10 w-10 text-white" />
+              </div>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-2">
+                Fast & Reliable Shipping
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-4 max-w-2xl mx-auto">
+                We deliver your orders quickly and safely across Kenya with multiple shipping options to suit your needs.
+              </p>
+              <div className="flex flex-wrap justify-center gap-3 text-xs">
+                <div className="flex items-center text-green-600 dark:text-green-400">
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Free shipping on orders over Ksh 2,000
+                </div>
+                <div className="flex items-center text-green-600 dark:text-green-400">
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Real-time tracking included
+                </div>
+                <div className="flex items-center text-green-600 dark:text-green-400">
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Secure packaging guaranteed
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-4">
         {/* Shipping Options */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-6">
             Choose Your Shipping Speed
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -196,8 +189,8 @@ const Shipping = () => {
         </div>
 
         {/* Service Areas */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-6">
             Delivery Coverage
           </h2>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
@@ -233,8 +226,8 @@ const Shipping = () => {
         </div>
 
         {/* How It Works */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-6">
             How Our Shipping Works
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -259,7 +252,7 @@ const Shipping = () => {
         </div>
 
         {/* Shipping Guarantee */}
-        <div className="mb-16">
+        <div className="mb-8">
           <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/10 dark:to-blue-900/10 rounded-xl p-8 text-center border border-green-200 dark:border-green-800">
             <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <Shield className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -289,7 +282,7 @@ const Shipping = () => {
 
         {/* FAQ Section */}
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-6">
             Frequently Asked Questions
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -304,7 +297,7 @@ const Shipping = () => {
               </div>
             ))}
           </div>
-          <div className="text-center mt-8">
+          <div className="text-center mt-6">
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               Still have questions about shipping?
             </p>
@@ -319,7 +312,7 @@ const Shipping = () => {
       </div>
 
       {/* Bottom CTA */}
-      <div className="bg-gray-900 dark:bg-black py-16">
+      <div className="bg-gray-900 dark:bg-black py-8">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to Start Shopping?

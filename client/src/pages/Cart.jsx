@@ -1,14 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Heart, ShoppingCart } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
 import { useCart } from '../contexts/CartContext';
 import { useCheckout } from '../contexts/CheckoutContext';
+import { useWishlist } from '../contexts/WishlistContext';
+import ProductService from '../services/productService';
 import toast from 'react-hot-toast';
 
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+
 const Cart = () => {
-  const { items, updateQuantity, removeFromCart, getTotalPrice, getTotalItems, clearCart, loading } = useCart();
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  
+  const { items, updateQuantity, removeFromCart, getTotalPrice, getTotalItems, clearCart, loading, addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { taxRates = [] } = useCheckout() || {};
-  // Remove local loading state, use loading from context if available
 
   const handleQuantityChange = (id, newQuantity) => {
     if (newQuantity < 1) {
@@ -30,10 +41,7 @@ const Cart = () => {
   };
 
   const subtotal = getTotalPrice();
-  // Remove shipping calculation, since shipping is decided at checkout
-  // const shipping = subtotal > 50 ? 0 : 9.99;
 
-  // Calculate tax using taxRates array (range-based)
   let tax = 0;
   if (taxRates && Array.isArray(taxRates)) {
     const taxRule = taxRates.find(
@@ -46,9 +54,85 @@ const Cart = () => {
 
   const total = subtotal + tax;
 
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (!items.length) return;
+      
+      try {
+        setLoadingRelated(true);
+        
+        // Try different ways to access category information
+        const categoryIds = [];
+        
+        // Try to extract category from different possible structures
+        items.forEach(item => {
+          const product = item.product;
+          
+          // Try different ways the category ID might be stored
+          if (product.category?._id) {
+            categoryIds.push(product.category._id);
+          } else if (product.category?.id) {
+            categoryIds.push(product.category.id);
+          } else if (product.categoryId) {
+            categoryIds.push(product.categoryId);
+          } else if (typeof product.category === 'string') {
+            categoryIds.push(product.category);
+          }
+        });
+        
+        // Use the first category ID to fetch related products
+        if (categoryIds.length > 0) {
+          // Get the first product ID to exclude it from results
+          const excludeProductId = items[0].product._id || items[0].product.id;
+          
+          // As a fallback, if we can't get related products by category, use a hardcoded category
+          const products = await ProductService.getRelatedProducts(
+            excludeProductId, 
+            categoryIds[0] || "electronics" // Fallback to a default category
+          );
+          
+          setRelatedProducts(products || []);
+        } else {
+          // Fallback to get some products using a default category
+          const defaultCategory = "electronics";
+          const excludeProductId = items[0].product._id || items[0].product.id;
+          const products = await ProductService.getRelatedProducts(excludeProductId, defaultCategory);
+          
+          setRelatedProducts(products || []);
+        }
+      } catch (error) {
+        // Silently handle errors
+        setRelatedProducts([]);
+      } finally {
+        setLoadingRelated(false);
+      }
+    };
+
+    fetchRelatedProducts();
+  }, [items]);
+
+  const handleAddRelatedToCart = (product) => {
+    const item = {
+      product,
+      quantity: 1
+    };
+    addToCart(item);
+    toast.success('Added to cart!');
+  };
+  
+  const handleRelatedWishlistToggle = (product) => {
+    if (isInWishlist(product._id)) {
+      removeFromWishlist(product._id);
+      toast.success('Removed from wishlist');
+    } else {
+      addToWishlist(product);
+      toast.success('Added to wishlist!');
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-44 lg:pt-32">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -56,8 +140,8 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto px-4 py-16">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-44 lg:pt-32">
+        <div className="container mx-auto px-4 py-4">
           <div className="text-center">
             <ShoppingBag className="h-24 w-24 text-gray-400 mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Your cart is empty</h1>
@@ -78,8 +162,8 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-44 lg:pt-32">
+      <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Shopping Cart ({getTotalItems()} items)
@@ -109,7 +193,6 @@ const Cart = () => {
                 </Link>
 
                 <div className="flex-1 min-w-0">
-                  
                   <Link
                     to={`/product/${item.product.id}`}
                     className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 transition-colors"
@@ -252,19 +335,139 @@ const Cart = () => {
           </div>
         </div>
 
-        {/* Recently Viewed */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-            You might also like
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {/* This would typically show recently viewed or recommended products */}
-            {/* For now, showing some sample products */}
-            <div className="text-center text-gray-500 dark:text-gray-400 col-span-full py-8">
-              <p>Recommended products would appear here</p>
+        {/* You might also like - Swiper Section */}
+        <section className="py-4 sm:py-6 md:py-8 mt-16">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              You might also like
+            </h2>
+            <div className="flex space-x-2">
+              <button
+                className="related-products-swiper-prev rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Previous"
+              >
+                <svg className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                className="related-products-swiper-next rounded-full p-2 bg-blue-600 hover:bg-blue-700 transition-colors"
+                aria-label="Next"
+              >
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           </div>
-        </div>
+
+          {loadingRelated ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : relatedProducts.length > 0 ? (
+            <Swiper
+              modules={[Navigation]}
+              navigation={{
+                nextEl: '.related-products-swiper-next',
+                prevEl: '.related-products-swiper-prev',
+              }}
+              spaceBetween={16}
+              slidesPerView={2}
+              breakpoints={{
+                480: { slidesPerView: 2.5 },
+                640: { slidesPerView: 3 },
+                768: { slidesPerView: 4 },
+                1024: { slidesPerView: 5 },
+                1280: { slidesPerView: 6 },
+              }}
+              className="pb-8"
+            >
+              {relatedProducts.map((product, index) => (
+                <SwiperSlide key={product._id}>
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+                    <Link to={`/product/${product._id}`}>
+                      <div className="aspect-square overflow-hidden relative">
+                        <img 
+                          src={product.images?.[0]?.url || 'https://via.placeholder.com/300'}
+                          alt={product.title}
+                          className="w-full h-48 object-cover rounded-t-lg"
+                        />
+                        {product.salePrice && (
+                          <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                            -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    
+                    <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
+                      <Link to={`/product/${product._id}`} className="hover:text-blue-600 transition-colors">
+                        <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                          <span className="line-clamp-2">
+                            {product.title}
+                          </span>
+                        </h3>
+                      </Link>
+
+                      <div className="mt-1">
+                        <div className="flex items-baseline">
+                          <p className="text-red-600 font-bold text-base">
+                            KES {product.salePrice || product.price}
+                          </p>
+                          {product.salePrice && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                              KES {product.price}
+                            </span>
+                          )}
+                        </div>
+                        {product.salePrice && (
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                            Save KES {Math.floor(product.price - product.salePrice)}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex-grow"></div>
+                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                        <button
+                          onClick={() => handleAddRelatedToCart(product)}
+                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <span className="text-xs sm:text-sm">Add to Cart</span>
+                        </button>
+                        <button
+                          onClick={() => handleRelatedWishlistToggle(product)}
+                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                            isInWishlist(product._id)
+                              ? 'bg-red-50 border-red-200 text-red-600'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                          } flex items-center justify-center`}
+                        >
+                          <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          ) : (
+            <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+              <p>No related products found</p>
+            </div>
+          )}
+
+          <div className="text-center mt-8">
+            <Link
+              to="/shop"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
+            >
+              View All Products
+            </Link>
+          </div>
+        </section>
       </div>
     </div>
   );

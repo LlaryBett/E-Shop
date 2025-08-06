@@ -90,14 +90,12 @@ const Orders = () => {
   const handleCancelOrder = async (orderId) => {
     try {
       await OrderService.cancelOrder(orderId);
-      // Refresh orders after cancellation
       const response = await OrderService.getOrders(pagination.page, pagination.limit, statusFilter !== 'all' ? statusFilter : undefined);
       setOrders(response.orders);
     } catch (err) {
-      // Show backend error message as toast only
       const msg = err?.response?.data?.message || err.message || 'Failed to cancel order';
       toast.error(msg);
-      setError(null); // Don't show error page
+      setError(null);
     }
   };
 
@@ -121,7 +119,6 @@ const Orders = () => {
     try {
       const items = await OrderService.reorderOrder(orderId);
       for (const item of items) {
-        // Fetch full product details before adding to cart
         const product = await ProductService.getProduct(item.product);
         addToCart(product, item.quantity, item.variant);
       }
@@ -132,7 +129,7 @@ const Orders = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pt-44 lg:pt-32 px-4">
         <div className="text-center">
           <Package className="h-8 w-8 sm:h-12 sm:w-12 text-blue-500 animate-bounce mx-auto" />
           <p className="mt-4 text-base sm:text-lg text-gray-600 dark:text-gray-400">Loading your orders...</p>
@@ -143,7 +140,7 @@ const Orders = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pt-44 lg:pt-32 px-4">
         <div className="text-center max-w-md">
           <XCircle className="h-8 w-8 sm:h-12 sm:w-12 text-red-500 mx-auto" />
           <p className="mt-4 text-base sm:text-lg text-gray-600 dark:text-gray-400 px-4">{error}</p>
@@ -159,10 +156,10 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 sm:pt-24 pb-4 sm:pb-8 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-44 lg:pt-32 pb-4 overflow-x-hidden">
       <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">My Orders</h1>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
             Track and manage your order history
@@ -170,68 +167,64 @@ const Orders = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="space-y-4">
-            {/* Search - Full width on mobile */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+        <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search orders..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base"
               />
             </div>
-
-            {/* Filter and Results - Stack on mobile */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full sm:w-auto px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base"
-              >
-                <option value="all">All Orders</option>
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-right">
-                {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''} found
-              </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="flex-shrink-0 px-4 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base"
+            >
+              <option value="all">All Orders</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex-shrink-0 text-center sm:text-left">
+              {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''} found
             </div>
           </div>
         </div>
 
         {/* Orders List */}
         {filteredOrders.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md p-8 sm:p-12 text-center">
-            <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">No orders found</h3>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 px-4">
-              {searchQuery || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filter criteria.'
-                : "You haven't placed any orders yet."
-              }
-            </p>
-            <Link
-              to="/shop"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-            >
-              Start Shopping
-            </Link>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-44 lg:pt-32">
+            <div className="container mx-auto px-3 sm:px-4 py-4 max-w-6xl">
+              <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md p-8 sm:p-12 text-center">
+                <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">No orders found</h3>
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 px-4">
+                  {searchQuery || statusFilter !== 'all' 
+                    ? 'Try adjusting your search or filter criteria.'
+                    : "You haven't placed any orders yet."
+                  }
+                </p>
+                <Link
+                  to="/shop"
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                >
+                  Start Shopping
+                </Link>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-4 sm:space-y-6">
             {filteredOrders.map((order) => (
               <div key={order._id} className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md overflow-hidden">
-                {/* Order Header */}
                 <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
-                    {/* Order Info - Stack on mobile */}
                     <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:space-x-4">
                       <div>
                         <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
@@ -241,8 +234,6 @@ const Orders = () => {
                           Placed on {new Date(order.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      
-                      {/* Status Badge */}
                       <div className="flex items-center space-x-2 w-fit">
                         {getStatusIcon(order.status)}
                         <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(order.status)}`}>
@@ -250,8 +241,6 @@ const Orders = () => {
                         </span>
                       </div>
                     </div>
-                    
-                    {/* Price and Actions - Stack on mobile */}
                     <div className="flex items-center justify-between sm:justify-end sm:space-x-4">
                       <div className="text-left sm:text-right">
                         <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
@@ -261,8 +250,6 @@ const Orders = () => {
                           {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                         </p>
                       </div>
-                      
-                      {/* Action Buttons */}
                       <div className="flex space-x-1 sm:space-x-2">
                         <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                           <Eye className="h-4 w-4" />
@@ -278,8 +265,6 @@ const Orders = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Order Items */}
                 <div className="p-4 sm:p-6">
                   <div className="space-y-3 sm:space-y-4">
                     {order.items.map((item) => (
@@ -308,8 +293,6 @@ const Orders = () => {
                       </div>
                     ))}
                   </div>
-
-                  {/* Tracking Info */}
                   {order.trackingNumber && (
                     <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
@@ -325,8 +308,6 @@ const Orders = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* Shipping Address */}
                   <div className="mt-4 sm:mt-6 p-3 sm:p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
                     <h5 className="font-medium text-gray-900 dark:text-white mb-2 text-sm sm:text-base">Shipping Address</h5>
                     <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1">
@@ -337,8 +318,6 @@ const Orders = () => {
                       </p>
                     </div>
                   </div>
-
-                  {/* Order Actions */}
                   <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3">
                     {order.status === 'delivered' && (
                       <>
@@ -358,21 +337,23 @@ const Orders = () => {
                         Cancel Order
                       </button>
                     )}
-                    <button
-                      className="w-full sm:w-auto px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm sm:text-base"
-                      onClick={() => handleReorderItems(order._id)}
-                    >
-                      Reorder Items
-                    </button>
-                    <button className="w-full sm:w-auto px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm sm:text-base">
-                      Get Help
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        className="flex-1 min-w-[120px] px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                        onClick={() => handleReorderItems(order._id)}
+                      >
+                        Reorder Items
+                      </button>
+                      <button
+                        className="flex-1 min-w-[120px] px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                      >
+                        Get Help
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
-
-            {/* Pagination */}
             {pagination.total > pagination.limit && (
               <div className="flex justify-center mt-6 sm:mt-8">
                 <nav className="flex items-center space-x-1 sm:space-x-2">
