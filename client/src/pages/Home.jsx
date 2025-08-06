@@ -65,7 +65,7 @@ const Home = () => {
     },
     {
       id: 4,
-      image: "/assets/Purple Green Colorful Organic Illustrative Online Shop Banner.jpg",
+      image: "/assets/Purple Green  Colorful Organic Illustrative Online Shop Banner.png",
       ctaLink: "/shop/outdoor"
     }
   ];
@@ -183,7 +183,7 @@ const Home = () => {
       <section className="relative overflow-hidden mt-4">
         <div className="max-w-[1450px] mx-auto px-4 lg:px-6">
           <div
-            className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-700"
+            className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
             style={{ aspectRatio: '4.6875/1' }}
           >
             {/* Banner Images */}
@@ -194,7 +194,7 @@ const Home = () => {
               {banners.map((banner, index) => (
                 <div
                   key={banner.id}
-                  className="w-full h-full flex-shrink-0 relative bg-gray-300 dark:bg-gray-600"
+                  className="w-full h-full flex-shrink-0 relative"
                 >
                   <img
                     src={banner.image}

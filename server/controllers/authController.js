@@ -181,10 +181,22 @@ export const forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'There is no user with that email',
+      // Security best practice: Don't reveal if a user exists or not
+      return res.status(200).json({
+        success: true,
+        message: 'If your email is registered, you will receive a password reset link',
       });
+    }
+
+    // Check for reset request frequency to prevent abuse
+    if (user.resetPasswordExpire && user.resetPasswordExpire > Date.now()) {
+      const timeLeft = Math.ceil((user.resetPasswordExpire - Date.now()) / (60 * 1000));
+      if (timeLeft > 55) { // If more than 55 minutes left on a 60-minute token
+        return res.status(429).json({
+          success: false,
+          message: `Please wait before requesting another reset. You can request again in ${timeLeft} minutes.`,
+        });
+      }
     }
 
     const resetToken = user.getResetPasswordToken();
@@ -193,24 +205,36 @@ export const forgotPassword = async (req, res, next) => {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     try {
+      // Use the email utility's template generation instead of custom HTML
       await sendEmail({
         email: user.email,
-        subject: 'Password Reset Token',
-        message: `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: ${resetUrl}`,
+        subject: 'E-Shop Password Reset',
+        greeting: 'Hello',
+        name: user.name,
+        message: 'You are receiving this email because a password reset was requested for your account. This link will expire in 60 minutes.\n\nIf you did not request this password reset, please ignore this email and your password will remain unchanged.',
+        actionUrl: resetUrl,
+        actionText: 'Reset Password',
+        footerText: 'This email was sent because a password reset was requested for your account.',
+        showContactSupport: true
       });
 
-      res.status(200).json({
+      // Log this for monitoring and debugging purposes
+      console.log(`✅ Password reset email sent to ${user.email}`);
+
+      // Return the same response regardless of whether the user exists
+      return res.status(200).json({
         success: true,
-        message: 'Email sent',
+        message: 'If your email is registered, you will receive a password reset link',
       });
     } catch (error) {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save({ validateBeforeSave: false });
 
+      console.error('Error sending password reset email:', error);
       return res.status(500).json({
         success: false,
-        message: 'Email could not be sent',
+        message: 'Could not send reset email. Please try again later.',
       });
     }
   } catch (error) {
@@ -232,6 +256,7 @@ export const resetPassword = async (req, res, next) => {
       });
     }
 
+    // Find user with valid token
     const user = await User.findOne({
       resetPasswordToken: req.params.token,
       resetPasswordExpire: { $gt: Date.now() },
@@ -240,15 +265,37 @@ export const resetPassword = async (req, res, next) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid token',
+        message: 'Password reset token is invalid or has expired',
       });
     }
 
+    // Update password and clear reset fields
     user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+    
+    // Add a flag to indicate the password was reset
+    user.passwordLastChanged = Date.now();
+    
     await user.save();
 
+    // Send notification email that password was changed
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Your Password Has Been Changed',
+        greeting: 'Hello',
+        name: user.name,
+        message: 'Your password has been successfully reset.\n\nIf you did not make this change, please contact our support team immediately.',
+        footerText: 'This is a security notification regarding your E-Shop account.',
+        showContactSupport: true
+      });
+    } catch (error) {
+      // Don't fail the request if the confirmation email fails
+      console.error('Error sending password change confirmation:', error);
+    }
+
+    // Return success response with new token
     sendTokenResponse(user, 200, res);
   } catch (error) {
     next(error);
@@ -341,7 +388,12 @@ export const resendVerification = async (req, res, next) => {
       await sendEmail({
         email: user.email,
         subject: 'Email Verification',
-        message: `Please click on the following link to verify your email: ${verificationUrl}`,
+        greeting: 'Hello',
+        name: user.name,
+        message: 'Thank you for registering with E-Shop. Please verify your email address to complete your registration.',
+        actionUrl: verificationUrl,
+        actionText: 'Verify Email',
+        footerText: 'If you did not create an account, please ignore this email.',
       });
 
       res.status(200).json({

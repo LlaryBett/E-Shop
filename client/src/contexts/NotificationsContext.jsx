@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import notificationsService from '../services/notificationsService';
+import { useAuth } from './AuthContext'; // Import your auth context
+import toast from 'react-hot-toast';
 
 const NotificationsContext = createContext();
 
@@ -12,143 +14,154 @@ export const useNotifications = () => {
 };
 
 export const NotificationsProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [events, setEvents] = useState([]);
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [loading, setLoading] = useState(true);
-  const [eventsLoading, setEventsLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Fetch notifications from backend
+  // Unified data loader with auth check
+  const loadNotificationsData = useCallback(async () => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      setEvents([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setEventsLoading(true);
+      setError(null);
+
+      const [notifs, evts] = await Promise.all([
+        notificationsService.getNotifications(),
+        notificationsService.getEvents()
+      ]);
+
+      setNotifications(notifs || []);
+      setEvents(evts || []);
+    } catch (error) {
+      if (!error.isAuthError) {
+        setError('Failed to load notifications');
+        toast.error('Failed to load notifications');
+        console.error('Notifications error:', error);
+      }
+    } finally {
+      setLoading(false);
+      setEventsLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  // Initial load and auth change handler
   useEffect(() => {
-    setLoading(true);
-    notificationsService.getNotifications()
-      .then((data) => {
-        console.log('notificationsService.getNotifications() response:', data);
+    loadNotificationsData();
+  }, [loadNotificationsData]);
 
-        if (data && data.data && Array.isArray(data.data.notifications)) {
-          setNotifications(data.data.notifications);
-        } else if (data && Array.isArray(data.notifications)) {
-          setNotifications(data.notifications);
-        } else if (Array.isArray(data)) {
-          setNotifications(data);
-        } else {
-          setNotifications([]);
-        }
-      })
-      .catch((err) => {
-        console.error('Error fetching notifications:', err);
-        setNotifications([]);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  // Fetch notification events
-  useEffect(() => {
-    setEventsLoading(true);
-    notificationsService.getEvents()
-      .then((res) => {
-        // Adjust based on your API's response shape
-        if (Array.isArray(res)) {
-          setEvents(res);
-        } else if (res && Array.isArray(res.events)) {
-          setEvents(res.events);
-        } else {
-          setEvents([]);
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching events:', error);
-        setEvents([]);
-      })
-      .finally(() => setEventsLoading(false));
-  }, []);
-
+  // Notification actions
   const markAsRead = async (id) => {
-    await notificationsService.markAsRead(id);
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
+    try {
+      await notificationsService.markAsRead(id);
+      setNotifications(prev =>
+        prev.map(n => n.id === id ? { ...n, isRead: true } : n)
+      );
+    } catch (error) {
+      toast.error('Failed to mark as read');
+    }
   };
 
   const markAllAsRead = async () => {
-    await notificationsService.markAllAsRead();
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
+    try {
+      await notificationsService.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (error) {
+      toast.error('Failed to mark all as read');
+    }
   };
 
   const deleteNotification = async (id) => {
-    await notificationsService.deleteNotification(id);
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+    try {
+      await notificationsService.deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      toast.error('Failed to delete notification');
+    }
   };
 
   const clearAll = async () => {
-    await notificationsService.clearAll();
-    setNotifications([]);
+    try {
+      await notificationsService.clearAll();
+      setNotifications([]);
+    } catch (error) {
+      toast.error('Failed to clear notifications');
+    }
   };
 
+  // Event actions
   const createEvent = async (eventData) => {
-    const newEvent = await notificationsService.createEvent(eventData);
-    setEvents(prev => [...prev, newEvent]);
-    return newEvent;
+    try {
+      const newEvent = await notificationsService.createEvent(eventData);
+      setEvents(prev => [...prev, newEvent]);
+      return newEvent;
+    } catch (error) {
+      toast.error('Failed to create event');
+      throw error;
+    }
   };
 
   const updateEvent = async (eventKey, eventData) => {
-    const updatedEvent = await notificationsService.updateEvent(eventKey, eventData);
-    setEvents(prev =>
-      prev.map(event =>
-        event.eventKey === eventKey ? updatedEvent : event
-      )
-    );
-    return updatedEvent;
+    try {
+      const updatedEvent = await notificationsService.updateEvent(eventKey, eventData);
+      setEvents(prev =>
+        prev.map(e => e.eventKey === eventKey ? updatedEvent : e)
+      );
+      return updatedEvent;
+    } catch (error) {
+      toast.error('Failed to update event');
+      throw error;
+    }
   };
 
   const deleteEvent = async (eventKey) => {
-    await notificationsService.deleteEvent(eventKey);
-    setEvents(prev => prev.filter(event => event.eventKey !== eventKey));
+    try {
+      await notificationsService.deleteEvent(eventKey);
+      setEvents(prev => prev.filter(e => e.eventKey !== eventKey));
+    } catch (error) {
+      toast.error('Failed to delete event');
+    }
   };
 
   const toggleEvent = async (eventKey, enabled) => {
-    await notificationsService.toggleEvent(eventKey, enabled);
-    setEvents(prev =>
-      prev.map(event =>
-        event.eventKey === eventKey ? { ...event, enabled } : event
-      )
-    );
+    try {
+      await notificationsService.toggleEvent(eventKey, enabled);
+      setEvents(prev =>
+        prev.map(e => e.eventKey === eventKey ? { ...e, enabled } : e)
+      );
+    } catch (error) {
+      toast.error('Failed to toggle event');
+    }
   };
 
-  const getUnreadCount = () => {
-    return notifications.filter(notification => !notification.isRead).length;
-  };
+  // Derived data
+  const getUnreadCount = () => notifications.filter(n => !n.isRead).length;
 
   const getFilteredNotifications = () => {
-    let filtered = notifications;
+    let filtered = [...notifications];
 
     if (filter !== 'all') {
-      if (filter === 'unread') {
-        filtered = filtered.filter(notification => !notification.isRead);
-      } else {
-        filtered = filtered.filter(notification => notification.type === filter);
-      }
+      filtered = filter === 'unread'
+        ? filtered.filter(n => !n.isRead)
+        : filtered.filter(n => n.type === filter);
     }
 
-    filtered = [...filtered].sort((a, b) => {
-      if (sortBy === 'newest') {
-        return new Date(b.timestamp) - new Date(a.timestamp);
-      } else if (sortBy === 'oldest') {
-        return new Date(a.timestamp) - new Date(b.timestamp);
-      } else if (sortBy === 'unread') {
-        return a.isRead - b.isRead;
-      }
+    return filtered.sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.timestamp) - new Date(a.timestamp);
+      if (sortBy === 'oldest') return new Date(a.timestamp) - new Date(b.timestamp);
+      if (sortBy === 'unread') return a.isRead - b.isRead;
       return 0;
     });
-
-    return filtered;
   };
 
   const value = {
@@ -160,6 +173,7 @@ export const NotificationsProvider = ({ children }) => {
     setSortBy,
     loading,
     eventsLoading,
+    error,
     markAsRead,
     markAllAsRead,
     deleteNotification,
@@ -169,7 +183,8 @@ export const NotificationsProvider = ({ children }) => {
     deleteEvent,
     toggleEvent,
     getUnreadCount,
-    getFilteredNotifications
+    getFilteredNotifications,
+    refresh: loadNotificationsData
   };
 
   return (

@@ -18,6 +18,6 @@ router.get('/tax-rates', protect, configController.getTaxRates);
 
 // --- Shipping Methods ---
 router.post('/shipping-methods', protect, configController.createShippingMethod);
-router.get('/shipping-methods', protect, configController.getShippingMethods);
+router.get('/shipping-methods',  configController.getShippingMethods);
 
 export default router;

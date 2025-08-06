@@ -1,76 +1,118 @@
-// services/notificationsService.js
-
 import api from './api';
+import AuthService from './authService'; // Import your auth service
 
 class NotificationsService {
+  /**
+   * Safe request wrapper that handles auth checks
+   */
+  async _makeAuthRequest(method, url, data = null, params = {}) {
+    if (!AuthService.isAuthenticated()) {
+      throw Object.assign(new Error('Not authenticated'), {
+        isAuthError: true,
+        suppressToast: true
+      });
+    }
+
+    try {
+      const response = await api({
+        method,
+        url,
+        data,
+        params,
+        _suppressAuthRedirect: true // Prevent auto-redirect
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw Object.assign(new Error('Session expired'), {
+          isAuthError: true
+        });
+      }
+      throw error;
+    }
+  }
+
   // 🔔 Notification methods
   async getNotifications(params = {}) {
-    const response = await api.get('/notifications', { params });
-    return response.data?.data?.notifications || [];
+    try {
+      const data = await this._makeAuthRequest('get', '/notifications', null, params);
+      return data?.notifications || [];
+    } catch (error) {
+      if (error.isAuthError) throw error;
+      return []; // Return empty array on other errors
+    }
   }
 
   async getUnreadCount() {
-    const response = await api.get('/notifications/unread-count');
-    return response.data.count;
+    try {
+      const data = await this._makeAuthRequest('get', '/notifications/unread-count');
+      return data.count || 0;
+    } catch (error) {
+      if (error.isAuthError) throw error;
+      return 0;
+    }
   }
 
   async getNotificationById(id) {
-    const response = await api.get(`/notifications/${id}`);
-    return response.data.notification;
+    return this._makeAuthRequest('get', `/notifications/${id}`);
   }
 
   async createNotification(data) {
-    const response = await api.post('/notifications', data);
-    return response.data.notification;
+    return this._makeAuthRequest('post', '/notifications', data);
   }
 
   async markAsRead(id) {
-    return api.patch(`/notifications/${id}/read`);
+    return this._makeAuthRequest('patch', `/notifications/${id}/read`);
   }
 
   async markAllAsRead() {
-    return api.patch('/notifications/read-all');
+    return this._makeAuthRequest('patch', '/notifications/read-all');
   }
 
   async bulkOperations(data) {
-    return api.post('/notifications/bulk', data);
+    return this._makeAuthRequest('post', '/notifications/bulk', data);
   }
 
   async deleteNotification(id) {
-    return api.delete(`/notifications/${id}`);
+    return this._makeAuthRequest('delete', `/notifications/${id}`);
   }
 
   async clearAll() {
-    return api.delete('/notifications/clear-all');
+    return this._makeAuthRequest('delete', '/notifications/clear-all');
   }
 
-  // ⚙️ Notification Event methods (Corrected to match backend route: /api/notifications/events)
+  // ⚙️ Notification Event methods
   async getEvents() {
-    const response = await api.get('/notifications/events'); // ✅ Matches route
-    return response.data?.events || [];
+    try {
+      const data = await this._makeAuthRequest('get', '/notifications/events');
+      return data?.events || [];
+    } catch (error) {
+      if (error.isAuthError) throw error;
+      return [];
+    }
   }
 
   async getEventByKey(eventKey) {
-    const response = await api.get(`/notifications/events/${eventKey}`);
-    return response.data.event;
+    return this._makeAuthRequest('get', `/notifications/events/${eventKey}`);
   }
 
   async createEvent(data) {
-    const response = await api.post('/notifications/events', data);
-    return response.data.event;
+    return this._makeAuthRequest('post', '/notifications/events', data);
   }
 
   async updateEvent(eventKey, data) {
-    const response = await api.put(`/notifications/events/${eventKey}`, data);
-    return response.data.event;
+    return this._makeAuthRequest('put', `/notifications/events/${eventKey}`, data);
   }
 
   async deleteEvent(eventKey) {
-    return api.delete(`/notifications/events/${eventKey}`);
+    return this._makeAuthRequest('delete', `/notifications/events/${eventKey}`);
   }
 
   async toggleEvent(eventKey, enabled) {
-    return api.patch(`/notifications/events/${eventKey}/toggle`, { enabled });
+    return this._makeAuthRequest('patch', 
+      `/notifications/events/${eventKey}/toggle`, 
+      { enabled }
+    );
   }
 }
 

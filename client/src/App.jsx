@@ -37,6 +37,7 @@ import ExitIntentModal from './components/common/ExitIntentModal';
 import Categories from './pages/Categories';
 import Shipping from './pages/Shipping';
 import SearchResults from './pages/SearchResults'; // Add this import
+import ResetPassword from './pages/ResetPassword'; // Import the ResetPassword component
 
 function App() {
   return (
@@ -64,18 +65,27 @@ function App() {
                           <Route path="/profile" element={<Profile />} />
                           <Route path="/orders" element={<Orders />} />
                           <Route path="/wishlist" element={<Wishlist />} />
-                          <Route path="/login" element={<Login />} />
-                          <Route path="/register" element={<Register />} />
-                          <Route path="/admin/*" element={<AdminDashboard />} />
                           <Route path="/about" element={<About />} />
                           <Route path="/contact" element={<Contact />} />
                           <Route path="/blog" element={<Blog />} />
                           <Route path="/faq" element={<FAQ />} />
                           <Route path="/verify-email-prompt" element={<VerifyEmailPrompt />} />
-                          <Route path="/verify-email/:token" element={<VerifyEmail />} />
                           <Route path="/notifications" element={<NotificationsPage />} />
                           <Route path="/categories" element={<Categories />} />
                           <Route path="/shipping" element={<Shipping />} />
+                          
+                          {/* Public routes that don't require authentication */}
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/register" element={<Register />} />
+                          <Route path="/reset-password/:token" element={<ResetPassword />} />
+                          <Route path="/verify-email/:token" element={<VerifyEmail />} />
+                          <Route path="/shipping" element={<Shipping />} />
+
+                          {/* Protected routes */}
+                          {/* <Route element={<ProtectedRoute />}> */}
+                            {/* Your protected routes */}
+                          {/* </Route> */}
+
                         </Routes>
                       </main>
                       <Footer />

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import AuthService from '../services/authService';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,6 +21,18 @@ const Login = () => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const from = location.state?.from?.pathname || '/';
+
+  // Check if we should open the forgot password modal based on navigation state
+  useEffect(() => {
+    if (location.state?.openForgotPasswordModal) {
+      setShowForgotPasswordModal(true);
+    }
+    
+    // Optional: Check if user was redirected after password reset
+    if (location.state?.passwordReset) {
+      toast.success('Your password has been reset successfully. Please log in with your new password.');
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -45,25 +58,34 @@ const Login = () => {
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
+    
+    // Email validation
     if (!resetEmail) {
       toast.error('Please enter your email address');
+      return;
+    }
+    
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      toast.error('Please enter a valid email address');
       return;
     }
     
     setIsResettingPassword(true);
     
     try {
-      // This would be an actual API call in a real application
-      // await AuthService.sendPasswordResetEmail(resetEmail);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Replace the simulation with an actual API call
+      await AuthService.sendPasswordResetEmail(resetEmail);
       
       toast.success('Password reset email sent! Check your inbox.');
       setShowForgotPasswordModal(false);
       setResetEmail('');
     } catch (error) {
-      toast.error('Failed to send reset email. Please try again.');
+      // More detailed error handling
+      const errorMessage = error.response?.data?.message || 
+                           'Failed to send reset email. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsResettingPassword(false);
     }

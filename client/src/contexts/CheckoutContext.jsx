@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import * as checkoutService from '../services/checkoutService';
 import toast from 'react-hot-toast';
+import { useAuth } from './AuthContext'; // Import your auth context
 
 const CheckoutContext = createContext();
 
@@ -19,83 +20,84 @@ export const useCheckout = () => {
 };
 
 export const CheckoutProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [coupons, setCoupons] = useState([]);
   const [fees, setFees] = useState(null);
   const [taxRates, setTaxRates] = useState([]);
   const [shippingMethods, setShippingMethods] = useState([]);
-
   const [loading, setLoading] = useState({
     coupons: false,
     fees: false,
     taxRates: false,
     shippingMethods: false,
   });
-
   const [error, setError] = useState(null);
 
-  // Fetch Coupons
-  const fetchCoupons = useCallback(async () => {
-    setLoading(prev => ({ ...prev, coupons: true }));
-    try {
-      const data = await checkoutService.getCoupons();
-      setCoupons(data || []);
-    } catch (err) {
-      setError('Failed to fetch coupons');
-      toast.error('Failed to load coupons');
-    } finally {
-      setLoading(prev => ({ ...prev, coupons: false }));
-    }
-  }, []);
-
-  // Fetch Fees & Rates
-  const fetchFees = useCallback(async () => {
-    setLoading(prev => ({ ...prev, fees: true }));
-    try {
-      const data = await checkoutService.getFeesAndRates();
-      setFees(data || null);
-    } catch (err) {
-      setError('Failed to fetch fees and rates');
-      toast.error('Failed to load fees');
-    } finally {
-      setLoading(prev => ({ ...prev, fees: false }));
-    }
-  }, []);
-
-  // Fetch Tax Rates
-  const fetchTaxRates = useCallback(async () => {
-    setLoading(prev => ({ ...prev, taxRates: true }));
-    try {
-      const data = await checkoutService.getTaxRates();
-      setTaxRates(data || []);
-    } catch (err) {
-      setError('Failed to fetch tax rates');
-      toast.error('Failed to load tax rates');
-    } finally {
-      setLoading(prev => ({ ...prev, taxRates: false }));
-    }
-  }, []);
-
-  // Fetch Shipping Methods
+  // Fetch Shipping Methods (public endpoint)
   const fetchShippingMethods = useCallback(async () => {
     setLoading(prev => ({ ...prev, shippingMethods: true }));
+    setError(null);
     try {
       const data = await checkoutService.getShippingMethods();
       setShippingMethods(data || []);
     } catch (err) {
       setError('Failed to fetch shipping methods');
-      toast.error('Failed to load shipping methods');
+      console.error('Shipping methods error:', err);
     } finally {
       setLoading(prev => ({ ...prev, shippingMethods: false }));
     }
   }, []);
 
-  // Fetch all on mount
+  // Fetch Protected Data (only when authenticated)
+  const fetchProtectedData = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      setLoading(prev => ({
+        ...prev,
+        coupons: true,
+        fees: true,
+        taxRates: true
+      }));
+      setError(null);
+      
+      const [couponsData, feesData, taxData] = await Promise.all([
+        checkoutService.getCoupons(),
+        checkoutService.getFeesAndRates(),
+        checkoutService.getTaxRates()
+      ]);
+      
+      setCoupons(couponsData || []);
+      setFees(feesData || null);
+      setTaxRates(taxData || []);
+    } catch (err) {
+      setError('Failed to load checkout data');
+      console.error('Protected data error:', err);
+    } finally {
+      setLoading(prev => ({
+        ...prev,
+        coupons: false,
+        fees: false,
+        taxRates: false
+      }));
+    }
+  }, [isAuthenticated]);
+
+  // Initial data loading
   useEffect(() => {
-    fetchCoupons();
-    fetchFees();
-    fetchTaxRates();
+    // Always load public data
     fetchShippingMethods();
-  }, [fetchCoupons, fetchFees, fetchTaxRates, fetchShippingMethods]);
+    
+    // Only load protected data if authenticated
+    if (isAuthenticated) {
+      fetchProtectedData();
+    } else {
+      // Clear protected data when logged out
+      setCoupons([]);
+      setFees(null);
+      setTaxRates([]);
+    }
+  }, [isAuthenticated, fetchShippingMethods, fetchProtectedData]);
 
   const value = {
     coupons,
@@ -104,10 +106,8 @@ export const CheckoutProvider = ({ children }) => {
     shippingMethods,
     loading,
     error,
-    fetchCoupons,
-    fetchFees,
-    fetchTaxRates,
-    fetchShippingMethods,
+    refetch: fetchProtectedData,
+    fetchShippingMethods
   };
 
   return (

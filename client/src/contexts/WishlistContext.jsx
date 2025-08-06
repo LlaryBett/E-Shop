@@ -1,12 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  fetchWishlist,
-  addToWishlist as addToWishlistAPI,
-  removeFromWishlist as removeFromWishlistAPI,
-  clearWishlist as clearWishlistAPI
-} from '../services/wishlistService';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import wishlistService from '../services/wishlistService';
+import { useAuth } from './AuthContext';
+import toast from 'react-hot-toast';
 
-const WishlistContext = createContext(undefined);
+const WishlistContext = createContext();
 
 export const useWishlist = () => {
   const context = useContext(WishlistContext);
@@ -17,45 +14,71 @@ export const useWishlist = () => {
 };
 
 export const WishlistProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Load wishlist from API on mount
-  useEffect(() => {
-    const loadWishlist = async () => {
-      try {
-        const data = await fetchWishlist();
-        setItems(data);
-      } catch (err) {
-        console.error('Failed to load wishlist:', err);
+  const loadWishlist = useCallback(async () => {
+    if (!isAuthenticated) {
+      setItems([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await wishlistService.fetchWishlist();
+      setItems(data);
+    } catch (error) {
+      if (!error.isAuthError) {
+        setError('Failed to load wishlist');
+        toast.error('Failed to load wishlist');
+        console.error('Wishlist error:', error);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     loadWishlist();
-  }, []);
+  }, [loadWishlist]);
 
   const addToWishlist = async (product) => {
     try {
-      const updated = await addToWishlistAPI(product.id);
+      const updated = await wishlistService.addToWishlist(product.id);
       setItems(updated);
-    } catch (err) {
-      console.error('Add to wishlist failed:', err);
+      toast.success('Added to wishlist');
+    } catch (error) {
+      if (!error.isAuthError) {
+        toast.error('Failed to add to wishlist');
+      }
+      throw error;
     }
   };
 
   const removeFromWishlist = async (productId) => {
     try {
-      const updated = await removeFromWishlistAPI(productId);
+      const updated = await wishlistService.removeFromWishlist(productId);
       setItems(updated);
-    } catch (err) {
-      console.error('Remove from wishlist failed:', err);
+      toast.success('Removed from wishlist');
+    } catch (error) {
+      if (!error.isAuthError) {
+        toast.error('Failed to remove from wishlist');
+      }
     }
   };
 
   const clearWishlist = async () => {
     try {
-      await clearWishlistAPI();
+      await wishlistService.clearWishlist();
       setItems([]);
-    } catch (err) {
-      console.error('Clear wishlist failed:', err);
+      toast.success('Wishlist cleared');
+    } catch (error) {
+      if (!error.isAuthError) {
+        toast.error('Failed to clear wishlist');
+      }
     }
   };
 
@@ -65,11 +88,18 @@ export const WishlistProvider = ({ children }) => {
 
   const value = {
     items,
+    loading,
+    error,
     addToWishlist,
     removeFromWishlist,
     isInWishlist,
     clearWishlist,
+    refreshWishlist: loadWishlist
   };
 
-  return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
+  return (
+    <WishlistContext.Provider value={value}>
+      {children}
+    </WishlistContext.Provider>
+  );
 };

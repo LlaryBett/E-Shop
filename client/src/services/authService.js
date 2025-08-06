@@ -43,7 +43,8 @@ class AuthService {
   }
 
   async resetPassword(token, password) {
-    return api.put(`/auth/reset-password/${token}`, { password });
+    const response = await api.put(`/auth/reset-password/${token}`, { password });
+    return response.data;
   }
 
   async updatePassword(currentPassword, newPassword) {
@@ -71,6 +72,17 @@ class AuthService {
   isAuthenticated() {
     return !!this.getToken();
   }
+
+  /**
+   * Send a password reset email to the user
+   * @param {string} email - The user's email address
+   * @returns {Promise} - API response
+   */
+  async sendPasswordResetEmail(email) {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  }
 }
 
 export default new AuthService();
+
