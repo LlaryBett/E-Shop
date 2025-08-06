@@ -653,6 +653,22 @@ const Header = () => {
                       <span className="text-base">My Orders</span>
                     </Link>
                     <Link
+                      to="/wishlist"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-all duration-300"
+                    >
+                      <Star className="h-5 w-5" />
+                      <span className="text-base">My Wishlists</span>
+                    </Link>
+                    <Link
+                      to="/profile?tab=addresses"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-300"
+                    >
+                      <MapPin className="h-5 w-5" />
+                      <span className="text-base">My Addresses</span>
+                    </Link>
+                    <Link
                       to="/wallet"
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
