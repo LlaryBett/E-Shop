@@ -24,7 +24,7 @@ import Orders from './pages/Orders';
 import Wishlist from './pages/Wishlist';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminDashboard from './pages/Admin/AdminDashboard'; // Import AdminDashboard
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Blog from './pages/Blog';
@@ -43,7 +43,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <CheckoutProvider> {/* ✅ Wrap here to provide checkout data */}
+        <CheckoutProvider>
           <CartProvider>
             <WishlistProvider>
               <NotificationsProvider>
@@ -52,43 +52,49 @@ function App() {
                     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
                       <PromoModalManager />
                       <ExitIntentModal />
-                      <Header />
-                      <main className="pt-16">
-                        <Routes>
-                          <Route path="/" element={<Home />} />
-                          <Route path="/shop" element={<Shop />} />
-                          <Route path="/search" element={<SearchResults />} /> {/* Add this new route */}
-                          <Route path="/shop/:category" element={<Shop />} />
-                          <Route path="/product/:id" element={<ProductDetail />} />
-                          <Route path="/cart" element={<Cart />} />
-                          <Route path="/checkout" element={<Checkout />} />
-                          <Route path="/profile" element={<Profile />} />
-                          <Route path="/orders" element={<Orders />} />
-                          <Route path="/wishlist" element={<Wishlist />} />
-                          <Route path="/about" element={<About />} />
-                          <Route path="/contact" element={<Contact />} />
-                          <Route path="/blog" element={<Blog />} />
-                          <Route path="/faq" element={<FAQ />} />
-                          <Route path="/verify-email-prompt" element={<VerifyEmailPrompt />} />
-                          <Route path="/notifications" element={<NotificationsPage />} />
-                          <Route path="/categories" element={<Categories />} />
-                          <Route path="/shipping" element={<Shipping />} />
-                          
-                          {/* Public routes that don't require authentication */}
-                          <Route path="/login" element={<Login />} />
-                          <Route path="/register" element={<Register />} />
-                          <Route path="/reset-password/:token" element={<ResetPassword />} />
-                          <Route path="/verify-email/:token" element={<VerifyEmail />} />
-                          <Route path="/shipping" element={<Shipping />} />
-
-                          {/* Protected routes */}
-                          {/* <Route element={<ProtectedRoute />}> */}
-                            {/* Your protected routes */}
-                          {/* </Route> */}
-
-                        </Routes>
-                      </main>
-                      <Footer />
+                      <Routes>
+                        {/* Admin routes: no Header/Footer */}
+                        <Route path="/admin/*" element={<AdminDashboard />} />
+                        {/* All other routes: with Header/Footer */}
+                        <Route
+                          path="*"
+                          element={
+                            <>
+                              <Header />
+                              <main className="pt-16">
+                                <Routes>
+                                  {/* ...existing code for all non-admin routes... */}
+                                  <Route path="/" element={<Home />} />
+                                  <Route path="/shop" element={<Shop />} />
+                                  <Route path="/search" element={<SearchResults />} />
+                                  <Route path="/shop/:category" element={<Shop />} />
+                                  <Route path="/product/:id" element={<ProductDetail />} />
+                                  <Route path="/cart" element={<Cart />} />
+                                  <Route path="/checkout" element={<Checkout />} />
+                                  <Route path="/profile" element={<Profile />} />
+                                  <Route path="/orders" element={<Orders />} />
+                                  <Route path="/wishlist" element={<Wishlist />} />
+                                  <Route path="/about" element={<About />} />
+                                  <Route path="/contact" element={<Contact />} />
+                                  <Route path="/blog" element={<Blog />} />
+                                  <Route path="/faq" element={<FAQ />} />
+                                  <Route path="/verify-email-prompt" element={<VerifyEmailPrompt />} />
+                                  <Route path="/notifications" element={<NotificationsPage />} />
+                                  <Route path="/categories" element={<Categories />} />
+                                  <Route path="/shipping" element={<Shipping />} />
+                                  <Route path="/login" element={<Login />} />
+                                  <Route path="/register" element={<Register />} />
+                                  <Route path="/reset-password/:token" element={<ResetPassword />} />
+                                  <Route path="/verify-email/:token" element={<VerifyEmail />} />
+                                  <Route path="/shipping" element={<Shipping />} />
+                                  {/* ...add any other non-admin routes here... */}
+                                </Routes>
+                              </main>
+                              <Footer />
+                            </>
+                          }
+                        />
+                      </Routes>
                     </div>
                   </Router>
                   <Toaster

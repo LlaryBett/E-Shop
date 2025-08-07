@@ -9,12 +9,12 @@ class UserService {
 
   async uploadAvatar(file) {
     const formData = new FormData();
-    formData.append('avatar', file);
-
-    const response = await api.post('/users/avatar', formData, {
+    formData.append('image', file);
+    formData.append('folder', 'profile'); // <-- set folder for profile images
+    const response = await api.post('/upload/image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return response.data.avatarUrl;
+    return response.data.url || response.data.image?.url;
   }
 
   // 📦 Addresses

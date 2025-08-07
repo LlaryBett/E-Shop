@@ -413,6 +413,42 @@ export const createOrder = async (req, res, next) => {
       items: orderItems,
     });
 
+    // Log order summary calculations
+    console.log('--- ORDER SUMMARY CALCULATIONS ---');
+    console.log({
+      subtotal,
+      discountAmount,
+      discountedSubtotal,
+      shippingCost,
+      tax,
+      calculatedTotal,
+      totalAmountFromFrontend: totalAmount,
+      appliedCoupon: couponDetails ? {
+        code: couponDetails.code,
+        type: couponDetails.type,
+        amount: couponDetails.amount,
+        minAmount: couponDetails.minAmount,
+        usedCount: couponDetails.usedCount,
+        maxUses: couponDetails.maxUses
+      } : null,
+      shippingMethod: shippingMethodObj ? {
+        name: shippingMethodObj.name,
+        cost: shippingMethodObj.cost,
+        minFree: shippingMethodObj.minFree
+      } : null,
+      items: orderItems.map(i => ({
+        title: i.title,
+        price: i.price,
+        quantity: i.quantity,
+        lineTotal: i.price * i.quantity
+      })),
+      taxRates: Array.isArray(taxRates) ? taxRates.map(r => ({
+        min: r.min,
+        max: r.max,
+        rate: r.rate
+      })) : []
+    });
+
     res.status(201).json({
       success: true,
       order,

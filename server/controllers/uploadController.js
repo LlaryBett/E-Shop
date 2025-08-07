@@ -1,4 +1,5 @@
 import { uploadToCloudinary } from '../utils/cloudinary.js';
+import User from '../models/User.js'; // <-- import your User model
 
 // @desc    Upload single image
 // @route   POST /api/upload/image
@@ -14,6 +15,15 @@ export const uploadImage = async (req, res, next) => {
 
     const folder = req.body.folder || 'general';
     const result = await uploadToCloudinary(req.file.buffer, folder);
+
+    // If this is a profile image upload, update the user's avatar in DB
+    if (folder === 'profile' && req.user) {
+      await User.findByIdAndUpdate(
+        req.user._id,
+        { avatar: result.secure_url },
+        { new: true }
+      );
+    }
 
     res.status(200).json({
       success: true,

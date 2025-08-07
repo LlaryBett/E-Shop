@@ -27,6 +27,7 @@ import AnalyticsDashboard from './AnalyticsDashboard';
 import SettingsPage from './SettingsPage';
 import ProductsManagement from './ProductsManagement';
 import adminService from '../../services/adminService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const RevenueChart = ({ data }) => {
   const months = [
@@ -132,6 +133,7 @@ const AdminDashboard = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
+  const { logout } = useAuth(); // <-- Add this
 
   useEffect(() => {
     adminService.getDashboardStats().then(res => {
@@ -143,13 +145,13 @@ const AdminDashboard = () => {
   }, []);
 
   const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/admin' },
-    { id: 'products', label: 'Products', icon: Package, path: '/admin/products' },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
-    { id: 'customers', label: 'Customers', icon: Users, path: '/admin/customers' },
-    { id: 'categories', label: 'Categories', icon: Package, path: '/admin/categories' },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '.' },
+    { id: 'products', label: 'Products', icon: Package, path: 'products' },
+    { id: 'orders', label: 'Orders', icon: ShoppingCart, path: 'orders' },
+    { id: 'customers', label: 'Customers', icon: Users, path: 'customers' },
+    { id: 'categories', label: 'Categories', icon: Package, path: 'categories' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, path: 'analytics' },
+    { id: 'settings', label: 'Settings', icon: Settings, path: 'settings' },
   ];
 
   const getStatusColor = (status) => {
@@ -350,7 +352,12 @@ const AdminDashboard = () => {
           {mobileSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
-        <div className="w-6"></div> {/* Spacer for alignment */}
+        <button
+          onClick={logout}
+          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 font-semibold text-sm"
+        >
+          Logout
+        </button>
       </div>
 
       <div className="flex flex-col lg:flex-row">
@@ -359,8 +366,14 @@ const AdminDashboard = () => {
           <div className="fixed inset-0 z-40 lg:hidden">
             <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setMobileSidebarOpen(false)}></div>
             <div className="relative flex flex-col w-64 max-w-xs h-full bg-white dark:bg-gray-800 shadow-xl">
-              <div className="p-6">
+              <div className="p-6 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
+                <button
+                  onClick={logout}
+                  className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 font-semibold text-sm"
+                >
+                  Logout
+                </button>
               </div>
               <nav className="mt-6 flex-1 overflow-y-auto">
                 {sidebarItems.map(item => {
@@ -390,8 +403,14 @@ const AdminDashboard = () => {
 
         {/* Sidebar - Desktop */}
         <div className="hidden lg:block w-64 bg-white dark:bg-gray-800 shadow-md min-h-screen fixed left-0 top-0">
-          <div className="p-6">
+          <div className="p-6 flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
+            <button
+              onClick={logout}
+              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 font-semibold text-sm"
+            >
+              Logout
+            </button>
           </div>
           <nav className="mt-6">
             {sidebarItems.map(item => {
@@ -420,12 +439,12 @@ const AdminDashboard = () => {
         <div className="flex-1 lg:ml-64 p-4 md:p-6 lg:p-8">
           <Routes>
             <Route path="/" element={<DashboardOverview />} />
-            <Route path="/products" element={<ProductsManagement />} />
-            <Route path="/orders" element={<OrdersManagement />} />
-            <Route path="/customers" element={<CustomersManagement />} />
-            <Route path="/categories" element={<CategoryManagement />} />
-            <Route path="/analytics" element={<AnalyticsDashboard />} />
-            <Route path="/settings" element={<SettingsPage/>} />
+            <Route path="products" element={<ProductsManagement />} />
+            <Route path="orders" element={<OrdersManagement />} />
+            <Route path="customers" element={<CustomersManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="analytics" element={<AnalyticsDashboard />} />
+            <Route path="settings" element={<SettingsPage/>} />
           </Routes>
         </div>
       </div>

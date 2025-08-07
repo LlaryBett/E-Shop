@@ -28,6 +28,8 @@ import notificationsRoutes from './routes/notifications.js';
 import newsletterRoutes from './routes/newsletter.js';
 import contactRoutes from './routes/contact.js'; // ✅ NEW
 import configRoutes from './routes/configRoutes.js';
+import mpesaRoutes from './routes/mpesa.js';
+
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -95,6 +97,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/contact', contactRoutes); // ✅ NEW
 app.use('/api/config', configRoutes); // ✅ ADD CONFIG ROUTES
+app.use('/api/mpesa', mpesaRoutes);
 
 // Error handlers
 app.use(notFound);

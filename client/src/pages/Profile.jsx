@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2, Bell } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationsContext'; // Add the .jsx extension
@@ -14,6 +14,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Define the tabs array that was missing
   const tabs = [
@@ -164,6 +165,22 @@ const Profile = () => {
     }
   };
 
+  // Handle avatar upload
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsLoading(true);
+    try {
+      const avatarUrl = await userService.uploadAvatar(file);
+      setProfileData(prev => ({ ...prev, avatar: avatarUrl }));
+      toast.success('Profile image updated!');
+    } catch {
+      toast.error('Failed to upload image');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'order':
@@ -217,9 +234,22 @@ const Profile = () => {
                 alt="Profile"
                 className="w-16 h-16 rounded-full object-cover mx-auto"
               />
-              <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-1 rounded-full hover:bg-blue-700 transition-colors">
+              <button
+                type="button"
+                className="absolute bottom-0 right-0 bg-blue-600 text-white p-1 rounded-full hover:bg-blue-700 transition-colors"
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                disabled={isLoading}
+              >
                 <Camera className="h-3 w-3" />
               </button>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleAvatarChange}
+                disabled={isLoading}
+              />
             </div>
             <h3 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{profileData.name}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{profileData.email}</p>
@@ -263,9 +293,22 @@ const Profile = () => {
                     alt="Profile"
                     className="w-20 h-20 rounded-full object-cover"
                   />
-                  <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-1 rounded-full hover:bg-blue-700 transition-colors">
+                  <button
+                    type="button"
+                    className="absolute bottom-0 right-0 bg-blue-600 text-white p-1 rounded-full hover:bg-blue-700 transition-colors"
+                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                    disabled={isLoading}
+                  >
                     <Camera className="h-3 w-3" />
                   </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleAvatarChange}
+                    disabled={isLoading}
+                  />
                 </div>
                 <h3 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">{profileData.name}</h3>
                 <p className="text-gray-600 dark:text-gray-400">{profileData.email}</p>
@@ -689,7 +732,7 @@ const AddressForm = ({ address, onSubmit, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 lg:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 lg:p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {address ? 'Edit Address' : 'Add New Address'}
         </h3>
@@ -798,9 +841,8 @@ const AddressForm = ({ address, onSubmit, onCancel }) => {
                 onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               >
-                <option value="United States">United States</option>
-                <option value="Canada">Canada</option>
-                <option value="United Kingdom">United Kingdom</option>
+                <option value="Kenya">Kenya</option>
+                
               </select>
             </div>
           </div>
