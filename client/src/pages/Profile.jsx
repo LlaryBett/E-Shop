@@ -86,9 +86,7 @@ const Profile = () => {
     // Fetch notifications if notifications tab is active
     if (activeTab === 'notifications') {
       refreshNotifications();
-      // Add debugging logs
-      console.log('Filter:', filter);
-      console.log('Raw notifications:', getFilteredNotifications());
+     
     }
   }, [activeTab, refreshNotifications]);
 

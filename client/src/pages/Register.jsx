@@ -62,7 +62,7 @@ const Register = () => {
 
     try {
       const res = await register(formData.name, formData.email, formData.password);
-      console.log('Register response:', res);
+    
       if (res.user && res.user.isEmailVerified === false) {
         localStorage.setItem('token', res.token);
         navigate('/verify-email-prompt', { state: { email: formData.email } });

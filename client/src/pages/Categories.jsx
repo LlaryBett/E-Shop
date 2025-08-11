@@ -265,7 +265,7 @@ const Categories = () => {
                   isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
                 } cursor-pointer`}
                 onClick={() => {
-                  console.log('Navigating to category:', category.slug);
+                  
                   navigate(`/shop?category=${encodeURIComponent(category.slug)}`);
                 }}
               >
