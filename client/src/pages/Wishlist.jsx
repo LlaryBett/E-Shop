@@ -132,19 +132,21 @@ const Wishlist = () => {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-16">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6 py-8 sm:py-12 lg:py-16">
           <div className="text-center">
-            <Heart className="h-24 w-24 text-gray-400 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Your wishlist is empty</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
+            <Heart className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 text-gray-400 mx-auto mb-4 sm:mb-6" />
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-4">
+              Your wishlist is empty
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-6 sm:mb-8">
               Save items you love to your wishlist and never lose track of them.
             </p>
             <Link
               to="/shop"
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center space-x-2 px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
             >
               <span>Start Shopping</span>
-              <ShoppingCart className="h-4 w-4" />
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
           </div>
         </div>
@@ -154,20 +156,20 @@ const Wishlist = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
-      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+      <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
             My Wishlist ({items.length} items)
           </h1>
           <button
             onClick={handleClearWishlist}
-            className="text-red-600 hover:text-red-700 font-medium"
+            className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium"
           >
             Clear All
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
           {items.map((item) => {
             const product = item.product;
             return (
@@ -175,7 +177,7 @@ const Wishlist = () => {
                 key={product.id}
                 className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900"
               >
-                <div className="h-40 overflow-hidden relative">
+                <div className="h-36 sm:h-40 overflow-hidden relative">
                   <Link to={`/product/${product.id}`}>
                     <img 
                       src={product.images?.[0]?.url || product.images?.[0] || ''}
@@ -194,12 +196,12 @@ const Wishlist = () => {
                     onClick={() => handleRemoveFromWishlist(product.id)}
                     className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
                   >
-                    <Heart className="h-4 w-4 text-red-500 fill-current" />
+                    <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 fill-current" />
                   </button>
                 </div>
 
                 <div className="px-3 pb-3 flex flex-col" style={{ minHeight: '120px' }}>
-                  <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-8 overflow-hidden">
+                  <h3 className="font-medium text-gray-900 dark:text-white text-sm sm:text-base leading-tight h-7 sm:h-8 overflow-hidden">
                     <Link to={`/product/${product.id}`} className="hover:text-blue-600 transition-colors">
                       <span className="line-clamp-2">
                         {product.title}
@@ -210,7 +212,7 @@ const Wishlist = () => {
                   {/* Price Section */}
                   <div className="mt-1">
                     <div className="flex items-baseline">
-                      <p className="text-red-600 font-bold text-base">
+                      <p className="text-xs sm:text-sm font-bold text-red-600">
                         KES {product.salePrice || product.price}
                       </p>
                       {product.salePrice && (
@@ -232,20 +234,20 @@ const Wishlist = () => {
                   <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
                     <button
                       onClick={() => handleAddToCart(product)}
-                      className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                      className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
                     >
-                      <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="text-xs sm:text-sm">Add to Cart</span>
+                      <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>Add to Cart</span>
                     </button>
                     <button
                       onClick={() => handleWishlistToggle(product)}
-                      className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                      className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors text-xs sm:text-sm ${
                         isInWishlist(product._id || product.id)
                           ? 'bg-red-50 border-red-200 text-red-600'
                           : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                       } flex items-center justify-center`}
                     >
-                      <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id || product.id) ? 'fill-current' : ''}`} />
+                      <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id || product.id) ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 </div>
@@ -255,38 +257,38 @@ const Wishlist = () => {
         </div>
 
         {/* Wishlist Actions */}
-        <div className="mt-12 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
-  <h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white mb-4">Wishlist Actions</h2>
-  <div className="flex flex-wrap gap-3 sm:gap-4">
-    <button
-      onClick={() => {
-        items.forEach(item => addToCart(item.product));
-        toast.success('All items added to cart!');
-      }}
-      className="flex-1 basis-[45%] px-3 py-2 text-[13px] sm:px-5 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-    >
-      <ShoppingCart className="h-4 w-4" />
-      <span>Add All to Cart</span>
-    </button>
-    <button
-      onClick={() =>
-        handleShare({
-          title: 'My Wishlist',
-          description: 'Check out my wishlist!',
-        })
-      }
-      className="flex-1 basis-[45%] px-3 py-2 text-[13px] sm:px-5 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
-    >
-      <Share2 className="h-4 w-4" />
-      <span>Share Wishlist</span>
-    </button>
-  </div>
-</div>
+        <div className="mt-8 sm:mt-12 bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">Wishlist Actions</h2>
+          <div className="flex flex-wrap gap-2 sm:gap-4">
+            <button
+              onClick={() => {
+                items.forEach(item => addToCart(item.product));
+                toast.success('All items added to cart!');
+              }}
+              className="flex-1 basis-[45%] px-3 py-2 sm:px-4 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm"
+            >
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span>Add All to Cart</span>
+            </button>
+            <button
+              onClick={() =>
+                handleShare({
+                  title: 'My Wishlist',
+                  description: 'Check out my wishlist!',
+                })
+              }
+              className="flex-1 basis-[45%] px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm"
+            >
+              <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span>Share Wishlist</span>
+            </button>
+          </div>
+        </div>
 
         {/* You might also like - Swiper Section */}
-        <section className="py-4 sm:py-6 md:py-8 mt-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+        <section className="py-2 sm:py-4 md:py-6 mt-8 sm:mt-12">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
               You might also like
             </h2>
             <div className="flex space-x-2">
@@ -294,7 +296,7 @@ const Wishlist = () => {
                 className="related-products-swiper-prev rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 aria-label="Previous"
               >
-                <svg className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
@@ -302,7 +304,7 @@ const Wishlist = () => {
                 className="related-products-swiper-next rounded-full p-2 bg-blue-600 hover:bg-blue-700 transition-colors"
                 aria-label="Next"
               >
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -339,7 +341,7 @@ const Wishlist = () => {
                         <img 
                           src={product.images?.[0]?.url || 'https://via.placeholder.com/300'}
                           alt={product.title}
-                          className="w-full h-48 object-cover rounded-t-lg hover:scale-105 transition-transform duration-300"
+                          className="w-full h-36 sm:h-48 object-cover rounded-t-lg hover:scale-105 transition-transform duration-300"
                         />
                         {product.salePrice && (
                           <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
@@ -349,9 +351,9 @@ const Wishlist = () => {
                       </div>
                     </Link>
                     
-                    <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
+                    <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
                       <Link to={`/product/${product._id || product.id}`} className="hover:text-blue-600 transition-colors">
-                        <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                        <h3 className="font-medium text-gray-900 dark:text-white text-xs sm:text-sm leading-tight h-8 overflow-hidden">
                           <span className="line-clamp-2">
                             {product.title}
                           </span>
@@ -360,7 +362,7 @@ const Wishlist = () => {
 
                       <div className="mt-1">
                         <div className="flex items-baseline">
-                          <p className="text-red-600 font-bold text-base">
+                          <p className="text-xs font-bold text-red-600">
                             KES {product.salePrice || product.price}
                           </p>
                           {product.salePrice && (
@@ -380,20 +382,20 @@ const Wishlist = () => {
                       <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
                         <button
                           onClick={() => handleAddRelatedToCart(product)}
-                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
                         >
-                          <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          <span className="text-xs sm:text-sm">Add to Cart</span>
+                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>Add to Cart</span>
                         </button>
                         <button
                           onClick={() => handleRelatedWishlistToggle(product)}
-                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors text-xs sm:text-sm ${
                             isInWishlist(product._id || product.id)
                               ? 'bg-red-50 border-red-200 text-red-600'
                               : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                           } flex items-center justify-center`}
                         >
-                          <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id || product.id) ? 'fill-current' : ''}`} />
+                          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id || product.id) ? 'fill-current' : ''}`} />
                         </button>
                       </div>
                     </div>
@@ -402,15 +404,15 @@ const Wishlist = () => {
               ))}
             </Swiper>
           ) : (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+            <div className="text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 py-8">
               <p>No related products found</p>
             </div>
           )}
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-6 sm:mt-8">
             <Link
               to="/shop"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 sm:px-6 sm:py-3 font-medium transition-colors w-full max-w-xs mx-auto text-xs sm:text-sm"
             >
               View All Products
             </Link>
