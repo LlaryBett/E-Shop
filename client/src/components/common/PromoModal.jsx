@@ -246,7 +246,7 @@ const PromoModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center px-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center px-4 animate-in fade-in duration-300 pt-44 lg:pt-32">
       <div className="bg-white max-w-md w-full rounded-2xl shadow-2xl p-8 relative transform animate-in zoom-in-95 duration-300">
         <button
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
