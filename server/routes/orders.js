@@ -35,7 +35,8 @@ const orderValidation = [
   body('shippingAddress.state').trim().notEmpty().withMessage('State is required'),
   body('shippingAddress.zipCode').trim().notEmpty().withMessage('ZIP code is required'),
   body('shippingAddress.country').trim().notEmpty().withMessage('Country is required'),
-  body('paymentMethod').isIn(['stripe', 'paypal', 'cash_on_delivery', 'card']).withMessage('Valid payment method is required'),
+  // Only allow 'mpesa' as payment method
+  body('paymentMethod').isIn(['mpesa']).withMessage('Valid payment method is required'),
   body('shippingMethod')
     .custom((value) => {
       // Accept valid MongoDB ObjectId for shippingMethod

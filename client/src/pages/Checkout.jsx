@@ -85,6 +85,9 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
     expiryDate: '',
     cvv: '',
     cardholderName: '',
+    mpesaPhone: user?.phone
+      ? user.phone.replace(/^(\+?254|254|0)?/, '') // Remove country code or leading 0 for local format
+      : '',
   });
 
   const [shippingError, setShippingError] = useState('');
@@ -241,23 +244,17 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
           shippingAddress.city &&
           shippingAddress.state &&
           shippingAddress.zipCode &&
-          shippingAddress.country // Ensure country is selected
+          shippingAddress.country
         );
       case 2:
         // Must select a shipping method
         return !!shippingMethod;
       case 3:
-        // Must select a payment method, and if card, all card fields
-        if (!paymentMethod) return false;
-        if (paymentMethod === 'card') {
-          return (
-            paymentInfo.cardNumber &&
-            paymentInfo.expiryDate &&
-            paymentInfo.cvv &&
-            paymentInfo.cardholderName
-          );
-        }
-        return true;
+        // Always require a phone number for checkout
+        return (
+          paymentInfo.mpesaPhone &&
+          /^(7\d{8}|1\d{8})$/.test(paymentInfo.mpesaPhone)
+        );
       default:
         return false;
     }
@@ -286,6 +283,17 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
+  const formatPhoneNumber = (phone) => {
+    // Always return in 2547XXXXXXXX format (no +)
+    let p = phone.trim();
+    if (p.startsWith('+254')) return p.slice(1); // remove +
+    if (p.startsWith('254')) return p;
+    if (p.startsWith('0')) return '254' + p.slice(1);
+    // If user enters 7XXXXXXXX or 1XXXXXXXX, prepend 254
+    if (/^[17]\d{8}$/.test(p)) return '254' + p;
+    return p; // fallback
+  };
+
   const handlePlaceOrder = async () => {
     if (!validateStep(3)) {
       toast.error('Please complete all required fields');
@@ -298,11 +306,14 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
       const orderData = {
         items,
         shippingAddress,
-        paymentMethod,
+        // Always use mpesa as payment method
+        paymentMethod: 'mpesa',
         shippingMethod,
         appliedCoupon,
         discountAmount,
-        totalAmount: total
+        totalAmount: total,
+        // Send phoneNumber in correct format for backend
+        phoneNumber: formatPhoneNumber(paymentInfo.mpesaPhone)
       };
       
       await OrderService.createOrder(orderData);
@@ -429,72 +440,69 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
         )}
 
         {/* Progress Steps */}
-        {/* Progress Steps - Mobile Friendly Version */}
-<div className="mb-6">
-  {/* Progress Steps - Mobile Friendly (No Horizontal Scroll) */}
-<div className="mb-6">
-  <div className="grid grid-cols-4 gap-2 px-2"> {/* 4 equal columns for 4 steps */}
-    {steps.map((step) => {
-      const Icon = step.icon;
-      const isActive = currentStep === step.id;
-      const isCompleted = currentStep > step.id;
-      
-      return (
-        <div key={step.id} className="flex flex-col items-center">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-            isCompleted ? 'bg-green-500 text-white' :
-            isActive ? 'bg-blue-600 text-white' :
-            'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300'
-          }`}>
-            <Icon className="h-4 w-4" />
+        <div className="mb-6">
+          {/* Progress Steps - Mobile Friendly (No Horizontal Scroll) */}
+          <div className="mb-6 lg:hidden">
+            <div className="grid grid-cols-4 gap-2 px-2">
+              {steps.map((step) => {
+                const Icon = step.icon;
+                const isActive = currentStep === step.id;
+                const isCompleted = currentStep > step.id;
+                return (
+                  <div key={step.id} className="flex flex-col items-center">
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                      isCompleted ? 'bg-green-500 text-white' :
+                      isActive ? 'bg-blue-600 text-white' :
+                      'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300'
+                    }`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className={`mt-1 text-xs text-center font-medium ${
+                      isActive ? 'text-blue-600 dark:text-blue-400' : 
+                      isCompleted ? 'text-green-600 dark:text-green-400' : 
+                      'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {step.name}
+                    </span>
+                    {isActive && (
+                      <div className="w-full h-0.5 bg-blue-600 dark:bg-blue-400 mt-1"></div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <span className={`mt-1 text-xs text-center font-medium ${
-            isActive ? 'text-blue-600 dark:text-blue-400' : 
-            isCompleted ? 'text-green-600 dark:text-green-400' : 
-            'text-gray-500 dark:text-gray-400'
-          }`}>
-            {step.name}
-          </span>
-          {isActive && (
-            <div className="w-full h-0.5 bg-blue-600 dark:bg-blue-400 mt-1"></div>
-          )}
-        </div>
-      );
-    })}
-  </div>
-</div>
 
-  {/* Desktop Steps (with connecting lines) */}
-  <div className="hidden lg:flex items-center justify-between">
-    {steps.map((step, index) => {
-      const Icon = step.icon;
-      const isActive = currentStep === step.id;
-      const isCompleted = currentStep > step.id;
-      
-      return (
-        <div key={step.id} className="flex items-center">
-          <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-            isCompleted ? 'bg-green-500 border-green-500 text-white' :
-            isActive ? 'bg-blue-600 border-blue-600 text-white' :
-            'border-gray-300 text-gray-400'
-          }`}>
-            <Icon className="h-5 w-5" />
+          {/* Desktop Steps (with connecting lines) */}
+          <div className="hidden lg:flex items-center justify-between">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = currentStep === step.id;
+              const isCompleted = currentStep > step.id;
+              return (
+                <div key={step.id} className="flex items-center">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                    isCompleted ? 'bg-green-500 border-green-500 text-white' :
+                    isActive ? 'bg-blue-600 border-blue-600 text-white' :
+                    'border-gray-300 text-gray-400'
+                  }`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className={`ml-2 text-sm font-medium lg:text-lg ${
+                    isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'
+                  }`}>
+                    {step.name}
+                  </span>
+                  {index < steps.length - 1 && (
+                    <div className={`flex-1 h-0.5 mx-4 ${
+                      isCompleted ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <span className={`ml-2 text-sm font-medium ${
-            isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'
-          }`}>
-            {step.name}
-          </span>
-          {index < steps.length - 1 && (
-            <div className={`flex-1 h-0.5 mx-4 ${
-              isCompleted ? 'bg-green-500' : 'bg-gray-300'
-            }`} />
-          )}
         </div>
-      );
-    })}
-  </div>
-</div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -682,6 +690,14 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
           </div>
         </label>
       ))}
+
+      {/* Debug: Show selectedShipping details */}
+      {selectedShipping && (
+        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg border border-yellow-200 dark:border-yellow-800 text-sm text-gray-700 dark:text-gray-300">
+          <p className="font-medium text-gray-900 dark:text-white mb-2">Selected Shipping Method:</p>
+          <pre className="whitespace-pre-wrap">{JSON.stringify(selectedShipping, null, 2)}</pre>
+        </div>
+      )}
     </div>
     
     {/* Error Message */}
@@ -696,120 +712,82 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
             {/* Step 3: Payment */}
             {currentStep === 3 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                  Payment Information
-                </h2>
-                
-                {/* Payment Method Selection */}
-                <div className="mb-6">
-                  <div className="flex space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="card"
-                        checked={paymentMethod === 'card'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-gray-900 dark:text-white">Credit/Debit Card</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="paypal"
-                        checked={paymentMethod === 'paypal'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-gray-900 dark:text-white">PayPal</span>
-                    </label>
-                  </div>
-                </div>
+  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+    Payment Information
+  </h2>
+  
+  {/* M-Pesa Payment Section */}
+  <div className="space-y-4">
+    <div className="flex items-center mb-4">
+      <svg className="h-6 w-6 text-green-600 mr-2" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-lg font-medium text-gray-900 dark:text-white">M-Pesa Payment</span>
+    </div>
 
-                {paymentMethod === 'card' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Cardholder Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentInfo.cardholderName}
-                        onChange={(e) => handlePaymentInfoChange('cardholderName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        required
-                      />
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Card Number *
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentInfo.cardNumber}
-                        onChange={(e) => handlePaymentInfoChange('cardNumber', e.target.value)}
-                        placeholder="1234 5678 9012 3456"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Expiry Date *
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentInfo.expiryDate}
-                        onChange={(e) => handlePaymentInfoChange('expiryDate', e.target.value)}
-                        placeholder="MM/YY"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        CVV *
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentInfo.cvv}
-                        onChange={(e) => handlePaymentInfoChange('cvv', e.target.value)}
-                        placeholder="123"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        M-Pesa Phone Number *
+      </label>
+      <div className="flex">
+        <span className="inline-flex items-center px-3 py-2 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
+          +254
+        </span>
+        <input
+          type="tel"
+          value={paymentInfo.mpesaPhone}
+          onChange={(e) => handlePaymentInfoChange('mpesaPhone', e.target.value)}
+          placeholder="7XXXXXXXX"
+          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+          required
+        />
+      </div>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        Enter your M-Pesa registered phone number
+      </p>
+    </div>
+    
 
-                {paymentMethod === 'paypal' && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      You will be redirected to PayPal to complete your payment.
-                    </p>
-                  </div>
-                )}
 
-                {/* Billing Address */}
-                <div className="mt-6">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={sameAsBilling}
-                      onChange={(e) => setSameAsBilling(e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="ml-2 text-gray-900 dark:text-white">
-                      Billing address same as shipping address
-                    </span>
-                  </label>
-                </div>
-              </div>
+    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+      <div className="flex items-start">
+        <div className="flex-shrink-0">
+          <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
+            How M-Pesa Payment Works
+          </h3>
+          <div className="mt-2 text-sm text-green-700 dark:text-green-300">
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Click "Complete Payment" to proceed</li>
+              <li>You'll receive an M-Pesa STK push notification on your phone</li>
+              <li>Enter your M-Pesa PIN to confirm the payment</li>
+              <li>You'll receive a confirmation SMS once payment is successful</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Billing Address */}
+  <div className="mt-6">
+    <label className="flex items-center">
+      <input
+        type="checkbox"
+        checked={sameAsBilling}
+        onChange={(e) => setSameAsBilling(e.target.checked)}
+        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+      />
+      <span className="ml-2 text-gray-900 dark:text-white">
+        Billing address same as shipping address
+      </span>
+    </label>
+  </div>
+</div>
             )}
 
             {/* Step 4: Review */}
@@ -857,11 +835,8 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
                   <div>
                     <h3 className="font-medium text-gray-900 dark:text-white mb-2">Payment Method</h3>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {paymentMethod === 'card' ? (
-                        <p>Credit Card ending in {paymentInfo.cardNumber.slice(-4)}</p>
-                      ) : (
-                        <p>PayPal</p>
-                      )}
+                      {/* Always show M-Pesa for payment method */}
+                      <p>M-Pesa</p>
                     </div>
                   </div>
                 </div>

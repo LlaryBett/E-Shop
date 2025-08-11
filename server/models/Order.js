@@ -3,8 +3,11 @@ import mongoose from 'mongoose';
 const orderSchema = new mongoose.Schema({
   orderNumber: {
     type: String,
-    unique: true,
     required: true,
+    default: function () {
+      // Generate order number if not present
+      return `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    }
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -53,6 +56,11 @@ const orderSchema = new mongoose.Schema({
     phone: {
       type: String,
       required: true,
+      validate: {
+        // Accepts 2547XXXXXXXX or 2541XXXXXXXX or +2547XXXXXXXX or +2541XXXXXXXX or 07XXXXXXXX or 01XXXXXXXX
+        validator: v => /^(\+?254|0)[17]\d{8}$/.test(v),
+        message: 'Invalid Kenyan phone number'
+      }
     },
     address: {
       type: String,
@@ -73,32 +81,35 @@ const orderSchema = new mongoose.Schema({
     country: {
       type: String,
       required: true,
+      default: 'Kenya'
     },
   },
-  billingAddress: {
-    firstName: String,
-    lastName: String,
-    email: String,
-    phone: String,
-    address: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: String,
-  },
-   paymentInfo: {
+  paymentInfo: {
     method: {
       type: String,
-      enum: ['stripe', 'paypal', 'cash_on_delivery', 'card'], // Add 'card'
-      required: true,
+      enum: ['mpesa'],
+      default: 'mpesa',
+      required: true
     },
-    transactionId: String,
     status: {
       type: String,
       enum: ['pending', 'paid', 'failed', 'refunded'],
       default: 'pending',
     },
+    mpesaReference: String,
+    merchantRequestID: String,
+    checkoutRequestID: String,
+    phoneNumber: {
+      type: String,
+      validate: {
+        // Accepts 2547XXXXXXXX or 2541XXXXXXXX or +2547XXXXXXXX or +2541XXXXXXXX or 07XXXXXXXX or 01XXXXXXXX
+        validator: v => /^(\+?254|0)[17]\d{8}$/.test(v),
+        message: 'Invalid M-Pesa phone number'
+      }
+    },
     paidAt: Date,
+    resultCode: Number,
+    resultDesc: String
   },
   pricing: {
     subtotal: {
@@ -122,39 +133,6 @@ const orderSchema = new mongoose.Schema({
       required: true,
     },
   },
-  shippingInfo: {
-    method: {
-      type: String,
-      // Accept ObjectId as string for validation, but store the key for reporting
-      // Remove enum validation here, since method is now dynamic from DB
-      required: true,
-    },
-    methodId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'ShippingMethod',
-      required: true,
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    description: String,
-    cost: {
-      type: Number,
-      default: 0,
-    },
-    estimatedDays: {
-      type: Number,
-      default: 3,
-    },
-    minFree: {
-      type: Number,
-      default: 0,
-    },
-    estimatedDelivery: Date,
-    trackingNumber: String,
-    carrier: String,
-  },
   status: {
     type: String,
     enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'],
@@ -171,31 +149,17 @@ const orderSchema = new mongoose.Schema({
     },
     note: String,
   }],
-  notes: String,
-  couponCode: String,
-  deliveredAt: Date,
-  cancelledAt: Date,
-  refundedAt: Date,
-},
-{
-  timestamps: true,
-  validateBeforeSave: false // Add this to allow pre-save hooks to run before validation
+}, {
+  timestamps: true
 });
 
-// Generate order number before saving
-orderSchema.pre('save', function(next) {
-  if (!this.orderNumber) {
-    this.orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-  }
-  next();
-});
-
-// Add status to history when status changes
+// Status history tracking
 orderSchema.pre('save', function(next) {
   if (this.isModified('status') && !this.isNew) {
     this.statusHistory.push({
       status: this.status,
       date: new Date(),
+      note: this.status === 'paid' ? 'M-Pesa payment confirmed' : ''
     });
   }
   next();
@@ -205,6 +169,9 @@ orderSchema.pre('save', function(next) {
 orderSchema.index({ user: 1 });
 orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ 'paymentInfo.checkoutRequestID': 1 });
+orderSchema.index({ 'paymentInfo.merchantRequestID': 1 });
+orderSchema.index({ 'paymentInfo.mpesaReference': 1 });
 orderSchema.index({ createdAt: -1 });
 
 export default mongoose.model('Order', orderSchema);
