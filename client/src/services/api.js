@@ -3,7 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.MODE === 'production'
     ? import.meta.env.VITE_API_URL
-    : 'https://e-shop-4-u33b.onrender.com',
+    : 'https://e-shop-4-u33b.onrender.com/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
