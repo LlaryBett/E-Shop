@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2, Bell } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2, Bell, ShoppingBag, Heart, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationsContext'; // Add the .jsx extension
 import toast from 'react-hot-toast';
 import userService from '../services/userService';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -278,6 +279,31 @@ const Profile = () => {
                   </button>
                 );
               })}
+              {/* --- Additional mobile-only icon buttons --- */}
+              <button
+                onClick={() => navigate('/orders')}
+                className="w-full p-3 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                title="Orders"
+              >
+                <ShoppingBag className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => navigate('/wishlists')}
+                className="w-full p-3 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                title="Wishlists"
+              >
+                <Heart className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+                className="w-full p-3 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
             </nav>
           </div>
 
