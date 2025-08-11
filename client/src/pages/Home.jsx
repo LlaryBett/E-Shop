@@ -901,6 +901,7 @@ const Home = () => {
         </div>
       </section>
 
+
      {/* Newsletter Section */}
 <section className="py-12 bg-blue-600">
   <div className="max-w-[1320px] mx-auto px-4 lg:px-6 text-center">
