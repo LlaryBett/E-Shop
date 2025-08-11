@@ -459,7 +459,7 @@ const Header = () => {
                 <Menu className="h-6 w-6" />
               </button>
               <Link to="/" className="ml-2">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                   E-Shop
                 </span>
               </Link>
@@ -494,7 +494,7 @@ const Header = () => {
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <MapPin className="h-4 w-4 text-gray-500" />
-              <span className="text-sm sm:text-base font-medium">Deliver to {deliverToLocation}</span>
+              <span className="text-xs font-medium">Deliver to {deliverToLocation}</span>
             </div>
             <Link
               to="/profile?tab=addresses"
@@ -512,22 +512,22 @@ const Header = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search for products..."
-                className="w-full px-4 py-2 pl-10 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
+                className="w-full px-3 py-2 pl-9 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
               />
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
             </form>
           </div>
 
           {/* Wallet + Cart Row */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
             <Link to="/wallet" className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg">
-              <Wallet className="h-5 w-5" />
-              <span className="text-sm sm:text-base font-medium">KES 0.00</span>
+              <Wallet className="h-4 w-4" />
+              <span className="text-xs font-medium">KES 0.00</span>
             </Link>
             <Link to="/cart" className="relative p-2 text-gray-700 dark:text-gray-300">
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-5 w-5" />
               {getTotalItems() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                   {getTotalItems()}
                 </span>
               )}
@@ -556,10 +556,10 @@ const Header = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
                   </div>
                   <div>
-                    <div className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    <span className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                       E-Shop
-                    </div>
-                    <div className="text-sm sm:text-base text-gray-500 dark:text-gray-400 -mt-1 font-medium">Premium Store</div>
+                    </span>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 -mt-1 font-medium">Premium Store</div>
                   </div>
                 </Link>
 
@@ -571,13 +571,13 @@ const Header = () => {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search products..."
-                      className="w-full px-6 py-3 pl-12 pr-24 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 hover:shadow-md focus:shadow-lg text-base sm:text-lg"
+                      className="w-full px-6 py-3 pl-12 pr-24 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 hover:shadow-md focus:shadow-lg text-base"
                       aria-label="Search products"
                     />
                     <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
                     <button
                       type="submit"
-                      className="absolute right-2 top-2 px-5 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm sm:text-base font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
+                      className="absolute right-2 top-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-base font-medium hover:shadow-lg transition-all duration-300 hover:scale-105"
                       disabled={searchLoading}
                       aria-label="Search"
                     >
@@ -597,19 +597,19 @@ const Header = () => {
                   </button>
                   {/* Right Section - Account, Cart, etc. */}
                   <div className="hidden lg:flex items-center space-x-3">
-                    <div className="flex items-center space-x-2 text-base sm:text-lg">
-                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+                    <div className="flex items-center space-x-2 text-base">
+                      <MapPin className="h-4 w-4 text-gray-500" />
                       <div>
-                        <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                           Deliver to
                           <Link
                             to="/profile?tab=addresses"
-                            className="text-xs sm:text-sm font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
+                            className="text-xs font-semibold bg-blue-500 text-white px-2 py-0.5 rounded hover:bg-blue-600 transition"
                           >
                             Change
                           </Link>
                         </div>
-                        <div className="font-medium text-gray-900 dark:text-white text-base sm:text-lg">
+                        <div className="font-medium text-gray-900 dark:text-white text-base">
                           {deliverToLocation}
                         </div>
                       </div>
@@ -619,49 +619,49 @@ const Header = () => {
                       {isAuthenticated ? (
                         <button
                           onClick={() => setShowUserMenu(!showUserMenu)}
-                          className="flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200 text-xs sm:text-sm"
+                          className="flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200"
                           aria-label="User menu"
                           aria-expanded={showUserMenu}
                         >
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md">
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-base shadow-md">
                             {user?.name?.charAt(0)?.toUpperCase() || 'L'}
                           </div>
-                          <div className="text-base sm:text-lg">
-                            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Welcome</div>
+                          <div className="text-base">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">Welcome</div>
                             <div className="font-medium text-gray-900 dark:text-white">{user?.name || 'Larry'}</div>
                           </div>
-                          <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
+                          <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
                         </button>
                       ) : (
                         <button
                           onClick={() => setShowUserMenu(!showUserMenu)}
-                          className="flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200 text-xs sm:text-sm"
+                          className="flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 border border-transparent hover:border-blue-200"
                           aria-label="Account menu"
                           aria-expanded={showUserMenu}
                         >
                           <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-lg flex items-center justify-center text-white shadow-md">
-                            <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <User className="h-4 w-4" />
                           </div>
-                          <div className="text-base sm:text-lg">
-                            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Account</div>
+                          <div className="text-base">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">Account</div>
                             <div className="font-medium text-gray-900 dark:text-white">Sign In</div>
                           </div>
-                          <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
+                          <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showUserMenu ? 'rotate-180' : ''}`} />
                         </button>
                       )}
                       
                       {showUserMenu && (
-                        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50 text-xs sm:text-sm">
+                        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50">
                           {isAuthenticated ? (
                             <>
                               <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
                                 <div className="flex items-center space-x-3">
-                                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white font-bold text-lg sm:text-xl">
+                                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white font-bold text-lg">
                                     {user?.name?.charAt(0)?.toUpperCase() || 'L'}
                                   </div>
                                   <div>
-                                    <p className="font-semibold text-base sm:text-lg">{user?.name || 'Larry'}</p>
-                                    <p className="text-blue-100 text-xs sm:text-sm">{user?.email || 'user@example.com'}</p>
+                                    <p className="font-semibold text-base">{user?.name || 'Larry'}</p>
+                                    <p className="text-blue-100 text-sm">{user?.email || 'user@example.com'}</p>
                                   </div>
                                 </div>
                               </div>
@@ -671,59 +671,59 @@ const Header = () => {
                                   <Link
                                     to="/admin"
                                     onClick={() => setShowUserMenu(false)}
-                                    className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-300 text-xs sm:text-sm"
+                                    className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-300"
                                   >
-                                    <Grid3X3 className="h-5 w-5 sm:h-6 sm:w-6" />
-                                    <span className="text-base sm:text-lg">Admin Dashboard</span>
+                                    <Grid3X3 className="h-5 w-5" />
+                                    <span className="text-base">Admin Dashboard</span>
                                   </Link>
                                 )}
                                 <Link
                                   to="/profile"
                                   onClick={() => setShowUserMenu(false)}
-                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 text-xs sm:text-sm"
+                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
                                 >
                                   <User className="h-5 w-5" />
-                                  <span className="text-base sm:text-lg">My Profile</span>
+                                  <span className="text-base">My Profile</span>
                                 </Link>
                                 <Link
                                   to="/orders"
                                   onClick={() => setShowUserMenu(false)}
-                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300 text-xs sm:text-sm"
+                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
                                 >
                                   <ShoppingCart className="h-5 w-5" />
-                                  <span className="text-base sm:text-lg">My Orders</span>
+                                  <span className="text-base">My Orders</span>
                                 </Link>
                                 <Link
                                   to="/wishlist"
                                   onClick={() => setShowUserMenu(false)}
-                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-all duration-300 text-xs sm:text-sm"
+                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-all duration-300"
                                 >
                                   <Star className="h-5 w-5" />
-                                  <span className="text-base sm:text-lg">My Wishlists</span>
+                                  <span className="text-base">My Wishlists</span>
                                 </Link>
                                 <Link
                                   to="/profile?tab=addresses"
                                   onClick={() => setShowUserMenu(false)}
-                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-300 text-xs sm:text-sm"
+                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all duration-300"
                                 >
                                   <MapPin className="h-5 w-5" />
-                                  <span className="text-base sm:text-lg">My Addresses</span>
+                                  <span className="text-base">My Addresses</span>
                                 </Link>
                                 <Link
                                   to="/wallet"
                                   onClick={() => setShowUserMenu(false)}
-                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300 text-xs sm:text-sm"
+                                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
                                 >
                                   <Wallet className="h-5 w-5" />
-                                  <span className="text-base sm:text-lg">My Wallet</span>
+                                  <span className="text-base">My Wallet</span>
                                 </Link>
                                 <hr className="my-2 border-gray-200 dark:border-gray-700" />
                                 <button
                                   onClick={handleLogout}
-                                  className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300 text-xs sm:text-sm"
+                                  className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
                                 >
-                                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
-                                  <span className="text-base sm:text-lg">Sign Out</span>
+                                  <X className="h-5 w-5" />
+                                  <span className="text-base">Sign Out</span>
                                 </button>
                               </div>
                             </>
@@ -758,16 +758,16 @@ const Header = () => {
 
                     <Link
                       to="/cart"
-                      className="relative flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 group border border-transparent hover:border-blue-200 text-xs sm:text-sm"
+                      className="relative flex items-center space-x-1.5 p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 group border border-transparent hover:border-blue-200"
                       aria-label="Shopping cart"
                     >
-                      <ShoppingCart className="h-6 w-6 sm:h-7 sm:w-7 group-hover:scale-110 transition-transform duration-300" />
-                      <div className="text-base sm:text-lg">
-                        <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Cart</div>
+                      <ShoppingCart className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
+                      <div className="text-base">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Cart</div>
                         <div className="font-medium">{getTotalItems()} items</div>
                       </div>
                       {getTotalItems() > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs sm:text-sm rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg animate-pulse min-w-[24px]">
+                        <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg animate-pulse min-w-[24px]">
                           {getTotalItems() > 99 ? '99+' : getTotalItems()}
                         </span>
                       )}
@@ -788,13 +788,13 @@ const Header = () => {
                   onMouseLeave={() => setShowCategoriesMenu(false)}
                 >
                   <button
-                    className="flex items-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-300 font-medium text-xs sm:text-sm tracking-widest"
+                    className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-300 font-medium text-sm tracking-widest"
                     aria-label="Categories"
                     aria-expanded={showCategoriesMenu}
                   >
-                    <Grid3X3 className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <Grid3X3 className="h-5 w-5" />
                     <span className="uppercase">Categories</span>
-                    <ChevronDown className={`h-5 w-5 sm:h-6 sm:w-6 transition-transform duration-300 ${showCategoriesMenu ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${showCategoriesMenu ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
 
@@ -807,11 +807,11 @@ const Header = () => {
                     >
                       <Link
                         to={item.path}
-                        className="flex items-center space-x-2 px-3 py-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                        className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
                       >
-                        <item.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="uppercase text-xs sm:text-sm">{item.name}</span>
-                        <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 opacity-60" />
+                        <item.icon className="h-4 w-4" />
+                        <span className="uppercase text-xs">{item.name}</span>
+                        <ChevronDown className="h-3 w-3 opacity-60" />
                       </Link>
                     </div>
                   ))}
@@ -821,11 +821,11 @@ const Header = () => {
                   >
                     <Link
                       to="/shop?filter=fashion"
-                      className="flex items-center space-x-2 px-3 py-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
+                      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
                     >
-                      <Shirt className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span className="uppercase text-xs sm:text-sm">Fashion</span>
-                      <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 opacity-60" />
+                      <Shirt className="h-4 w-4" />
+                      <span className="uppercase text-xs">Fashion</span>
+                      <ChevronDown className="h-3 w-3 opacity-60" />
                     </Link>
                   </div>
                 </nav>
@@ -833,14 +833,14 @@ const Header = () => {
                 <div className="hidden lg:block flex-shrink-0">
                   <Link
                     to="/wallet"
-                    className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-all duration-300 group text-xs sm:text-sm"
+                    className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-all duration-300 group"
                     aria-label="Wallet"
                   >
-                    <Wallet className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />
-                    <div className="text-xs sm:text-sm">
-                      <div className="text-xs text-green-600 dark:text-green-500">Wallet Bal</div>
-                      <div className="font-semibold text-base sm:text-lg">KES 0.00</div>
-                    </div>
+                    <Wallet className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="text-sm">
+  <div className="text-xs text-green-600 dark:text-green-500">Wallet Bal</div>
+  <div className="font-semibold text-base">KES 0.00</div>
+</div>
 
                   </Link>
                 </div>
@@ -855,21 +855,21 @@ const Header = () => {
                   onMouseLeave={() => setShowCategoriesMenu(false)}
                 >
                   <div className="flex">
-                    <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-                      <div className="space-y-2 sm:space-y-4">
+                    <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+                      <div className="space-y-2">
                         {Object.entries(categories).map(([id, category]) => (
                           <button
                             key={id}
                             onMouseOver={() => setActiveTab(parseInt(id))}
-                            className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 text-xs sm:text-sm ${
+                            className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
                               activeTab === parseInt(id)
                                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                                 : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                             }`}
                           >
-                            <category.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                            <category.icon className="h-5 w-5" />
                             <div className="min-w-0">
-                              <div className="font-medium text-xs sm:text-sm">{category.name}</div>
+                              <div className="font-medium text-sm">{category.name}</div>
                               <div className="text-xs text-gray-500">{category.count} items</div>
                             </div>
                           </button>
@@ -883,17 +883,17 @@ const Header = () => {
                           className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
                         >
                           <div className="mb-4">
-                            <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                               {category.name}
                             </h3>
-                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
                               {category.description}
                             </p>
                           </div>
-                          <ul className="masonry" style={{ columnCount: 2, columnGap: '1rem' }}>
+                          <ul className="masonry" style={{ columnCount: 5 }}>
                             {category.subcategories.map((subcategory, index) => (
                               <li key={index} className="mb-3 break-inside-avoid">
-                                <div className="font-semibold text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
                                   {subcategory.name}
                                 </div>
                                 <ul className="space-y-1">
@@ -901,7 +901,7 @@ const Header = () => {
                                     <li key={itemIndex} className="py-1">
                                       <Link
                                         to={`/category/${item.slug}`}
-                                        className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
                                         onClick={() => setShowCategoriesMenu(false)}
                                       >
                                         {item.name}
@@ -973,17 +973,17 @@ const Header = () => {
                       return categoryData ? (
                         <>
                           <div className="mb-4">
-                            <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                               {categoryData.name}
                             </h3>
-                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
                               {categoryData.description}
                             </p>
                           </div>
-                          <ul className="masonry" style={{ columnCount: 2, columnGap: '1rem' }}>
+                          <ul className="masonry" style={{ columnCount: 5 }}>
                             {categoryData.subcategories.map((subcategory, index) => (
                               <li key={index} className="mb-3 break-inside-avoid">
-                                <div className="font-semibold text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
                                   {subcategory.name}
                                 </div>
                                 <ul className="space-y-1">
@@ -991,7 +991,7 @@ const Header = () => {
                                     <li key={itemIndex} className="py-1">
                                       <Link
                                         to={`/category/${subItem.slug}`}
-                                        className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
                                         onClick={() => {
                                           setActiveNavTab(null);
                                           setMouseInsideNavDropdown(false);
@@ -1022,17 +1022,17 @@ const Header = () => {
                 >
                   <div className="p-6">
                     <div className="mb-4">
-                      <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                         {categories[5678].name}
                       </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {categories[5678].description}
                       </p>
                     </div>
-                    <ul className="masonry" style={{ columnCount: 2, columnGap: '1rem' }}>
+                    <ul className="masonry" style={{ columnCount: 5 }}>
                       {categories[5678].subcategories.map((subcategory, index) => (
                         <li key={index} className="mb-3 break-inside-avoid">
-                          <div className="font-semibold text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-2">
+                          <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
                             {subcategory.name}
                           </div>
                           <ul className="space-y-1">
@@ -1040,7 +1040,7 @@ const Header = () => {
                               <li key={itemIndex} className="py-1">
                                 <Link
                                   to={`/category/${item.slug}`}
-                                  className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
                                   onClick={() => {
                                     setActiveNavTab(null);
                                     setMouseInsideNavDropdown(false);
