@@ -690,14 +690,6 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
           </div>
         </label>
       ))}
-
-      {/* Debug: Show selectedShipping details */}
-      {selectedShipping && (
-        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg border border-yellow-200 dark:border-yellow-800 text-sm text-gray-700 dark:text-gray-300">
-          <p className="font-medium text-gray-900 dark:text-white mb-2">Selected Shipping Method:</p>
-          <pre className="whitespace-pre-wrap">{JSON.stringify(selectedShipping, null, 2)}</pre>
-        </div>
-      )}
     </div>
     
     {/* Error Message */}

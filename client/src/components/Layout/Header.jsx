@@ -474,7 +474,14 @@ const Header = () => {
                 {isDark ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
               </button>
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
+                // Redirect to login or profile on mobile
+                onClick={() => {
+                  if (isAuthenticated) {
+                    navigate('/profile');
+                  } else {
+                    navigate('/login');
+                  }
+                }}
                 className="p-2 text-gray-700 dark:text-gray-300"
                 aria-label="Account"
               >
@@ -489,7 +496,12 @@ const Header = () => {
               <MapPin className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium">Deliver to {deliverToLocation}</span>
             </div>
-            <button className="text-sm text-blue-600">Change</button>
+            <Link
+              to="/profile?tab=addresses"
+              className="text-sm text-blue-600 font-semibold"
+            >
+              Change
+            </Link>
           </div>
 
           {/* Search Row */}
