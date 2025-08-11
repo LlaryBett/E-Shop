@@ -891,46 +891,51 @@ const Home = () => {
           </Swiper>
 
           <div className="text-center mt-8">
-            <Link
-              to="/shop?sort=check-this-out"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
-            >
-              View All Products
-            </Link>
-          </div>
+  <Link
+    to="/shop?sort=check-this-out"
+    className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors max-w-xs mx-auto"
+  >
+    View All Products
+  </Link>
+</div>
         </div>
       </section>
 
-      {/* Newsletter Section */}
-      <section className="py-12 bg-blue-600">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-6 text-center">
-          <div className="max-w-md mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-3">
-              Stay Updated
-            </h2>
-            <p className="text-blue-100 mb-6">
-              Get exclusive offers and new arrivals
-            </p>
-            <form className="flex gap-2" onSubmit={handleNewsletterSubmit}>
-              <input
-                type="email"
-                value={newsletterEmail}
-                onChange={e => setNewsletterEmail(e.target.value)}
-                placeholder="Your email"
-                className="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30"
-                disabled={newsletterLoading}
-              />
-              <button
-                type="submit"
-                className="px-6 py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-                disabled={newsletterLoading}
-              >
-                {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
-              </button>
-            </form>
-          </div>
-        </div>
-      </section>
+     {/* Newsletter Section */}
+<section className="py-12 bg-blue-600">
+  <div className="max-w-[1320px] mx-auto px-4 lg:px-6 text-center">
+    <div className="max-w-md mx-auto w-full">
+      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+        Stay Updated
+      </h2>
+      <p className="text-base sm:text-lg text-blue-100 mb-6">
+        Get exclusive offers and new arrivals
+      </p>
+      <form
+        className="flex gap-2 w-full"
+        onSubmit={handleNewsletterSubmit}
+      >
+        <input
+          type="email"
+          value={newsletterEmail}
+          onChange={(e) => setNewsletterEmail(e.target.value)}
+          placeholder="Your email"
+          className="flex-grow min-w-0 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30 text-base"
+          disabled={newsletterLoading}
+        />
+        <button
+          type="submit"
+          className="shrink-0 px-4 sm:px-6 py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 transition-colors text-sm sm:text-base"
+          disabled={newsletterLoading}
+        >
+          {newsletterLoading ? "Subscribing..." : "Subscribe"}
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+
     </div>
   );
 };
