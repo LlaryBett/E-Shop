@@ -588,127 +588,127 @@ const Profile = () => {
 
             {/* Notifications */}
             {activeTab === 'notifications' && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 lg:p-6">
-                <div className="mb-4 lg:mb-6">
-                  <h2 className="text-lg lg:text-xl font-semibold text-gray-900 dark:text-white mb-3 lg:mb-4">
-                    Notifications
-                  </h2>
-                  
-                  {/* Mobile-responsive controls */}
-                  <div className="space-y-3 lg:space-y-0 lg:flex lg:items-center lg:justify-between">
-                    <div className="flex items-center space-x-2 lg:space-x-4">
-                      <div className="flex items-center space-x-1 lg:space-x-2 flex-1 min-w-0">
-                        <label htmlFor="notification-filter" className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                          Filter:
-                        </label>
-                        <select 
-                          id="notification-filter"
-                          value={filter}
-                          onChange={(e) => setFilter(e.target.value)}
-                          className="flex-1 text-xs lg:text-sm border border-gray-300 dark:border-gray-600 rounded-md py-1.5 px-2 dark:bg-gray-700 dark:text-white min-w-0"
-                        >
-                          <option value="all">All</option>
-                          <option value="unread">Unread</option>
-                          <option value="order">Orders</option>
-                          <option value="system">System</option>
-                          <option value="price">Price Alerts</option>
-                        </select>
-                      </div>
-                      
-                      <div className="flex items-center space-x-1 lg:space-x-2 flex-1 min-w-0">
-                        <label htmlFor="notification-sort" className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                          Sort:
-                        </label>
-                        <select 
-                          id="notification-sort"
-                          value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value)}
-                          className="flex-1 text-xs lg:text-sm border border-gray-300 dark:border-gray-600 rounded-md py-1.5 px-2 dark:bg-gray-700 dark:text-white min-w-0"
-                        >
-                          <option value="newest">Newest</option>
-                          <option value="oldest">Oldest</option>
-                          <option value="unread">Unread first</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={markAllAsRead}
-                      className="w-full lg:w-auto text-xs lg:text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 lg:py-0 text-center lg:text-left"
-                    >
-                      Mark all as read
-                    </button>
-                  </div>
-                </div>
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-2 lg:p-6 w-full max-w-full overflow-hidden box-border">
+    <div className="mb-3 lg:mb-6 w-full max-w-full overflow-hidden">
+      <h2 className="text-lg lg:text-xl font-semibold text-gray-900 dark:text-white mb-3 lg:mb-4">
+        Notifications
+      </h2>
+      
+      {/* Mobile-responsive controls */}
+      <div className="space-y-2 lg:space-y-0 lg:flex lg:items-center lg:justify-between w-full max-w-full overflow-hidden">
+        <div className="flex items-center gap-1 lg:gap-4 w-full max-w-full overflow-hidden box-border">
+          <div className="flex items-center gap-1 flex-1 min-w-0 max-w-[48%] box-border">
+            <label htmlFor="notification-filter" className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 shrink-0">
+              Filter:
+            </label>
+            <select 
+              id="notification-filter"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="flex-1 text-xs lg:text-sm border border-gray-300 dark:border-gray-600 rounded py-0.5 px-1 lg:py-1.5 lg:px-2 dark:bg-gray-700 dark:text-white min-w-0 w-full box-border"
+            >
+              <option value="all">All</option>
+              <option value="unread">Unread</option>
+              <option value="order">Orders</option>
+              <option value="system">System</option>
+              <option value="price">Price Alerts</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-1 flex-1 min-w-0 max-w-[48%] box-border">
+            <label htmlFor="notification-sort" className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 shrink-0">
+              Sort:
+            </label>
+            <select 
+              id="notification-sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="flex-1 text-xs lg:text-sm border border-gray-300 dark:border-gray-600 rounded py-0.5 px-1 lg:py-1.5 lg:px-2 dark:bg-gray-700 dark:text-white min-w-0 w-full box-border"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="unread">Unread first</option>
+            </select>
+          </div>
+        </div>
+        
+        <button
+          onClick={markAllAsRead}
+          className="w-full lg:w-auto text-xs lg:text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 lg:py-0 text-center lg:text-left"
+        >
+          Mark all as read
+        </button>
+      </div>
+    </div>
 
-                {notificationsLoading ? (
-                  <div className="flex justify-center py-6 lg:py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 lg:h-8 lg:w-8 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : getFilteredNotifications().length === 0 ? (
-                  <div className="text-center py-6 lg:py-8 text-gray-500 dark:text-gray-400">
-                    <Bell className="h-10 w-10 lg:h-12 lg:w-12 mx-auto mb-3 text-gray-400" />
-                    <p className="text-sm lg:text-base">You don't have any notifications yet.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 lg:space-y-4">
-                    {getFilteredNotifications().map(notification => (
-                      <div 
-                        key={notification.id} 
-                        className={`flex p-3 lg:p-4 border ${
-                          notification.isRead 
-                            ? 'border-gray-200 dark:border-gray-700' 
-                            : 'border-blue-100 dark:border-blue-900/30 bg-blue-50 dark:bg-blue-900/10'
-                        } rounded-lg transition-all`}
-                      >
-                        {/* Icon - hidden on mobile */}
-                        <div className="hidden lg:block mr-3 lg:mr-4 flex-shrink-0">
-                          {getNotificationIcon(notification.type)}
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="flex-grow min-w-0 pr-2">
-                          <p className={`text-xs lg:text-sm ${
-                            notification.isRead 
-                              ? 'text-gray-600 dark:text-gray-300' 
-                              : 'text-gray-900 dark:text-white font-medium'
-                          } leading-relaxed break-words`}>
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {formatNotificationTime(notification.timestamp)}
-                          </p>
-                        </div>
-                        
-                        {/* Actions - more compact on mobile */}
-                        <div className="flex flex-col lg:flex-row items-center space-y-1 lg:space-y-0 lg:space-x-2 flex-shrink-0">
-                          {!notification.isRead && (
-                            <button 
-                              onClick={() => markAsRead(notification.id)}
-                              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-1"
-                              title="Mark as read"
-                              aria-label="Mark as read"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </button>
-                          )}
-                          <button 
-                            onClick={() => deleteNotification(notification.id)}
-                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
-                            title="Delete notification"
-                            aria-label="Delete notification"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+    {notificationsLoading ? (
+      <div className="flex justify-center py-6 lg:py-8">
+        <div className="animate-spin rounded-full h-6 w-6 lg:h-8 lg:w-8 border-b-2 border-blue-600"></div>
+      </div>
+    ) : getFilteredNotifications().length === 0 ? (
+      <div className="text-center py-6 lg:py-8 text-gray-500 dark:text-gray-400">
+        <Bell className="h-10 w-10 lg:h-12 lg:w-12 mx-auto mb-3 text-gray-400" />
+        <p className="text-sm lg:text-base">You don't have any notifications yet.</p>
+      </div>
+    ) : (
+      <div className="space-y-2 lg:space-y-4 w-full max-w-full overflow-hidden">
+        {getFilteredNotifications().map(notification => (
+          <div 
+            key={notification.id} 
+            className={`flex p-2 lg:p-4 border ${
+              notification.isRead 
+                ? 'border-gray-200 dark:border-gray-700' 
+                : 'border-blue-100 dark:border-blue-900/30 bg-blue-50 dark:bg-blue-900/10'
+            } rounded-lg transition-all`}
+          >
+            {/* Icon - hidden on mobile */}
+            <div className="hidden lg:block mr-3 lg:mr-4 flex-shrink-0">
+              {getNotificationIcon(notification.type)}
+            </div>
+            
+            {/* Content */}
+            <div className="flex-grow min-w-0 pr-2">
+              <p className={`text-xs lg:text-sm ${
+                notification.isRead 
+                  ? 'text-gray-600 dark:text-gray-300' 
+                  : 'text-gray-900 dark:text-white font-medium'
+              } leading-relaxed break-words overflow-wrap-anywhere`}>
+                {notification.message}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {formatNotificationTime(notification.timestamp)}
+              </p>
+            </div>
+            
+            {/* Actions - more compact on mobile */}
+            <div className="flex flex-col lg:flex-row items-center space-y-1 lg:space-y-0 lg:space-x-2 flex-shrink-0">
+              {!notification.isRead && (
+                <button 
+                  onClick={() => markAsRead(notification.id)}
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-1"
+                  title="Mark as read"
+                  aria-label="Mark as read"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              )}
+              <button 
+                onClick={() => deleteNotification(notification.id)}
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
+                title="Delete notification"
+                aria-label="Delete notification"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
             {/* Security */}
             {activeTab === 'security' && (
