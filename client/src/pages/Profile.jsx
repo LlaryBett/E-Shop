@@ -16,6 +16,7 @@ const Profile = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const fileInputRef = useRef(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   // Define the tabs array that was missing
   const tabs = [
@@ -232,6 +233,8 @@ const Profile = () => {
                 src={profileData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.name)}&background=3B82F6&color=fff`}
                 alt="Profile"
                 className="w-16 h-16 rounded-full object-cover mx-auto"
+                onClick={() => setShowAvatarModal(true)}
+                style={{ cursor: 'pointer' }}
               />
               <button
                 type="button"
@@ -254,6 +257,48 @@ const Profile = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{profileData.email}</p>
           </div>
         </div>
+
+        {/* Avatar Modal for mobile */}
+        {showAvatarModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
+            onClick={() => setShowAvatarModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg p-6 flex flex-col items-center relative"
+              style={{ minWidth: 220 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                onClick={() => setShowAvatarModal(false)}
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <img
+                src={profileData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.name)}&background=3B82F6&color=fff`}
+                alt="Profile"
+                className="w-28 h-28 rounded-full object-cover mb-4"
+              />
+              <button
+                type="button"
+                className="flex flex-col items-center justify-center bg-blue-600 text-white rounded-full p-4 hover:bg-blue-700 transition-colors focus:outline-none"
+                onClick={() => {
+                  setShowAvatarModal(false);
+                  fileInputRef.current && fileInputRef.current.click();
+                }}
+                disabled={isLoading}
+                aria-label="Change profile image"
+              >
+                <Camera className="h-8 w-8" />
+                <span className="mt-2 text-xs font-medium">Change Photo</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Desktop Title - hidden on mobile */}
         <h1 className="hidden lg:block text-3xl font-bold text-gray-900 dark:text-white mb-8">My Account</h1>
