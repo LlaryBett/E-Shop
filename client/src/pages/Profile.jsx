@@ -745,7 +745,7 @@ const AddressForm = ({ address, onSubmit, onCancel }) => {
     city: address?.city || '',
     state: address?.state || '',
     zipCode: address?.zipCode || '',
-    country: address?.country || 'United States',
+    country: address?.country || '',
     isDefault: address?.isDefault || false,
   });
 

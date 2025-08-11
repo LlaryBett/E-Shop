@@ -44,7 +44,7 @@ const Checkout = () => {
       city: '',
       state: '',
       zipCode: '',
-      country: 'United States',
+      country: 'Kenya',
     };
   };
 
@@ -74,7 +74,7 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
     city: '',
     state: '',
     zipCode: '',
-    country: 'United States',
+    country: 'Kenya',
   });
 
   const [paymentInfo, setPaymentInfo] = useState({
@@ -631,9 +631,8 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
                       className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                       required
                     >
-                      <option value="United States">United States</option>
-                      <option value="Canada">Canada</option>
-                      <option value="United Kingdom">United Kingdom</option>
+                      <option value="Kenya">Kenya</option>
+                      
                     </select>
                   </div>
                 </div>
