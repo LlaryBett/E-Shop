@@ -288,7 +288,7 @@ const Profile = () => {
                 <ShoppingBag className="h-5 w-5" />
               </button>
               <button
-                onClick={() => navigate('/wishlists')}
+                onClick={() => navigate('/wishlist')}
                 className="w-full p-3 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 title="Wishlists"
               >
