@@ -2,8 +2,8 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.MODE === 'production'
-    ? import.meta.env.VITE_API_URL
-    : 'https://e-shop-4-u33b.onrender.com/api',
+    ? 'https://e-shop-4-u33b.onrender.com/api' // Production URL
+    : 'https://e-shop-4-u33b.onrender.com/api', // Same for dev to avoid .env
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -34,13 +34,14 @@ api.interceptors.response.use(
       if (!error.config?._isPublic) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        
+
         const currentPath = window.location.pathname;
-        const isAuthRoute = currentPath.includes('/login') || 
-                           currentPath.includes('/reset-password') || 
-                           currentPath.includes('/verify-email') ||
-                           currentPath.includes('/forgot-password');
-        
+        const isAuthRoute =
+          currentPath.includes('/login') ||
+          currentPath.includes('/reset-password') ||
+          currentPath.includes('/verify-email') ||
+          currentPath.includes('/forgot-password');
+
         if (!isAuthRoute) {
           window.location.href = '/login';
         }
@@ -55,8 +56,8 @@ api.interceptors.response.use(
  */
 api.public = axios.create({
   baseURL: import.meta.env.MODE === 'production'
-    ? import.meta.env.VITE_API_URL
-    : 'http://localhost:5000/api',
+    ? 'https://e-shop-4-u33b.onrender.com/api' // Production URL
+    : 'https://e-shop-4-u33b.onrender.com/api', // Same for dev
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
