@@ -211,7 +211,10 @@ const generateEmailTemplate = (options) => {
           <div class="greeting">${greeting}${name ? ` ${name}` : ''},</div>
           
           <div class="message">
-            ${options.message.replace(/\n/g, '<br>')}
+            ${
+              // Replace all $ amounts with Ksh in the message
+              options.message.replace(/\$/g, 'Ksh').replace(/\n/g, '<br>')
+            }
           </div>
           
           ${actionUrl ? `

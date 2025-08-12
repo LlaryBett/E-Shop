@@ -550,11 +550,11 @@ export const getOrderInvoice = async (req, res, next) => {
     doc.fontSize(20).text(`Invoice for Order ${order.orderNumber}`, { align: 'center' });
     doc.moveDown();
     doc.fontSize(12).text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`);
-    doc.text(`Total: $${order.pricing.total.toFixed(2)}`);
+    doc.text(`Total: Ksh ${order.pricing.total.toFixed(2)}`);
     doc.moveDown();
     doc.text('Items:');
     order.items.forEach(item => {
-      doc.text(`- ${item.title} x${item.quantity} ($${item.price.toFixed(2)} each)`);
+      doc.text(`- ${item.title} x${item.quantity} (Ksh ${item.price.toFixed(2)} each)`);
     });
 
     doc.end();
@@ -571,7 +571,7 @@ const sendOrderConfirmationEmail = async (order, user) => {
     
     Thank you for your order! Your order #${order.orderNumber} has been confirmed.
     
-    Order Total: $${order.pricing.total.toFixed(2)}
+    Order Total: Ksh ${order.pricing.total.toFixed(2)}
     
     We'll send you another email when your order ships.
     
