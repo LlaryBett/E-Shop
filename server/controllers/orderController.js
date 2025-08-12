@@ -45,10 +45,9 @@ export const createOrder = async (req, res, next) => {
           message: 'Phone number is required for M-Pesa payments',
         });
       }
-      // Accept 07XXXXXXXX, 01XXXXXXXX, +2547XXXXXXXX, +2541XXXXXXXX, 2547XXXXXXXX, 2541XXXXXXXX
       const normalized = phoneNumber
-        .replace(/^\+/, '') // remove leading +
-        .replace(/^0/, '254'); // convert leading 0 to 254
+        .replace(/^\+/, '')
+        .replace(/^0/, '254');
 
       if (!/^254[17]\d{8}$/.test(normalized)) {
         return res.status(400).json({
@@ -56,10 +55,10 @@ export const createOrder = async (req, res, next) => {
           message: 'Invalid Kenyan phone number format',
         });
       }
-      req.body.phoneNumber = normalized; // use normalized for saving and payment
+      req.body.phoneNumber = normalized;
     }
 
-    // Process order items and validate stock
+    // Process order items and validate stock (without deducting yet)
     let subtotal = 0;
     const orderItems = [];
     const productsToUpdate = [];
@@ -148,7 +147,6 @@ export const createOrder = async (req, res, next) => {
     
     const calculatedTotal = discountedSubtotal + shippingCost + tax;
 
-    // Validate calculated total matches frontend total
     if (Math.abs(calculatedTotal - totalAmount) > 0.01) {
       return res.status(400).json({
         success: false,
@@ -156,92 +154,147 @@ export const createOrder = async (req, res, next) => {
       });
     }
 
-    // Create and save order
-    const order = new Order({
-      user: req.user.id,
-      items: orderItems,
-      shippingAddress,
-      billingAddress: billingAddress || shippingAddress,
-      status: 'pending', // explicitly set
-      paymentInfo: {
-        method: paymentMethod,
-        status: 'pending',
-        phoneNumber: paymentMethod === 'mpesa' ? req.body.phoneNumber : undefined
-      },
-      pricing: {
-        subtotal,
-        discount: discountAmount,
-        tax,
-        shipping: shippingCost,
-        total: calculatedTotal,
-      },
-      appliedCoupon: couponDetails ? {
-        code: couponDetails.code,
-        type: couponDetails.type,
-        amount: couponDetails.amount,
-        minAmount: couponDetails.minAmount,
-        _id: couponDetails._id
-      } : undefined,
-      shippingInfo: {
-        method: shippingMethod,
-        cost: shippingCost,
-        estimatedDelivery: calculateDeliveryDate(shippingMethod),
-      },
-    });
-
-    await order.save();
-
-    // Update product stock
-    for (const { product, quantity } of productsToUpdate) {
-      product.stock -= quantity;
-      await product.save({ validateBeforeSave: false });
-    }
-
-    // Update user stats
-    try {
-      const user = await User.findById(req.user.id);
-      if (user) {
-        user.orderCount = (user.orderCount || 0) + 1;
-        user.totalSpent = (user.totalSpent || 0) + calculatedTotal;
-        
-        // Update loyalty tier
-        if (user.totalSpent >= 5000) user.loyalty = 'platinum';
-        else if (user.totalSpent >= 2000) user.loyalty = 'gold';
-        else if (user.totalSpent >= 1000) user.loyalty = 'silver';
-        else user.loyalty = 'bronze';
-
-        await user.save();
-      }
-    } catch (userUpdateError) {
-      console.error('Failed to update user stats:', userUpdateError);
-    }
-
-    // Process payment
+    // Process payment FIRST
     try {
       if (paymentMethod === 'mpesa') {
-        // Initiate M-Pesa STK Push
+        // 1. Initiate M-Pesa payment before creating order
         const amountInt = Math.round(calculatedTotal);
+        const tempReference = `TEMP_${Date.now()}`;
         const stkResponse = await stkPush(
           req.body.phoneNumber,
           amountInt,
-          order.orderNumber,
-          `Payment for order ${order.orderNumber}`
+          tempReference,
+          `Payment for your purchase`
         );
 
-        // Update order with M-Pesa references
-        order.paymentInfo.merchantRequestID = stkResponse.MerchantRequestID;
-        order.paymentInfo.checkoutRequestID = stkResponse.CheckoutRequestID;
+        if (!stkResponse.MerchantRequestID) {
+          throw new Error('Failed to initiate M-Pesa payment');
+        }
+
+        // 2. Only after successful payment initiation, create order
+        const order = new Order({
+          user: req.user.id,
+          items: orderItems,
+          shippingAddress,
+          billingAddress: billingAddress || shippingAddress,
+          status: 'pending',
+          paymentInfo: {
+            method: paymentMethod,
+            status: 'pending',
+            phoneNumber: req.body.phoneNumber,
+            merchantRequestID: stkResponse.MerchantRequestID,
+            checkoutRequestID: stkResponse.CheckoutRequestID,
+            reference: tempReference
+          },
+          pricing: {
+            subtotal,
+            discount: discountAmount,
+            tax,
+            shipping: shippingCost,
+            total: calculatedTotal,
+          },
+          appliedCoupon: couponDetails ? {
+            code: couponDetails.code,
+            type: couponDetails.type,
+            amount: couponDetails.amount,
+            minAmount: couponDetails.minAmount,
+            _id: couponDetails._id
+          } : undefined,
+          shippingInfo: {
+            method: shippingMethod,
+            cost: shippingCost,
+            estimatedDelivery: calculateDeliveryDate(shippingMethod),
+          },
+        });
+
         await order.save();
 
-        // Do NOT mark as paid here! Wait for callback.
+        // 3. Now deduct stock after successful order creation
+        for (const { product, quantity } of productsToUpdate) {
+          product.stock -= quantity;
+          await product.save({ validateBeforeSave: false });
+        }
+
+        // 4. Update order with actual order number
+        order.paymentInfo.reference = order.orderNumber;
+        await order.save();
+
+        // 5. Update user stats (but don't count as spent until payment completes)
+        try {
+          const user = await User.findById(req.user.id);
+          if (user) {
+            user.orderCount = (user.orderCount || 0) + 1;
+            await user.save();
+          }
+        } catch (userUpdateError) {
+          console.error('Failed to update user stats:', userUpdateError);
+        }
+
         return res.status(201).json({
           success: true,
           order,
           mpesaResponse: stkResponse,
-          message: 'Order created. Awaiting M-Pesa payment confirmation.'
+          message: 'Payment initiated. Awaiting confirmation.'
         });
       } else {
-        // For non-M-Pesa payments
+        // Handle non-M-Pesa payments (COD, etc.)
+        const order = new Order({
+          user: req.user.id,
+          items: orderItems,
+          shippingAddress,
+          billingAddress: billingAddress || shippingAddress,
+          status: 'pending',
+          paymentInfo: {
+            method: paymentMethod,
+            status: 'pending'
+          },
+          pricing: {
+            subtotal,
+            discount: discountAmount,
+            tax,
+            shipping: shippingCost,
+            total: calculatedTotal,
+          },
+          appliedCoupon: couponDetails ? {
+            code: couponDetails.code,
+            type: couponDetails.type,
+            amount: couponDetails.amount,
+            minAmount: couponDetails.minAmount,
+            _id: couponDetails._id
+          } : undefined,
+          shippingInfo: {
+            method: shippingMethod,
+            cost: shippingCost,
+            estimatedDelivery: calculateDeliveryDate(shippingMethod),
+          },
+        });
+
+        await order.save();
+
+        // For non-M-Pesa, deduct stock immediately
+        for (const { product, quantity } of productsToUpdate) {
+          product.stock -= quantity;
+          await product.save({ validateBeforeSave: false });
+        }
+
+        // Update user stats
+        try {
+          const user = await User.findById(req.user.id);
+          if (user) {
+            user.orderCount = (user.orderCount || 0) + 1;
+            user.totalSpent = (user.totalSpent || 0) + calculatedTotal;
+            
+            if (user.totalSpent >= 5000) user.loyalty = 'platinum';
+            else if (user.totalSpent >= 2000) user.loyalty = 'gold';
+            else if (user.totalSpent >= 1000) user.loyalty = 'silver';
+            else user.loyalty = 'bronze';
+
+            await user.save();
+          }
+        } catch (userUpdateError) {
+          console.error('Failed to update user stats:', userUpdateError);
+        }
+
         try {
           await sendOrderConfirmationEmail(order, req.user);
         } catch (emailError) {
@@ -250,16 +303,12 @@ export const createOrder = async (req, res, next) => {
 
         return res.status(201).json({
           success: true,
-          order
+          order,
+          message: 'Order created successfully'
         });
       }
     } catch (paymentError) {
-      // Restore product stock if payment fails
-      for (const { product, quantity } of productsToUpdate) {
-        product.stock += quantity;
-        await product.save({ validateBeforeSave: false });
-      }
-
+      // For M-Pesa failures, no order was created yet, so no cleanup needed
       return res.status(400).json({
         success: false,
         message: 'Payment processing failed',

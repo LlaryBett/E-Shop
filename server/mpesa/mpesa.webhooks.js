@@ -13,37 +13,36 @@ export const handleSTKCallback = async (req, res) => {
     const callbackData = req.body;
     console.log('STK Callback Received:', callbackData);
 
-    // Validate callback signature (security)
+    // 1. Validate callback signature
     if (process.env.NODE_ENV === 'production' && 
         !validateIPN(callbackData, req.headers['x-callback-signature'])) {
       return res.status(403).json({ error: 'Invalid signature' });
     }
 
     const result = callbackData.Body.stkCallback;
-    const merchantRequestID = result.MerchantRequestID;
-    const checkoutRequestID = result.CheckoutRequestID;
+    const { MerchantRequestID, CheckoutRequestID } = result;
 
-    // Find the pending transaction record
+    // 2. Find the pending transaction
     const transaction = await Transaction.findOne({ 
-      merchantRequestID,
-      checkoutRequestID,
+      merchantRequestID: MerchantRequestID,
+      checkoutRequestID: CheckoutRequestID,
       status: 'pending'
     });
 
     if (!transaction) {
-      console.error('Transaction not found:', { merchantRequestID, checkoutRequestID });
+      console.error('Transaction not found:', { MerchantRequestID, CheckoutRequestID });
       return res.status(404).send();
     }
 
-    // Process based on result
+    // 3. Process success/failure
     if (result.ResultCode === 0) {
-      // Success case - payment completed
+      // --- SUCCESS CASE ---
       const metadata = result.CallbackMetadata?.Item?.reduce((acc, item) => {
         acc[item.Name] = item.Value;
         return acc;
       }, {});
 
-      // Update the transaction record
+      // Update transaction
       await transaction.updateStatus('completed', {
         mpesaReference: metadata?.MpesaReceiptNumber,
         resultCode: 0,
@@ -51,13 +50,11 @@ export const handleSTKCallback = async (req, res) => {
         callbackMetadata: result
       });
 
-      console.log(`Payment completed for ${transaction.phoneNumber}: ${metadata?.MpesaReceiptNumber}`);
-      
-      // Find and update the associated order
+      // Update order
       const order = await Order.findOneAndUpdate(
         { 
-          'paymentInfo.checkoutRequestID': checkoutRequestID,
-          'paymentInfo.merchantRequestID': merchantRequestID 
+          'paymentInfo.checkoutRequestID': CheckoutRequestID,
+          'paymentInfo.merchantRequestID': MerchantRequestID 
         },
         {
           'paymentInfo.status': 'paid',
@@ -66,33 +63,49 @@ export const handleSTKCallback = async (req, res) => {
           'paymentInfo.paidAt': new Date()
         },
         { new: true }
-      );
+      ).populate('user');
 
-      if (!order) {
-        console.error('Order not found for completed payment:', { checkoutRequestID, merchantRequestID });
+      // Send confirmation
+      if (order?.user) {
+        await sendPaymentSuccessEmail(order.user.email, order);
       }
+
     } else {
-      // Failure case - payment failed
+      // --- FAILURE CASE ---
       await transaction.updateStatus('failed', {
         resultCode: result.ResultCode,
         resultDesc: result.ResultDesc,
         callbackMetadata: result
       });
 
-      // Update the associated order if exists
-      await Order.findOneAndUpdate(
+      // Update order and restore stock
+      const order = await Order.findOneAndUpdate(
         { 
-          'paymentInfo.checkoutRequestID': checkoutRequestID,
-          'paymentInfo.merchantRequestID': merchantRequestID 
+          'paymentInfo.checkoutRequestID': CheckoutRequestID,
+          'paymentInfo.merchantRequestID': MerchantRequestID 
         },
         {
           'paymentInfo.status': 'failed',
           'status': 'payment_failed',
           'paymentInfo.failureReason': result.ResultDesc
-        }
-      );
+        },
+        { new: true }
+      ).populate('items.product');
 
-      console.warn(`Payment failed for ${transaction.phoneNumber}: ${result.ResultDesc}`);
+      // Restore stock
+      if (order) {
+        for (const item of order.items) {
+          if (item.product) {
+            item.product.stock += item.quantity;
+            await item.product.save();
+          }
+        }
+
+        // Notify user
+        if (order.user) {
+          await sendPaymentFailedSms(order.user.phone, result.ResultDesc);
+        }
+      }
     }
 
     res.status(200).send();
@@ -104,7 +117,6 @@ export const handleSTKCallback = async (req, res) => {
     });
   }
 };
-
 
 
 /**

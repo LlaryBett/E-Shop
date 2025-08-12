@@ -496,7 +496,7 @@ const Header = () => {
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <MapPin className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium">Deliver to {deliverToLocation}</span>
+              <span className="text-xs font-medium">Deliver to {deliverToLocation}</span>
             </div>
             <Link
               to="/profile?tab=addresses"
@@ -514,22 +514,22 @@ const Header = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search for products..."
-                className="w-full px-4 py-2 pl-10 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
+                className="w-full px-3 py-2 pl-9 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
               />
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
             </form>
           </div>
 
           {/* Wallet + Cart Row */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
             <Link to="/wallet" className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg">
-              <Wallet className="h-5 w-5" />
-              <span className="text-sm font-medium">KES 0.00</span>
+              <Wallet className="h-4 w-4" />
+              <span className="text-xs font-medium">KES 0.00</span>
             </Link>
             <Link to="/cart" className="relative p-2 text-gray-700 dark:text-gray-300">
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-5 w-5" />
               {getTotalItems() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                   {getTotalItems()}
                 </span>
               )}

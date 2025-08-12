@@ -298,15 +298,15 @@ const Home = () => {
 
 
       {/* Shop by Brand Section */}
-      <div className="max-w-[1320px] mx-auto px-4 lg:px-6 pb-8">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-4 sm:mb-6">
+      <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6 pb-6 sm:pb-8">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 dark:text-white mb-3 sm:mb-6">
           Shop by Brand
         </h2>
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 sm:gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 sm:gap-4">
           {brands.map((brand) => (
             <div
               key={brand._id}
-              className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-750 transition-all duration-200 cursor-pointer group"
+              className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-2 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-750 transition-all duration-200 cursor-pointer group"
             >
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden mb-2 border border-gray-300 dark:border-gray-600 group-hover:scale-105 transition-transform duration-200">
                 <img
@@ -324,13 +324,13 @@ const Home = () => {
       </div>
 
       {/* Enhanced Featured Products */}
-      <section className="py-4 sm:py-6 md:py-8">
-        <div className="max-w-[px] mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+      <section className="py-3 sm:py-4 md:py-6">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
               Featured Products
             </h2>
-            <div className="flex space-x-2">
+            <div className="flex space-x-1 sm:space-x-2">
               <button
                 className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 onClick={() => swiperRef.current?.slidePrev()}
@@ -375,7 +375,7 @@ const Home = () => {
                     <img 
                       src={product.images?.[0]?.url || product.images?.[0] || ''}
                       alt={product.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
+                      className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
                     />
                     {product.salePrice && (
                       <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
@@ -383,15 +383,15 @@ const Home = () => {
                       </div>
                     )}
                   </div>
-                  <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
-                    <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                  <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
+                    <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
                       <span className="line-clamp-2">
                         {product.title}
                       </span>
                     </h3>
                     <div className="mt-1">
                       <div className="flex items-baseline">
-                        <p className="text-red-600 font-bold text-base">
+                        <p className="text-base font-bold sm:text-lg text-red-600">
                           KES {product.salePrice || product.price}
                         </p>
                         {product.salePrice && (
@@ -410,10 +410,10 @@ const Home = () => {
                     <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
                       <button
                         onClick={() => handleAddToCart(product)}
-                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
                       >
-                        <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        <span className="text-xs sm:text-sm">Add to Cart</span>
+                        <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span>Add to Cart</span>
                       </button>
                       <button
                         onClick={() => handleWishlistToggle(product)}
@@ -423,7 +423,7 @@ const Home = () => {
                             : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                         } flex items-center justify-center`}
                       >
-                        <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                        <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
                       </button>
                     </div>
                   </div>
@@ -432,10 +432,10 @@ const Home = () => {
             ))}
           </Swiper>
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-6 sm:mt-8">
             <Link
               to="/shop"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors w-full max-w-xs mx-auto"
             >
               View All Products
             </Link>
@@ -445,12 +445,12 @@ const Home = () => {
 
       {/* Shop by Category */}
       <section className="py-1">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between gap-5 sm:gap-6 md:gap-7 mb-4 sm:mb-5 md:mb-6">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between gap-3 sm:gap-6 md:gap-7 mb-3 sm:mb-5 md:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
               Shop by Category
             </h2>
-            <div className="flex space-x-2">
+            <div className="flex space-x-1 sm:space-x-2">
               <button
                 className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
                 onClick={() => swiperRef.current?.slidePrev()}
@@ -529,13 +529,13 @@ const Home = () => {
       </section>
 
       {/* New Arrivals */}
-      <section className="py-4 sm:py-6 md:py-8">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+      <section className="py-3 sm:py-4 md:py-6">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
               New Arrivals
             </h2>
-            <div className="flex space-x-2">
+            <div className="flex space-x-1 sm:space-x-2">
               <button
                 className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 onClick={() => newArrivalsSwiperRef.current?.slidePrev()}
@@ -580,7 +580,7 @@ const Home = () => {
                     <img 
                       src={product.images?.[0]?.url || product.images?.[0] || ''}
                       alt={product.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
+                      className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
                     />
                     {product.salePrice && (
                       <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
@@ -588,15 +588,15 @@ const Home = () => {
                       </div>
                     )}
                   </div>
-                  <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
-                    <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                  <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
+                    <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
                       <span className="line-clamp-2">
                         {product.title}
                       </span>
                     </h3>
                     <div className="mt-1">
                       <div className="flex items-baseline">
-                        <p className="text-red-600 font-bold text-base">
+                        <p className="text-base font-bold sm:text-lg text-red-600">
                           KES {product.salePrice || product.price}
                         </p>
                         {product.salePrice && (
@@ -615,10 +615,10 @@ const Home = () => {
                     <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
                       <button
                         onClick={() => handleAddToCart(product)}
-                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
                       >
-                        <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        <span className="text-xs sm:text-sm">Add to Cart</span>
+                        <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span>Add to Cart</span>
                       </button>
                       <button
                         onClick={() => handleWishlistToggle(product)}
@@ -628,7 +628,7 @@ const Home = () => {
                             : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                         } flex items-center justify-center`}
                       >
-                        <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                        <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
                       </button>
                     </div>
                   </div>
@@ -637,10 +637,10 @@ const Home = () => {
             ))}
           </Swiper>
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-6 sm:mt-8">
             <Link
               to="/shop?sort=newest"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors w-full max-w-xs mx-auto"
             >
               View All Products
             </Link>
@@ -649,13 +649,13 @@ const Home = () => {
       </section>
 
       {/* Just for you */}
-      <section className="py-4 sm:py-6 md:py-8">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+      <section className="py-3 sm:py-4 md:py-6">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
               Just For You
             </h2>
-            <div className="flex space-x-2">
+            <div className="flex space-x-1 sm:space-x-2">
               <button
                 className="just-for-you-swiper-prev rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 aria-label="Previous"
@@ -699,21 +699,21 @@ const Home = () => {
                     <img 
                       src={product.images?.[0]?.url || product.images?.[0] || ''}
                       alt={product.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
+                      className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
                     />
                     <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
                       #{index + 1} Trending
                     </div>
                   </div>
-                  <div className="p-3 flex flex-col" style={{ minHeight: '160px' }}>
-                    <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight h-10 overflow-hidden">
+                  <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
+                    <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
                       <span className="line-clamp-2">
                         {product.title}
                       </span>
                     </h3>
                     <div className="mt-1">
                       <div className="flex items-baseline">
-                        <p className="text-red-600 font-bold text-base">
+                        <p className="text-base font-bold sm:text-lg text-red-600">
                           KES {product.salePrice || product.price}
                         </p>
                         {product.salePrice && (
@@ -732,10 +732,10 @@ const Home = () => {
                     <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
                       <button
                         onClick={() => handleAddToCart(product)}
-                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
                       >
-                        <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        <span className="text-xs sm:text-sm">Add to Cart</span>
+                        <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span>Add to Cart</span>
                       </button>
                       <button
                         onClick={() => handleWishlistToggle(product)}
@@ -745,7 +745,7 @@ const Home = () => {
                             : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                         } flex items-center justify-center`}
                       >
-                        <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                        <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
                       </button>
                     </div>
                   </div>
@@ -754,10 +754,10 @@ const Home = () => {
             ))}
           </Swiper>
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-6 sm:mt-8">
             <Link
               to="/shop?sort=just-for-you"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors w-full max-w-xs mx-auto"
             >
               View All Products
             </Link>
@@ -765,29 +765,15 @@ const Home = () => {
         </div>
       </section>
 
-      
-      <section className="relative overflow-hidden my-0 sm:my-1 md:my-2">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
-          <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-700" style={{ aspectRatio: '4.6875 / 1' }}>
-            <img
-              src="/assets/Banner ecommerce smartwatch electronics store product promotion dropshipping offer instagram stories.png"
-              alt="Smartwatch Promotion Banner"
-              className="absolute inset-0 w-full h-full object-cover object-center"
-              loading="lazy"
-              onError={(e) => (e.target.style.display = 'none')}
-            />
-          </div>
-        </div>
-      </section>
+      {/* ...existing code... */}
 
-     
-      <section className="py-4 sm:py-6 md:py-8">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+      <section className="py-3 sm:py-4 md:py-6">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
               Check This Out
             </h2>
-            <div className="flex space-x-2">
+            <div className="flex space-x-1 sm:space-x-2">
               <button
                 className="rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 onClick={() => checkThisOutSwiperRef.current?.slidePrev()}
@@ -826,7 +812,7 @@ const Home = () => {
             className="pb-8"
           >
             {checkThisOutProducts.map((product) => {
-              console.log('Check This Out product payload:', product);
+             
               return (
                 <SwiperSlide key={product._id || product.id}>
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
@@ -834,7 +820,7 @@ const Home = () => {
                       <img 
                         src={product.images?.[0]?.url || product.images?.[0] || ''}
                         alt={product.title}
-                        className="w-full h-48 object-cover rounded-t-lg"
+                        className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
                       />
                       {product.salePrice && (
                         <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
@@ -842,13 +828,15 @@ const Home = () => {
                         </div>
                       )}
                     </div>
-                    <div className="p-4 flex flex-col" style={{ minHeight: '160px' }}>
-                      <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                        {product.title}
+                    <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
+                      <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
+                        <span className="line-clamp-2">
+                          {product.title}
+                        </span>
                       </h3>
-                      <div className="mt-2">
+                      <div className="mt-1">
                         <div className="flex items-baseline">
-                          <p className="text-red-600 font-bold">
+                          <p className="text-base font-bold sm:text-lg text-red-600">
                             KES {product.salePrice || product.price}
                           </p>
                           {product.salePrice && (
@@ -858,19 +846,19 @@ const Home = () => {
                           )}
                         </div>
                         {product.salePrice && (
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
                             Save KES {Math.floor(product.price - product.salePrice)}
                           </p>
                         )}
                       </div>
                       <div className="flex-grow"></div>
-                      <div className="flex items-center gap-0.5 sm:gap-1 mt-2 pt-1">
+                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
                         <button
                           onClick={() => handleAddToCart(product)}
-                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
+                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
                         >
-                          <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          <span className="text-xs sm:text-sm">Add to Cart</span>
+                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>Add to Cart</span>
                         </button>
                         <button
                           onClick={() => handleWishlistToggle(product)}
@@ -880,7 +868,7 @@ const Home = () => {
                               : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                           } flex items-center justify-center`}
                         >
-                          <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
                         </button>
                       </div>
                     </div>
@@ -890,10 +878,10 @@ const Home = () => {
             })}
           </Swiper>
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-6 sm:mt-8">
             <Link
               to="/shop?sort=check-this-out"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors w-full max-w-xs mx-auto"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors max-w-xs mx-auto"
             >
               View All Products
             </Link>
@@ -902,35 +890,40 @@ const Home = () => {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-12 bg-blue-600">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-6 text-center">
-          <div className="max-w-md mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-3">
+      <section className="py-8 sm:py-12 bg-blue-600">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6 text-center">
+          <div className="max-w-md mx-auto w-full">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
               Stay Updated
             </h2>
-            <p className="text-blue-100 mb-6">
+            <p className="text-sm sm:text-base text-blue-100 mb-4 sm:mb-6">
               Get exclusive offers and new arrivals
             </p>
-            <form className="flex gap-2" onSubmit={handleNewsletterSubmit}>
+            <form
+              className="flex gap-1 sm:gap-2 w-full"
+              onSubmit={handleNewsletterSubmit}
+            >
               <input
                 type="email"
                 value={newsletterEmail}
-                onChange={e => setNewsletterEmail(e.target.value)}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Your email"
-                className="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30"
+                className="flex-grow min-w-0 px-3 py-2 sm:px-4 sm:py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30 text-sm sm:text-base"
                 disabled={newsletterLoading}
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                className="shrink-0 px-3 sm:px-4 py-2 sm:py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 transition-colors text-xs sm:text-sm"
                 disabled={newsletterLoading}
               >
-                {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
+                {newsletterLoading ? "Subscribing..." : "Subscribe"}
               </button>
             </form>
           </div>
         </div>
       </section>
+
+
     </div>
   );
 };
