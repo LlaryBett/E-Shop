@@ -71,7 +71,12 @@ const Register = () => {
         navigate('/');
       }
     } catch (error) {
-      toast.error('Failed to create account. Please try again.');
+      // Show backend error message if available, else fallback
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to create account. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

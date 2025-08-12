@@ -49,8 +49,13 @@ const Login = () => {
       await login(formData.email, formData.password);
       toast.success('Welcome back!');
       navigate(from, { replace: true });
-    } catch {
-      toast.error('Invalid email or password');
+    } catch (error) {
+      // Show backend error message if available, else fallback
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Invalid email or password';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
