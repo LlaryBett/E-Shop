@@ -21,6 +21,8 @@ const Header = () => {
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [defaultAddress, setDefaultAddress] = useState(null);
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
+  const [mobileAccordionOpen, setMobileAccordionOpen] = useState(null);
 
   // Categories data structure for mega menu
   const categories = {
@@ -1069,6 +1071,127 @@ const Header = () => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
+
+     {/* Mobile Hamburger Menu Drawer */}
+{isMobileMenuOpen && (
+  <div className="fixed inset-0 z-50 flex">
+    {/* Drawer */}
+    <div className="w-80 max-w-full bg-white dark:bg-gray-900 h-full shadow-2xl flex flex-col">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+        <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          Menu
+        </span>
+        <button
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="p-2 text-gray-700 dark:text-gray-300"
+          aria-label="Close menu"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
+      <nav className="flex-1 overflow-y-auto">
+        <ul className="py-2">
+          <li className="border-b border-gray-200 dark:border-gray-700">
+            <Link
+              to="/"
+              className="flex items-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Home className="h-5 w-5 mr-3" />
+              Home
+            </Link>
+          </li>
+          <li className="border-b border-gray-200 dark:border-gray-700">
+            <button
+              className="flex items-center w-full px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              onClick={() => setMobileCategoriesOpen((v) => !v)}
+            >
+              <Grid3X3 className="h-5 w-5 mr-3" />
+              Categories
+              <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${mobileCategoriesOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {mobileCategoriesOpen && (
+              <ul className="pl-6 pr-2 py-2 space-y-1">
+                {Object.entries(categories).map(([id, category]) => (
+                  <li key={id}>
+                    <button
+                      className="flex items-center w-full py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600"
+                      onClick={() =>
+                        setMobileAccordionOpen(mobileAccordionOpen === id ? null : id)
+                      }
+                    >
+                      <category.icon className="h-4 w-4 mr-2" />
+                      {category.name}
+                      <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${mobileAccordionOpen === id ? 'rotate-180' : ''}`} />
+                    </button>
+                    {mobileAccordionOpen === id && (
+                      <ul className="pl-5 py-1 space-y-1">
+                        {category.subcategories.map((subcategory, subIdx) => (
+                          <li key={subIdx}>
+                            <div className="font-semibold text-xs text-blue-600 dark:text-blue-400 mb-1 mt-2">
+                              {subcategory.name}
+                            </div>
+                            <ul>
+                              {subcategory.items.map((item, itemIdx) => (
+                                <li key={itemIdx}>
+                                  <Link
+                                    to={`/category/${item.slug}`}
+                                    className="block py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                                    onClick={() => {
+                                      setIsMobileMenuOpen(false);
+                                      setMobileCategoriesOpen(false);
+                                      setMobileAccordionOpen(null);
+                                    }}
+                                  >
+                                    {item.name}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+          {/* Other nav items */}
+          {navItems.map((item) => (
+            <li key={item.name} className="border-b border-gray-200 dark:border-gray-700">
+              <Link
+                to={item.path}
+                className="flex items-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <item.icon className="h-5 w-5 mr-3" />
+                {item.name}
+              </Link>
+            </li>
+          ))}
+          <li className="border-b border-gray-200 dark:border-gray-700">
+            <Link
+              to="/shop?filter=fashion"
+              className="flex items-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Shirt className="h-5 w-5 mr-3" />
+              Fashion
+            </Link>
+          </li>
+        </ul>
+      </nav>
+      {/* Optional: Add sign in/out/profile links here for mobile */}
+    </div>
+    {/* Overlay */}
+    <div
+      className="flex-1 bg-black/20 backdrop-blur-sm"
+      onClick={() => setIsMobileMenuOpen(false)}
+    />
+  </div>
+)}
+
 
       {/* Backdrop for user menu */}
       {showUserMenu && (
