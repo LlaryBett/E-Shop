@@ -50,12 +50,10 @@ const Login = () => {
       toast.success('Welcome back!');
       navigate(from, { replace: true });
     } catch (error) {
-      // Show backend error message if available, else fallback
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Invalid email or password';
-      toast.error(errorMessage);
+      // Only display the backend error message, do not fallback to frontend message
+      if (error?.response?.data?.message) {
+        toast.error(error.response.data.message);
+      }
     } finally {
       setIsLoading(false);
     }
