@@ -1076,7 +1076,7 @@ const Header = () => {
 {isMobileMenuOpen && (
   <div className="fixed inset-0 z-50 flex">
     {/* Drawer */}
-    <div className="w-80 max-w-full bg-white dark:bg-gray-900 h-full shadow-2xl flex flex-col">
+    <div className="w-64 max-w-full bg-white dark:bg-gray-900 h-full shadow-2xl flex flex-col">
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
         <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
           Menu
