@@ -103,18 +103,11 @@ export const login = async (req, res, next) => {
 
     const { email, password } = req.body;
 
+    // Find user and include password field
     const user = await User.findOne({ email }).select('+password');
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials',
-      });
-    }
-
-    const isMatch = await user.comparePassword(password);
-
-    if (!isMatch) {
+    // Single check for both "not found" and "wrong password"
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials',
@@ -128,6 +121,7 @@ export const login = async (req, res, next) => {
       });
     }
 
+    // Update last login without triggering validation
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 
@@ -136,6 +130,7 @@ export const login = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // @desc    Logout user
 // @route   POST /api/auth/logout
