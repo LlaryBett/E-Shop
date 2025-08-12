@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login({ email, password });
       setUser(response.user);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      toast.error(error.response?.data?.message );
       throw error;
     }
   };
