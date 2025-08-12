@@ -225,6 +225,12 @@ export const createOrder = async (req, res, next) => {
           if (user) {
             user.orderCount = (user.orderCount || 0) + 1;
             await user.save();
+            // Send confirmation email for M-Pesa orders as well
+            try {
+              await sendOrderConfirmationEmail(order, user);
+            } catch (emailError) {
+              console.error('Failed to send confirmation email:', emailError);
+            }
           }
         } catch (userUpdateError) {
           console.error('Failed to update user stats:', userUpdateError);
@@ -294,6 +300,9 @@ export const createOrder = async (req, res, next) => {
         } catch (userUpdateError) {
           console.error('Failed to update user stats:', userUpdateError);
         }
+
+        // Log req.user to ensure it contains correct user data
+        console.log('Order confirmation: req.user =', req.user);
 
         try {
           await sendOrderConfirmationEmail(order, req.user);
