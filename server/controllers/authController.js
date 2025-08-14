@@ -5,16 +5,21 @@ import { sendEmail } from '../utils/sendEmail.js';
 // Helper function to send token response
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedJwtToken();
-
   const cookieExpireDays = parseInt(process.env.JWT_COOKIE_EXPIRE || '7', 10);
 
   const options = {
     expires: new Date(Date.now() + cookieExpireDays * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    secure: true, // ✅ Always true when using sameSite: 'None'
+    secure: true, // Always true for cross-origin
     sameSite: 'None',
     path: '/'
   };
+
+  // 🔍 DEBUG: Log cookie setting
+  console.log('🍪 Setting cookie with options:', JSON.stringify(options, null, 2));
+  console.log('🍪 Cookie value (first 20 chars):', token.substring(0, 20) + '...');
+  console.log('🍪 Request origin:', res.req.headers.origin);
+  console.log('🍪 NODE_ENV:', process.env.NODE_ENV);
 
   res.status(statusCode)
     .cookie('token', token, options)
@@ -29,6 +34,9 @@ const sendTokenResponse = (user, statusCode, res) => {
         isEmailVerified: user.isEmailVerified,
       },
     });
+
+  // 🔍 DEBUG: Log response headers after setting cookie
+  console.log('🍪 Response Set-Cookie header:', res.getHeaders()['set-cookie']);
 };
 
 // @desc    Register user

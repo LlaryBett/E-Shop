@@ -45,6 +45,9 @@ app.set('trust proxy', 1); // needed for secure cookies behind proxy (Render, He
 app.use(helmet());
 app.use(compression());
 
+
+// Replace your CORS configuration with this:
+
 const allowedOrigins = [
   'http://localhost:5173',
   'https://e-shop-lyart-beta.vercel.app'
@@ -63,11 +66,30 @@ app.use(
         callback(new Error('Not allowed by CORS'));
       }
     },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true, // ✅ This is correct
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // ✅ Added OPTIONS
+    allowedHeaders: [
+      'Content-Type', 
+      'Authorization', 
+      'Cookie',           // ✅ CRITICAL - This was missing!
+      'X-Requested-With', // ✅ Good to have
+      'Accept'            // ✅ Good to have
+    ],
+    exposedHeaders: ['Set-Cookie'], // ✅ CRITICAL - This was missing!
+    optionsSuccessStatus: 200,      // ✅ For legacy browser support
+    preflightContinue: false,       // ✅ Let CORS handle preflight
+    maxAge: 86400                   // ✅ Cache preflight for 24 hours
   })
 );
+
+// 🔍 Enhanced cookie logging middleware
+app.use((req, res, next) => {
+  console.log('📦 Incoming cookies:', req.cookies);
+  console.log('📦 Raw cookie header:', req.headers.cookie);
+  console.log('📦 User-Agent:', req.headers['user-agent']?.substring(0, 50) + '...');
+  console.log('📦 Request URL:', req.method, req.url);
+  next();
+});
 
 // Body & cookie parser
 app.use(express.json({ limit: '10mb' }));
