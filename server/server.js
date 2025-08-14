@@ -47,8 +47,8 @@ app.use(compression());
 
 // CORS
 const allowedOrigins = [
-  'https://e-shop-3-2mab.onrender.com', // Local development
-  'https://e-shop-3-2mab.onrender.com', // Production frontend
+  'https://e-shop-lyart-beta.vercel.app/', // Local development
+  'https://e-shop-lyart-beta.vercel.app/', // Production frontend
 ];
 
 app.use(
