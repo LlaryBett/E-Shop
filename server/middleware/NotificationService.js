@@ -66,6 +66,16 @@ class NotificationService {
         actionText: 'Rate Order',
         actionLink: `/orders/${orderData.orderId}/rate`,
         priority: 'medium'
+      },
+      'order_canceled': {
+        type: 'order',
+        title: 'Order Canceled',
+        message: `Your order #${orderData.orderNumber} has been canceled.`,
+        icon: '❌',
+        color: 'red',
+        actionText: 'View Details',
+        actionLink: `/orders/${orderData.orderId}`,
+        priority: 'high'
       }
     };
 

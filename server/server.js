@@ -48,7 +48,7 @@ app.use(compression());
 // CORS
 const allowedOrigins = [
   'http://localhost:5173', // Local development
-  'https://e-shop-1k1v.vercel.app', // Production frontend
+  'http://localhost:5173', // Production frontend
 ];
 
 app.use(

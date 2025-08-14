@@ -3,15 +3,17 @@ import User from '../models/User.js';
 
 // Protect routes - require authentication
 export const protect = async (req, res, next) => {
+  console.log("🛡 [protect] Middleware running...");
   let token;
 
-  // Check for token in headers
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
-  }
-  // Check for token in cookies
-  else if (req.cookies.token) {
+    console.log("🔑 Token found in Authorization header");
+  } else if (req.cookies.token) {
     token = req.cookies.token;
+    console.log("🍪 Token found in cookies");
+  } else {
+    console.log("❌ No token provided");
   }
 
   if (!token) {
@@ -22,12 +24,12 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Get user from token
+    console.log("✅ Token decoded:", decoded);
+
     const user = await User.findById(decoded.id).select('-password');
-    
+    console.log("👤 User found:", user ? `${user._id} (${user.email})` : "No user found");
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -36,6 +38,7 @@ export const protect = async (req, res, next) => {
     }
 
     if (!user.isActive) {
+      console.log("⚠ User account is deactivated");
       return res.status(401).json({
         success: false,
         message: 'User account is deactivated',
@@ -45,12 +48,14 @@ export const protect = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.error("💥 Token verification failed:", error.message);
     return res.status(401).json({
       success: false,
       message: 'Not authorized to access this route',
     });
   }
 };
+
 
 // Grant access to specific roles
 export const authorize = (...roles) => {

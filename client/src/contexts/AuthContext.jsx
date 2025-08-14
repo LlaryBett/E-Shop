@@ -19,18 +19,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = authService.getToken();
-      const savedUser = authService.getCurrentUser();
-      
-      if (token && savedUser) {
-        try {
-          const currentUser = await authService.getMe();
-          setUser(currentUser);
-        } catch {
-          authService.logout();
-        }
+      try {
+        // Just fetch from backend — cookies are sent automatically
+        const currentUser = await authService.getMe();
+        setUser(currentUser);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initializeAuth();
@@ -41,7 +38,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login({ email, password });
       setUser(response.user);
     } catch (error) {
-      toast.error(error.response?.data?.message );
+      toast.error(error.response?.data?.message || 'Login failed');
       throw error;
     }
   };
@@ -57,16 +54,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      await authService.logout(); // Clears cookie in backend
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error.response?.data || error.message);
+    }
   };
 
   const updateProfile = (updates) => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser((prev) => ({ ...prev, ...updates }));
     }
   };
 
@@ -81,7 +80,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 📩 Contact Form
   const submitContactForm = async (formData) => {
     try {
       const message = await userService.submitContactForm(formData);
@@ -93,21 +91,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 🛡️ Admin: Contact Management
   const getAllContactMessages = async () => {
     try {
-      const messages = await userService.getAllContactMessages();
-      return messages;
+      return await userService.getAllContactMessages();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to fetch messages');
       throw error;
     }
   };
 
-  // Update contact message status and send reply content if provided
   const updateContactMessageStatus = async (id, status, replyContent) => {
     try {
-      // Pass replyContent to userService if provided
       const message = await userService.updateContactMessageStatus(id, status, replyContent);
       toast.success('Status updated');
       return message;

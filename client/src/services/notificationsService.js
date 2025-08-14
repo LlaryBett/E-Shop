@@ -1,5 +1,5 @@
 import api from './api';
-import AuthService from './authService'; // Import your auth service
+import AuthService from './authService';
 
 class NotificationsService {
   /**
@@ -17,9 +17,9 @@ class NotificationsService {
       const response = await api({
         method,
         url,
-        data,
+        data, // Will send {} when provided
         params,
-        _suppressAuthRedirect: true // Prevent auto-redirect
+        _suppressAuthRedirect: true
       });
       return response.data;
     } catch (error) {
@@ -36,13 +36,11 @@ class NotificationsService {
   async getNotifications(params = {}) {
     try {
       const data = await this._makeAuthRequest('get', '/notifications', null, params);
-      // Fix: Extract notifications from the nested structure you showed in the API response
-      console.log('API response structure:', data);
       return data?.data?.notifications || [];
     } catch (error) {
       if (error.isAuthError) throw error;
       console.error('Failed to get notifications:', error);
-      return []; // Return empty array on other errors
+      return [];
     }
   }
 
@@ -65,11 +63,13 @@ class NotificationsService {
   }
 
   async markAsRead(id) {
-    return this._makeAuthRequest('patch', `/notifications/${id}/read`);
+    // Explicit empty body to ensure Content-Type
+    return this._makeAuthRequest('patch', `/notifications/${id}/read`, {});
   }
 
   async markAllAsRead() {
-    return this._makeAuthRequest('patch', '/notifications/read-all');
+    // Explicit empty body
+    return this._makeAuthRequest('patch', '/notifications/read-all', {});
   }
 
   async bulkOperations(data) {
@@ -77,12 +77,15 @@ class NotificationsService {
   }
 
   async deleteNotification(id) {
-    return this._makeAuthRequest('delete', `/notifications/${id}`);
+    // Explicit empty body
+    return this._makeAuthRequest('delete', `/notifications/${id}`, {});
   }
 
   async clearAll() {
-    return this._makeAuthRequest('delete', '/notifications/clear-all');
+    // Explicit empty body
+    return this._makeAuthRequest('delete', '/notifications/clear-all', {});
   }
+
 
   // ⚙️ Notification Event methods
   async getEvents() {

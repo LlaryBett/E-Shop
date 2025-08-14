@@ -1,7 +1,11 @@
 import { Transaction } from '../models/Transaction.js';
-import Order from '../models/Order.js'; // Import Order model
-import User from '../models/User.js'; // Import User model
+import Order from '../models/Order.js';
+import User from '../models/User.js';
 import { validateIPN } from './mpesa.utils.js';
+import { PendingOrder } from '../models/PendingOrder.js';
+import NotificationService from '../middleware/NotificationService.js';
+import Product from '../models/Product.js';
+import Coupon from '../models/Coupon.js';
 
 /**
  * STK Callback Handler (for Lipa Na M-Pesa Online)
@@ -10,111 +14,134 @@ import { validateIPN } from './mpesa.utils.js';
 
 export const handleSTKCallback = async (req, res) => {
   try {
+    // Log the raw request for debugging
+    console.log('💰 Raw M-Pesa Callback Data:', {
+      body: req.body,
+      headers: req.headers
+    });
+
     const callbackData = req.body;
-    console.log('STK Callback Received:', callbackData);
-
-    // 1. Validate callback signature
-    if (process.env.NODE_ENV === 'production' && 
-        !validateIPN(callbackData, req.headers['x-callback-signature'])) {
-      return res.status(403).json({ error: 'Invalid signature' });
-    }
-
     const result = callbackData.Body.stkCallback;
-    const { MerchantRequestID, CheckoutRequestID } = result;
+    const { MerchantRequestID, CheckoutRequestID, ResultCode, ResultDesc } = result;
 
-    // 2. Find the pending transaction
-    const transaction = await Transaction.findOne({ 
+    console.log('🔍 Processing M-Pesa callback:', {
+      MerchantRequestID,
+      CheckoutRequestID,
+      ResultCode,
+      ResultDesc
+    });
+
+    // Find pending order first
+    const pendingOrder = await PendingOrder.findOne({
       merchantRequestID: MerchantRequestID,
-      checkoutRequestID: CheckoutRequestID,
       status: 'pending'
     });
 
-    if (!transaction) {
-      console.error('Transaction not found:', { MerchantRequestID, CheckoutRequestID });
-      return res.status(404).send();
+    if (!pendingOrder) {
+      console.error('❌ No pending order found for:', MerchantRequestID);
+      return res.status(200).send(); // Still return 200 to M-Pesa
     }
 
-    // 3. Process success/failure
-    if (result.ResultCode === 0) {
-      // --- SUCCESS CASE ---
-      const metadata = result.CallbackMetadata?.Item?.reduce((acc, item) => {
-        acc[item.Name] = item.Value;
-        return acc;
-      }, {});
-
-      // Update transaction
-      await transaction.updateStatus('completed', {
-        mpesaReference: metadata?.MpesaReceiptNumber,
-        resultCode: 0,
-        resultDesc: 'Payment completed successfully',
-        callbackMetadata: result
+    // Handle payment failure immediately
+    if (ResultCode !== 0) {
+      console.error('❌ Payment failed:', ResultDesc);
+      
+      // Update pending order status
+      await PendingOrder.findByIdAndUpdate(pendingOrder._id, {
+        status: 'failed',
+        failureReason: ResultDesc
       });
 
-      // Update order
-      const order = await Order.findOneAndUpdate(
-        { 
-          'paymentInfo.checkoutRequestID': CheckoutRequestID,
-          'paymentInfo.merchantRequestID': MerchantRequestID 
-        },
-        {
-          'paymentInfo.status': 'paid',
-          'paymentInfo.mpesaReceiptNumber': metadata?.MpesaReceiptNumber,
-          'status': 'processing',
-          'paymentInfo.paidAt': new Date()
-        },
-        { new: true }
-      ).populate('user');
+      // Notify user about payment failure
+      const user = await User.findById(pendingOrder.userId);
+      if (user) {
+        // Send notification
+        await NotificationService.sendOrderNotification(pendingOrder.userId, {
+          status: 'payment_failed',
+          reason: ResultDesc,
+          orderReference: MerchantRequestID
+        });
 
-      // Send confirmation
-      if (order?.user) {
-        await sendPaymentSuccessEmail(order.user.email, order);
+        // Send email notification
+        await sendEmail({
+          email: user.email,
+          subject: 'Payment Failed',
+          message: `Your payment for order reference ${MerchantRequestID} failed. Reason: ${ResultDesc}. Please try again.`
+        });
       }
 
-    } else {
-      // --- FAILURE CASE ---
-      await transaction.updateStatus('failed', {
-        resultCode: result.ResultCode,
-        resultDesc: result.ResultDesc,
-        callbackMetadata: result
+      // Always return 200 to M-Pesa
+      return res.status(200).json({
+        success: false,
+        message: ResultDesc
+      });
+    }
+
+    console.log('✅ Found pending order:', pendingOrder._id);
+
+    // Extract payment metadata
+    const metadata = result.CallbackMetadata?.Item?.reduce((acc, item) => {
+      acc[item.Name] = item.Value;
+      return acc;
+    }, {});
+
+    console.log('📦 Payment metadata:', metadata);
+
+    try {
+      // Create order
+      console.log('📝 Creating order from pending data...');
+      const order = new Order({
+        user: pendingOrder.userId,
+        items: pendingOrder.items,
+        shippingAddress: pendingOrder.shippingAddress,
+        billingAddress: pendingOrder.billingAddress,
+        status: 'processing',
+        paymentInfo: {
+          method: 'mpesa',
+          status: 'paid',
+          phoneNumber: pendingOrder.phoneNumber,
+          merchantRequestID: MerchantRequestID,
+          checkoutRequestID: CheckoutRequestID,
+          mpesaReceiptNumber: metadata?.MpesaReceiptNumber,
+          paidAt: new Date()
+        },
+        pricing: pendingOrder.pricing,
+        appliedCoupon: pendingOrder.appliedCoupon,
+        shippingInfo: pendingOrder.shippingInfo,
       });
 
-      // Update order and restore stock
-      const order = await Order.findOneAndUpdate(
-        { 
-          'paymentInfo.checkoutRequestID': CheckoutRequestID,
-          'paymentInfo.merchantRequestID': MerchantRequestID 
-        },
-        {
-          'paymentInfo.status': 'failed',
-          'status': 'payment_failed',
-          'paymentInfo.failureReason': result.ResultDesc
-        },
-        { new: true }
-      ).populate('items.product');
+      await order.save();
+      console.log('✅ Order created:', order._id);
 
-      // Restore stock
-      if (order) {
-        for (const item of order.items) {
-          if (item.product) {
-            item.product.stock += item.quantity;
-            await item.product.save();
-          }
-        }
-
-        // Notify user
-        if (order.user) {
-          await sendPaymentFailedSms(order.user.phone, result.ResultDesc);
+      // Update stock
+      console.log('📊 Updating product stock...');
+      for (const item of pendingOrder.productsToUpdate) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          console.log(`Reducing stock for ${product._id} by ${item.quantity}`);
+          product.stock -= item.quantity;
+          await product.save();
         }
       }
+
+      // Mark pending order as processed
+      await PendingOrder.findByIdAndUpdate(pendingOrder._id, {
+        status: 'processed',
+        processedAt: new Date()
+      });
+
+      console.log('🎉 Order process completed successfully');
+    } catch (orderError) {
+      console.error('❌ Error processing order:', orderError);
+      // Still return 200 to M-Pesa but log the error
+      return res.status(200).send();
     }
 
     res.status(200).send();
   } catch (error) {
-    console.error('STK Callback Error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error('💥 Critical error in STK callback:', error);
+    // Always respond with 200 to M-Pesa even if we have internal errors
+    res.status(200).send();
   }
 };
 

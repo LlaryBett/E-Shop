@@ -54,6 +54,9 @@ const Checkout = () => {
 
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const [pollCount, setPollCount] = useState(0);
+  const MAX_POLL_ATTEMPTS = 24; // 2 minutes (24 * 5 seconds)
 
   // Coupon related state
   const [couponCode, setCouponCode] = useState('');
@@ -291,38 +294,114 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
     return p; // fallback
   };
 
-  const handlePlaceOrder = async () => {
-    if (!validateStep(3)) {
-      toast.error('Please complete all required fields');
-      return;
-    }
+  const pollPaymentStatus = async (pendingOrderId) => {
+  setIsPolling(true);
+  setPollCount(0);
 
-    setIsProcessing(true);
-    
+  // Store interval ID to clear later
+  const pollInterval = setInterval(async () => {
     try {
-      const orderData = {
-        items,
-        shippingAddress,
-        // Always use mpesa as payment method
-        paymentMethod: 'mpesa',
-        shippingMethod,
-        appliedCoupon,
-        discountAmount,
-        totalAmount: total,
-        // Send phoneNumber in correct format for backend
-        phoneNumber: formatPhoneNumber(paymentInfo.mpesaPhone)
-      };
-      
-      await OrderService.createOrder(orderData);
-      clearCart();
-      toast.success('Order placed successfully!');
-      navigate('/orders');
-    } catch (err) {
-      toast.error(err.message || 'Failed to place order. Please try again.');
-    } finally {
-      setIsProcessing(false);
+      // Prevent infinite polling
+      if (pollCount >= MAX_POLL_ATTEMPTS) {
+        clearInterval(pollInterval);
+        setIsPolling(false);
+        setIsProcessing(false);
+        toast.error('Payment confirmation timed out. Please check your order status.');
+        navigate('/orders');
+        return;
+      }
+
+      const response = await OrderService.checkPaymentStatus(pendingOrderId);
+      console.log('Poll response:', response);
+
+      if (response.success) {
+        switch (response.paymentStatus) {
+          case 'completed':
+            clearInterval(pollInterval);
+            setIsPolling(false);
+            setIsProcessing(false);
+            clearCart();
+            toast.success(response.message);
+            
+            // Use setTimeout to ensure state updates complete before navigation
+            setTimeout(() => {
+              navigate(response.action?.destination || '/orders');
+            }, 100);
+            break;
+            
+          case 'failed':
+            clearInterval(pollInterval);
+            setIsPolling(false);
+            setIsProcessing(false);
+            toast.error(response.message || 'Payment failed. Please try again.');
+            navigate('/cart');
+            break;
+            
+          case 'pending':
+            // Just increment count, continue polling
+            setPollCount(prev => prev + 1);
+            break;
+            
+          default:
+            clearInterval(pollInterval);
+            setIsPolling(false);
+            setIsProcessing(false);
+            toast.error('Unable to determine payment status');
+            navigate('/orders');
+        }
+      }
+    } catch (error) {
+      console.error('Polling error:', error);
+      // Don't stop polling on network errors
+      setPollCount(prev => prev + 1);
     }
+  }, 5000);
+
+  // Cleanup on unmount
+  return () => {
+    clearInterval(pollInterval);
+    setIsPolling(false);
+    setIsProcessing(false);
   };
+};
+
+ const handlePlaceOrder = async () => {
+  if (!validateStep(3)) {
+    toast.error('Please complete all required fields');
+    return;
+  }
+
+  setIsProcessing(true);
+  
+  try {
+    const orderData = {
+      items,
+      shippingAddress,
+      paymentMethod: 'mpesa',
+      shippingMethod,
+      appliedCoupon,
+      discountAmount,
+      totalAmount: total,
+      phoneNumber: formatPhoneNumber(paymentInfo.mpesaPhone)
+    };
+    
+    const result = await OrderService.createOrder(orderData);
+    console.log('Order Result:', result);
+
+    if (result.success) {
+      toast.success(result.message);
+      const pendingOrderId = result.pollUrl.split('/').pop();
+      pollPaymentStatus(pendingOrderId);
+    } else {
+      setIsProcessing(false);
+      toast.error(result.message);
+    }
+  } catch (err) {
+    console.error('Order error:', err);
+    setIsProcessing(false);
+    toast.error('Failed to create order. Please try again.');
+  }
+};
 
   // Allow viewing security details even without items
   if (items.length === 0 && !location.state?.showSecurityDetails) {
@@ -827,6 +906,21 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
                     </div>
                   </div>
                 </div>
+
+                {/* Polling Indicator - Shown only during polling */}
+                {isPolling && (
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center space-x-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
+                      <span className="text-blue-700 dark:text-blue-300">
+                        Waiting for M-Pesa payment confirmation...
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-blue-600 dark:text-blue-400">
+                      Please check your phone and enter your M-Pesa PIN to complete the payment
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

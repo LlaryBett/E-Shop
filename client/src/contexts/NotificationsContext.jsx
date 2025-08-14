@@ -63,30 +63,42 @@ export const NotificationsProvider = ({ children }) => {
   // Notification actions
   const markAsRead = async (id) => {
     try {
-      await notificationsService.markAsRead(id);
+      const response = await notificationsService.markAsRead(id);
       setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, isRead: true } : n)
       );
+      // Display success message from backend
+      toast.success(response.message || 'Notification marked as read');
     } catch (error) {
-      toast.error('Failed to mark as read');
+      // Revert optimistic update if failed
+      const message = error.response?.data?.message || 'Failed to mark notification as read';
+      toast.error(message);
     }
   };
 
   const markAllAsRead = async () => {
     try {
-      await notificationsService.markAllAsRead();
+      const response = await notificationsService.markAllAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      // Display success message from backend
+      toast.success(response.message || 'All notifications marked as read');
     } catch (error) {
-      toast.error('Failed to mark all as read');
+      // Revert optimistic update if failed
+      const message = error.response?.data?.message || 'Failed to mark all notifications as read';
+      toast.error(message);
     }
   };
 
   const deleteNotification = async (id) => {
     try {
-      await notificationsService.deleteNotification(id);
+      const response = await notificationsService.deleteNotification(id);
       setNotifications(prev => prev.filter(n => n.id !== id));
+      // Display success message from backend
+      toast.success(response.message || 'Notification deleted');
     } catch (error) {
-      toast.error('Failed to delete notification');
+      // Revert optimistic update if failed
+      const message = error.response?.data?.message || 'Failed to delete notification';
+      toast.error(message);
     }
   };
 

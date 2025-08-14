@@ -3,74 +3,53 @@ import api from './api';
 class AuthService {
   // 🔐 Authentication
   async login(data) {
-    const response = await api.post('/auth/login', data);
-    if (response.data.success) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-    }
+    const response = await api.post('/auth/login', data, { withCredentials: true });
     return response.data;
   }
 
   async register(data) {
-    const response = await api.post('/auth/register', data);
-    if (response.data.success) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-    }
+    const response = await api.post('/auth/register', data, { withCredentials: true });
     return response.data;
   }
 
   async logout() {
     try {
-      await api.post('/auth/logout');
+      await api.post('/auth/logout', {}, { withCredentials: true });
     } catch (error) {
       console.error('Logout error:', error.response?.data || error.message);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      throw error;
     }
   }
 
   async getMe() {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/auth/me', { withCredentials: true });
     return response.data.user;
   }
 
   // 🔑 Password / Email
   async forgotPassword(email) {
-    return api.post('/auth/forgot-password', { email });
+    const response = await api.post('/auth/forgot-password', { email }, { withCredentials: true });
+    return response.data;
   }
 
   async resetPassword(token, password) {
-    const response = await api.put(`/auth/reset-password/${token}`, { password });
+    const response = await api.put(`/auth/reset-password/${token}`, { password }, { withCredentials: true });
     return response.data;
   }
 
   async updatePassword(currentPassword, newPassword) {
-    return api.put('/auth/update-password', { currentPassword, newPassword });
+    const response = await api.put('/auth/update-password', { currentPassword, newPassword }, { withCredentials: true });
+    return response.data;
   }
 
   async resendVerificationEmail() {
-    return api.post('/auth/resend-verification');
+    const response = await api.post('/auth/resend-verification', {}, { withCredentials: true });
+    return response.data;
   }
 
   async verifyEmail(token) {
-    return api.get(`/auth/verify-email/${token}`);
-  }
-
-  // 📦 Helpers
-  getCurrentUser() {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  }
-
-  getToken() {
-    return localStorage.getItem('token');
-  }
-
-  isAuthenticated() {
-    return !!this.getToken();
+    const response = await api.get(`/auth/verify-email/${token}`, { withCredentials: true });
+    return response.data;
   }
 
   /**
@@ -79,10 +58,9 @@ class AuthService {
    * @returns {Promise} - API response
    */
   async sendPasswordResetEmail(email) {
-    const response = await api.post('/auth/forgot-password', { email });
+    const response = await api.post('/auth/forgot-password', { email }, { withCredentials: true });
     return response.data;
   }
 }
 
 export default new AuthService();
-

@@ -632,6 +632,7 @@ const Profile = () => {
           </div>
         </div>
         
+        {/* Mark all as read button */}
         <button
           onClick={markAllAsRead}
           className="w-full lg:w-auto text-xs lg:text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 lg:py-0 text-center lg:text-left"

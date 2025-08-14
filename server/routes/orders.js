@@ -7,8 +7,9 @@ import {
   getOrder,
   updateOrderStatus,
   cancelOrder,
-  getOrderInvoice, // <-- Add this import
-  reorderOrder, // <-- Add this import
+  getOrderInvoice,
+  reorderOrder,
+  checkPaymentStatus // Add this import
 } from '../controllers/orderController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -48,6 +49,12 @@ const orderValidation = [
 // Protected routes
 router.use(protect);
 
+
+router.get('/payment-status/:pendingOrderId', checkPaymentStatus);
+
+// @desc    Create new order
+// @route   POST /api/orders
+// @access  Private
 router.post('/', orderValidation, createOrder);
 router.get('/', getOrders);
 router.get('/:id', getOrder);

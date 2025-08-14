@@ -6,28 +6,30 @@ import { sendEmail } from '../utils/sendEmail.js';
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedJwtToken();
 
-  // Safely parse JWT_COOKIE_EXPIRE
   const cookieExpireDays = parseInt(process.env.JWT_COOKIE_EXPIRE || '7', 10);
 
   const options = {
     expires: new Date(Date.now() + cookieExpireDays * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // Send only over HTTPS in production
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? process.env.DOMAIN : 'localhost'
   };
 
-  res.status(statusCode).cookie('token', token, options).json({
-    success: true,
-    token,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      avatar: user.avatar,
-      isEmailVerified: user.isEmailVerified,
-    },
-  });
+  res.status(statusCode)
+    .cookie('token', token, options)
+    .json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        isEmailVerified: user.isEmailVerified,
+      },
+    });
 };
 
 // @desc    Register user
@@ -136,14 +138,20 @@ export const login = async (req, res, next) => {
 // @route   POST /api/auth/logout
 // @access  Private
 export const logout = async (req, res, next) => {
-  res.cookie('token', 'none', {
-    expires: new Date(Date.now() + 10 * 1000),
+  const options = {
+    expires: new Date(Date.now()),
     httpOnly: true,
-  });
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? process.env.DOMAIN : 'localhost'
+  };
 
+  res.cookie('token', '', options);
+  
   res.status(200).json({
     success: true,
-    message: 'Logged out successfully',
+    message: 'Logged out successfully'
   });
 };
 
