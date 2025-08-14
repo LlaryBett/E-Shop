@@ -1,4 +1,3 @@
-// server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -6,7 +5,6 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss-clean';
 import hpp from 'hpp';
@@ -39,66 +37,50 @@ import { notFound } from './middleware/notFound.js';
 dotenv.config();
 
 const app = express();
-app.set('trust proxy', 1); // needed for secure cookies behind proxy (Render, Heroku, etc.)
+app.set('trust proxy', 1); // still needed for IP-based rate limiting or similar
 
 // Security middleware
 app.use(helmet());
 app.use(compression());
 
-// CORS configuration - FIXED for cross-origin cookies
 const allowedOrigins = [
- 
+  'http://localhost:5173',
   'https://e-shop-pwxx.vercel.app'
 ];
 
+// Simplified CORS configuration for JWT in Authorization header
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log('🌍 Incoming request Origin:', origin);
-      
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) {
-        console.log('✅ No origin - allowing');
-        return callback(null, true);
-      }
-      
-      if (allowedOrigins.includes(origin)) {
-        console.log('✅ Origin allowed:', origin);
-        callback(null, true); // ← FIXED: Changed from 'origin' to 'true'
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, origin);
       } else {
-        console.log('❌ Origin blocked:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     },
-    credentials: true, // ✅ Critical for cookies
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type', 
-      'Authorization', 
-      'Cookie',
+      'Authorization',  // Only need this for JWT
       'X-Requested-With',
       'Accept'
     ],
-    exposedHeaders: ['Set-Cookie'],
     optionsSuccessStatus: 200,
-    preflightContinue: false,
     maxAge: 86400
   })
 );
 
-// Body & cookie parser - MOVED BEFORE logging middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
-
-// Enhanced logging middleware
+// Request logging middleware
 app.use((req, res, next) => {
-  console.log('📦 Incoming cookies:', req.cookies);
-  console.log('📦 Raw cookie header:', req.headers.cookie);
+  console.log('📦 Incoming request:', req.method, req.url);
   console.log('📦 User-Agent:', req.headers['user-agent']?.substring(0, 50) + '...');
-  console.log('📦 Request URL:', req.method, req.url);
+  console.log('📦 Authorization header:', req.headers['authorization'] ? 'Present' : 'Not present');
   next();
 });
+
+// Body parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Data sanitization
 app.use(mongoSanitize());

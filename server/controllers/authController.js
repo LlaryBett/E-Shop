@@ -5,43 +5,21 @@ import { sendEmail } from '../utils/sendEmail.js';
 // Helper function to send token response
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedJwtToken();
-  const cookieExpireDays = parseInt(process.env.JWT_COOKIE_EXPIRE || '7', 10);
 
-  const options = {
-    expires: new Date(Date.now() + cookieExpireDays * 24 * 60 * 60 * 1000),
-    httpOnly: true,
-    secure: true, // Always true for cross-origin
-    sameSite: 'None',
-    path: '/'
-  };
-
-  // 🔍 DEBUG: Log cookie setting
-  console.log('🍪 Setting cookie with options:', JSON.stringify(options, null, 2));
-  console.log('🍪 Cookie value (first 20 chars):', token.substring(0, 20) + '...');
-  console.log('🍪 Request origin:', res.req.headers.origin);
-  console.log('🍪 NODE_ENV:', process.env.NODE_ENV);
-
-  res.status(statusCode)
-    .cookie('token', token, options)
-    .json({
-      success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
-        isEmailVerified: user.isEmailVerified,
-      },
-    });
-
-  // 🔍 DEBUG: Log response headers after setting cookie
-  console.log('🍪 Response Set-Cookie header:', res.getHeaders()['set-cookie']);
+  res.status(statusCode).json({
+    success: true,
+    token, // Send token in response body
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      isEmailVerified: user.isEmailVerified,
+    },
+  });
 };
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
@@ -83,13 +61,8 @@ export const register = async (req, res, next) => {
       console.log('✅ Verification email sent to', user.email);
     } catch (error) {
       console.warn('⚠️ Email sending error (possibly still sent):', error.message);
-      // Optional: Keep the token for retry or remove it
-      // user.emailVerificationToken = undefined;
-      // user.emailVerificationExpire = undefined;
-      // await user.save({ validateBeforeSave: false });
     }
 
-    // Always respond with success if user was created, regardless of email status
     sendTokenResponse(user, 201, res);
   } catch (error) {
     next(error);
@@ -112,10 +85,8 @@ export const login = async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    // Find user and include password field
     const user = await User.findOne({ email }).select('+password');
 
-    // Single check for both "not found" and "wrong password"
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
         success: false,
@@ -130,7 +101,6 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // Update last login without triggering validation
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 
@@ -140,21 +110,10 @@ export const login = async (req, res, next) => {
   }
 };
 
-
 // @desc    Logout user
 // @route   POST /api/auth/logout
 // @access  Private
 export const logout = async (req, res, next) => {
-  const options = {
-    expires: new Date(Date.now()),
-    httpOnly: true,
-    secure: true, // ✅ Change this from process.env.NODE_ENV === 'production'
-    sameSite: 'None',
-    path: '/',
-  };
-
-  res.cookie('token', '', options);
-  
   res.status(200).json({
     success: true,
     message: 'Logged out successfully'
@@ -190,17 +149,15 @@ export const forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-      // Security best practice: Don't reveal if a user exists or not
       return res.status(200).json({
         success: true,
         message: 'If your email is registered, you will receive a password reset link',
       });
     }
 
-    // Check for reset request frequency to prevent abuse
     if (user.resetPasswordExpire && user.resetPasswordExpire > Date.now()) {
       const timeLeft = Math.ceil((user.resetPasswordExpire - Date.now()) / (60 * 1000));
-      if (timeLeft > 55) { // If more than 55 minutes left on a 60-minute token
+      if (timeLeft > 55) {
         return res.status(429).json({
           success: false,
           message: `Please wait before requesting another reset. You can request again in ${timeLeft} minutes.`,
@@ -214,7 +171,6 @@ export const forgotPassword = async (req, res, next) => {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     try {
-      // Use the email utility's template generation instead of custom HTML
       await sendEmail({
         email: user.email,
         subject: 'E-Shop Password Reset',
@@ -227,10 +183,8 @@ export const forgotPassword = async (req, res, next) => {
         showContactSupport: true
       });
 
-      // Log this for monitoring and debugging purposes
       console.log(`✅ Password reset email sent to ${user.email}`);
 
-      // Return the same response regardless of whether the user exists
       return res.status(200).json({
         success: true,
         message: 'If your email is registered, you will receive a password reset link',
@@ -265,7 +219,6 @@ export const resetPassword = async (req, res, next) => {
       });
     }
 
-    // Find user with valid token
     const user = await User.findOne({
       resetPasswordToken: req.params.token,
       resetPasswordExpire: { $gt: Date.now() },
@@ -278,17 +231,13 @@ export const resetPassword = async (req, res, next) => {
       });
     }
 
-    // Update password and clear reset fields
     user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    
-    // Add a flag to indicate the password was reset
     user.passwordLastChanged = Date.now();
     
     await user.save();
 
-    // Send notification email that password was changed
     try {
       await sendEmail({
         email: user.email,
@@ -300,11 +249,9 @@ export const resetPassword = async (req, res, next) => {
         showContactSupport: true
       });
     } catch (error) {
-      // Don't fail the request if the confirmation email fails
       console.error('Error sending password change confirmation:', error);
     }
 
-    // Return success response with new token
     sendTokenResponse(user, 200, res);
   } catch (error) {
     next(error);

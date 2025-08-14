@@ -1,72 +1,79 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-// Protect routes - require authentication (cookie-only version)
+// Protect routes - require authentication
 export const protect = async (req, res, next) => {
-  console.log("🛡 [protect] Middleware running...");
-  
-  // Only check cookies now (removed header check)
-  const token = req.cookies.token;
-  
+  let token;
+
+  // Check for token in headers
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  // Check for token in cookies
+  else if (req.cookies.token) {
+    token = req.cookies.token;
+  }
+
   if (!token) {
-    console.log("❌ No token cookie provided");
     return res.status(401).json({
       success: false,
-      message: 'Not authorized - please login',
+      message: 'Not authorized to access this route',
     });
   }
 
   try {
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("✅ Token decoded:", decoded);
-
+    
+    // Get user from token
     const user = await User.findById(decoded.id).select('-password');
     
     if (!user) {
-      console.log("🔴 No user found for token");
       return res.status(401).json({
         success: false,
-        message: 'User not found',
+        message: 'No user found with this token',
       });
     }
 
     if (!user.isActive) {
-      console.log("⚠️ User account is deactivated");
       return res.status(401).json({
         success: false,
-        message: 'Account deactivated',
+        message: 'User account is deactivated',
       });
     }
 
-    console.log(`👤 Authenticated as ${user.email}`);
     req.user = user;
     next();
-    
   } catch (error) {
-    console.error("💥 Token verification failed:", error.message);
     return res.status(401).json({
       success: false,
-      message: 'Invalid token - please login again',
+      message: 'Not authorized to access this route',
     });
   }
 };
 
-// Role authorization remains the same
+// Grant access to specific roles
 export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: `Role ${req.user.role} unauthorized for this route`,
+        message: `User role ${req.user.role} is not authorized to access this route`,
       });
     }
     next();
   };
 };
 
-// Optional auth (cookie-only version)
+// Optional authentication - doesn't require login but adds user if logged in
 export const optionalAuth = async (req, res, next) => {
-  const token = req.cookies.token;
+  let token;
+
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.token) {
+    token = req.cookies.token;
+  }
 
   if (token) {
     try {
@@ -77,7 +84,7 @@ export const optionalAuth = async (req, res, next) => {
         req.user = user;
       }
     } catch (error) {
-      // Silently fail for optional auth
+      // Token invalid, but continue without user
     }
   }
 

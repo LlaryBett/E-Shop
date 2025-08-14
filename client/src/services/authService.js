@@ -1,25 +1,32 @@
 import api from './api';
 
 class AuthService {
+  // Store token in localStorage (or sessionStorage)
+  storeToken(token) {
+    localStorage.setItem('token', token);
+  }
+
+  // Get stored token
+  getToken() {
+    return localStorage.getItem('token');
+  }
+
+  // Remove token
+  clearToken() {
+    localStorage.removeItem('token');
+  }
+
   // 🔐 Authentication
   async login(data) {
     try {
       console.log('🔐 Starting login process...');
-      const response = await api.post('/auth/login', data, { withCredentials: true });
+      const response = await api.post('/auth/login', data);
       
       console.log('🔐 Login response received:', response.status);
       
-      // Additional cookie check after successful login
-      if (response.status === 200) {
-        setTimeout(() => {
-          const hasToken = document.cookie.includes('token=');
-          console.log('🔐 Post-login cookie check:', hasToken ? 'Cookie found' : 'No cookie');
-          
-          if (!hasToken) {
-            console.warn('🚨 Login succeeded but no cookie was set!');
-            // You might want to show a warning to the user here
-          }
-        }, 200);
+      if (response.data.token) {
+        this.storeToken(response.data.token);
+        console.log('🔐 Token stored successfully');
       }
       
       return response.data;
@@ -30,16 +37,22 @@ class AuthService {
   }
 
   async register(data) {
-    const response = await api.post('/auth/register', data, { withCredentials: true });
+    const response = await api.post('/auth/register', data);
+    if (response.data.token) {
+      this.storeToken(response.data.token);
+    }
     return response.data;
   }
 
   async logout() {
     try {
       console.log('🚪 Starting logout...');
-      await api.post('/auth/logout', {}, { withCredentials: true });
+      // Clear the token from storage
+      this.clearToken();
       
-      // Clear any client-side storage if needed
+      // Optional: Call the server to invalidate the token if needed
+      await api.post('/auth/logout');
+      
       console.log('🚪 Logout successful');
     } catch (error) {
       console.error('🚪 Logout error:', error.response?.data || error.message);
@@ -50,7 +63,7 @@ class AuthService {
   async getMe() {
     try {
       console.log('👤 Getting user info...');
-      const response = await api.get('/auth/me', { withCredentials: true });
+      const response = await api.get('/auth/me');
       console.log('👤 User info retrieved successfully');
       return response.data.user;
     } catch (error) {
@@ -59,72 +72,50 @@ class AuthService {
     }
   }
 
-  // Test method to check if cookies are working
-  async testCookies() {
-    console.log('🧪 Testing cookie functionality...');
-    
-    try {
-      // Try to make an authenticated request
-      const response = await api.get('/auth/me', { withCredentials: true });
-      console.log('✅ Cookie test passed - user is authenticated', {
-        status: response.status,
-        headers: response.headers,
-        data: response.data
-      });
-      return {
-        success: true,
-        status: response.status,
-        data: response.data
-      };
-    } catch (error) {
-      if (error.response?.status === 401) {
-        console.log('❌ Cookie test failed - user not authenticated');
-        console.log('🔍 Current cookies:', document.cookie);
-        return {
-          success: false,
-          status: error.response.status,
-          cookies: document.cookie
-        };
-      }
-      throw error;
-    }
-  }
-
-  // Manual cookie check method
+  // Check if user is logged in
   isLoggedIn() {
-    const hasTokenCookie = document.cookie.includes('token=');
-    console.log('🔍 Manual login check - cookie exists:', hasTokenCookie);
-    return hasTokenCookie;
+    const hasToken = !!this.getToken();
+    console.log('🔍 Manual login check - token exists:', hasToken);
+    return hasToken;
   }
 
-  // 🔑 Other methods remain the same...
+  // 🔑 Password related methods
   async forgotPassword(email) {
-    const response = await api.post('/auth/forgot-password', { email }, { withCredentials: true });
+    const response = await api.post('/auth/forgot-password', { email });
     return response.data;
   }
 
   async resetPassword(token, password) {
-    const response = await api.put(`/auth/reset-password/${token}`, { password }, { withCredentials: true });
+    const response = await api.put(`/auth/reset-password/${token}`, { password });
+    if (response.data.token) {
+      this.storeToken(response.data.token);
+    }
     return response.data;
   }
 
   async updatePassword(currentPassword, newPassword) {
-    const response = await api.put('/auth/update-password', { currentPassword, newPassword }, { withCredentials: true });
+    const response = await api.put('/auth/update-password', { currentPassword, newPassword });
+    if (response.data.token) {
+      this.storeToken(response.data.token);
+    }
     return response.data;
   }
 
   async resendVerificationEmail() {
-    const response = await api.post('/auth/resend-verification', {}, { withCredentials: true });
+    const response = await api.post('/auth/resend-verification', {});
     return response.data;
   }
 
   async verifyEmail(token) {
-    const response = await api.get(`/auth/verify-email/${token}`, { withCredentials: true });
+    const response = await api.get(`/auth/verify-email/${token}`);
+    if (response.data.token) {
+      this.storeToken(response.data.token);
+    }
     return response.data;
   }
 
   async sendPasswordResetEmail(email) {
-    const response = await api.post('/auth/forgot-password', { email }, { withCredentials: true });
+    const response = await api.post('/auth/forgot-password', { email });
     return response.data;
   }
 }
