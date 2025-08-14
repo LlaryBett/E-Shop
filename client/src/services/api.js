@@ -2,30 +2,21 @@ import axios from 'axios';
 
 const API_BASE_URL =
   import.meta.env.MODE === 'production'
-    ? 'https://e-shop-3-2mab.onrender.com/api' // Change this in production
+    ? 'https://e-shop-3-2mab.onrender.com/api'
     : 'https://e-shop-3-2mab.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // sends cookies when needed
+  withCredentials: true, // Cookie-based auth
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor — attach token from localStorage
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// REMOVED the request interceptor completely
+// (No more localStorage token handling)
 
-// Response interceptor — handle expired or missing token
+// Response interceptor stays the same
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -38,8 +29,7 @@ api.interceptors.response.use(
         currentPath.includes('/forgot-password');
 
       if (!isAuthRoute) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Removed localStorage cleanup (handled by HTTP-only cookies)
         window.location.href = '/login';
       }
     }
@@ -47,7 +37,7 @@ api.interceptors.response.use(
   }
 );
 
-// Public API instance (no auth token)
+// Public API instance remains unchanged
 api.public = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
