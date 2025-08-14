@@ -29,13 +29,19 @@ const VerifyEmail = () => {
   }, [token, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-      {status === 'verifying' && <p>Verifying your email...</p>}
-      {status === 'success' && <p>Email verified! Redirecting to login...</p>}
+    <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 lg:px-6">
+      {status === 'verifying' && (
+        <p className="text-sm sm:text-base lg:text-lg">Verifying your email...</p>
+      )}
+      {status === 'success' && (
+        <p className="text-sm sm:text-base lg:text-lg">Email verified! Redirecting to login...</p>
+      )}
       {status === 'error' && (
-        <p>
+        <p className="text-sm sm:text-base lg:text-lg">
           Verification failed. Please try again or{' '}
-          <a href="/contact" className="underline text-blue-600">contact support</a>.
+          <a href="/contact" className="underline text-blue-600 text-xs sm:text-sm hover:text-blue-700">
+            contact support
+          </a>.
         </p>
       )}
     </div>

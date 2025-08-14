@@ -47,8 +47,8 @@ app.use(compression());
 
 // CORS
 const allowedOrigins = [
-  'http://localhost:5173', // Local development
-  'http://localhost:5173', // Production frontend
+  'https://e-shop-3-2mab.onrender.com', // Local development
+  'https://e-shop-3-2mab.onrender.com', // Production frontend
 ];
 
 app.use(
