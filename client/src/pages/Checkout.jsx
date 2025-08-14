@@ -298,7 +298,6 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
   setIsPolling(true);
   setPollCount(0);
 
-  // Store interval ID to clear later
   const pollInterval = setInterval(async () => {
     try {
       // Prevent infinite polling
@@ -314,45 +313,82 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
       const response = await OrderService.checkPaymentStatus(pendingOrderId);
       console.log('Poll response:', response);
 
-      if (response.success) {
-        switch (response.paymentStatus) {
-          case 'completed':
-            clearInterval(pollInterval);
-            setIsPolling(false);
-            setIsProcessing(false);
-            clearCart();
-            toast.success(response.message);
-            
-            // Use setTimeout to ensure state updates complete before navigation
-            setTimeout(() => {
-              navigate(response.action?.destination || '/orders');
-            }, 100);
-            break;
-            
-          case 'failed':
-            clearInterval(pollInterval);
-            setIsPolling(false);
-            setIsProcessing(false);
-            toast.error(response.message || 'Payment failed. Please try again.');
-            navigate('/cart');
-            break;
-            
-          case 'pending':
-            // Just increment count, continue polling
-            setPollCount(prev => prev + 1);
-            break;
-            
-          default:
-            clearInterval(pollInterval);
-            setIsPolling(false);
-            setIsProcessing(false);
-            toast.error('Unable to determine payment status');
-            navigate('/orders');
-        }
+      // Handle network / DNS error
+      if (
+        response?.message?.includes('getaddrinfo ENOTFOUND') ||
+        response?.message?.includes('Network Error')
+      ) {
+        clearInterval(pollInterval);
+        setIsPolling(false);
+        setIsProcessing(false);
+        toast.error('Network error: Unable to reach the server. Please try again.', { duration: 10000 });
+        return;
       }
+
+      // Handle failed payment immediately
+      if (response.paymentStatus === 'failed') {
+        clearInterval(pollInterval);
+        setIsPolling(false);
+        setIsProcessing(false);
+        
+        // Display detailed error message
+        toast.error(
+          <div className="space-y-1">
+            <p className="font-semibold">{response.message}</p>
+            <p>{response.details}</p>
+            {response.nextSteps?.length > 0 && (
+              <ul className="list-disc pl-5">
+                {response.nextSteps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ul>
+            )}
+          </div>,
+          { duration: 10000 }
+        );
+        
+        navigate('/cart');
+        return;
+      }
+
+      // Handle successful payment
+      if (response.paymentStatus === 'completed') {
+        clearInterval(pollInterval);
+        setIsPolling(false);
+        setIsProcessing(false);
+        clearCart();
+        toast.success(response.message);
+        setTimeout(() => {
+          navigate(response.action?.destination || '/orders');
+        }, 100);
+        return;
+      }
+
+      // Continue polling for pending status
+      if (response.paymentStatus === 'pending') {
+        setPollCount(prev => prev + 1);
+        return;
+      }
+
+      // Handle unexpected status
+      clearInterval(pollInterval);
+      setIsPolling(false);
+      setIsProcessing(false);
+      toast.error(response.message || 'Unexpected payment status');
+      navigate('/orders');
+
     } catch (error) {
       console.error('Polling error:', error);
-      // Don't stop polling on network errors
+
+      // Detect network/DNS errors in catch as well
+      if (error?.message?.includes('getaddrinfo ENOTFOUND') || error?.message?.includes('Network Error')) {
+        clearInterval(pollInterval);
+        setIsPolling(false);
+        setIsProcessing(false);
+        toast.error('Network error: Unable to reach the server. Please try again.', { duration: 10000 });
+        return;
+      }
+
       setPollCount(prev => prev + 1);
     }
   }, 5000);
@@ -364,6 +400,7 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
     setIsProcessing(false);
   };
 };
+
 
  const handlePlaceOrder = async () => {
   if (!validateStep(3)) {

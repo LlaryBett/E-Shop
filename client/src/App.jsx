@@ -38,7 +38,6 @@ import Categories from './pages/Categories';
 import Shipping from './pages/Shipping';
 import SearchResults from './pages/SearchResults'; // Add this import
 import ResetPassword from './pages/ResetPassword'; // Import the ResetPassword component
-import CookieDebugger from './pages/CookieDebbuger';
 
 function App() {
   return (
@@ -88,7 +87,6 @@ function App() {
                                   <Route path="/reset-password/:token" element={<ResetPassword />} />
                                   <Route path="/verify-email/:token" element={<VerifyEmail />} />
                                   <Route path="/shipping" element={<Shipping />} />
-                                  <Route path="/debug-cookies" element={<CookieDebugger />} />
                                   {/* ...add any other non-admin routes here... */}
                                 </Routes>
                               </main>

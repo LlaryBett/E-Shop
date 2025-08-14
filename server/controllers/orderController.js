@@ -74,6 +74,9 @@ export const createOrder = async (req, res, next) => {
     const orderItems = [];
     const productsToUpdate = [];
 
+    console.log('🧮 Starting price calculations...');
+    console.log('📦 Processing items:', items.length);
+
     for (const item of items) {
       const productId = typeof item.product === 'string' ? item.product : item.product?._id;
       const product = await Product.findById(productId);
@@ -95,6 +98,14 @@ export const createOrder = async (req, res, next) => {
       const price = product.salePrice || product.price;
       subtotal += price * item.quantity;
 
+      console.log(`📝 Item calculation:`, {
+        productId,
+        title: product.title,
+        price,
+        quantity: item.quantity,
+        lineTotal: price * item.quantity
+      });
+
       orderItems.push({
         product: product._id,
         title: product.title,
@@ -107,6 +118,8 @@ export const createOrder = async (req, res, next) => {
 
       productsToUpdate.push({ product: product._id, quantity: item.quantity });
     }
+
+    console.log('💰 Base subtotal:', subtotal);
 
     // Process coupon if applied
     let discountAmount = 0;
@@ -138,10 +151,18 @@ export const createOrder = async (req, res, next) => {
       discountAmount = couponDetails.type === 'percentage' 
         ? subtotal * (couponDetails.amount / 100) 
         : couponDetails.amount;
+      
+      console.log('🎫 Coupon applied:', {
+        code: appliedCoupon.code,
+        type: couponDetails.type,
+        amount: couponDetails.amount,
+        discountAmount
+      });
     }
 
     // Calculate order totals
     const discountedSubtotal = subtotal - discountAmount;
+    console.log('💰 After discount:', discountedSubtotal);
     
     const shippingMethodObj = await ShippingMethod.findById(shippingMethod);
     const shippingCost = shippingMethodObj 
@@ -151,17 +172,49 @@ export const createOrder = async (req, res, next) => {
         ? 0 
         : shippingMethodObj.cost
       : 0;
+    
+    console.log('🚚 Shipping:', {
+      method: shippingMethodObj?.name,
+      cost: shippingCost,
+      minFree: shippingMethodObj?.minFree
+    });
 
     const taxRates = await TaxRate.find({});
     const taxRule = taxRates.find(r => discountedSubtotal >= r.min && discountedSubtotal <= r.max);
     const tax = taxRule ? discountedSubtotal * taxRule.rate : 0;
     
+    console.log('💵 Tax calculation:', {
+      rule: taxRule ? `${taxRule.rate * 100}%` : 'No applicable tax',
+      amount: tax
+    });
+
     const calculatedTotal = discountedSubtotal + shippingCost + tax;
+    
+    console.log('🧾 Final totals:', {
+      subtotal,
+      discount: discountAmount,
+      discountedSubtotal,
+      shipping: shippingCost,
+      tax,
+      calculatedTotal,
+      receivedTotal: totalAmount,
+      difference: Math.abs(calculatedTotal - totalAmount)
+    });
 
     if (Math.abs(calculatedTotal - totalAmount) > 0.01) {
+      console.warn('❌ Total amount mismatch:', {
+        calculated: calculatedTotal,
+        received: totalAmount,
+        difference: Math.abs(calculatedTotal - totalAmount)
+      });
       return res.status(400).json({
         success: false,
         message: 'Total amount mismatch',
+        debug: {
+          calculated: calculatedTotal,
+          received: totalAmount,
+          difference: Math.abs(calculatedTotal - totalAmount)
+        }
       });
     }
 
@@ -763,6 +816,6 @@ export const checkPaymentStatus = async (req, res) => {
 };
 
 
-      
-  
+
+
 
