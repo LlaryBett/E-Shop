@@ -2,8 +2,8 @@ import axios from 'axios';
 
 const API_BASE_URL =
   import.meta.env.MODE === 'production'
-    ? 'https://e-shop-pwxx.vercel.app/api' // Update this in production
-    : 'https://e-shop-pwxx.vercel.app/api';
+    ? 'https://e-shop-3-2mab.onrender.com/api' // Update this in production
+    : 'https://e-shop-3-2mab.onrender.com/api';
 
 // Authenticated API instance — automatically attaches JWT from localStorage
 const api = axios.create({
