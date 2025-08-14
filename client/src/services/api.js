@@ -58,13 +58,14 @@ api.interceptors.response.use(
         .some(route => currentPath.includes(route));
         
       if (!isAuthRoute) {
-        console.log('🚪 Redirecting to login due to 401');
-        window.location.href = '/login';
+        console.log('🚪 Would redirect to login due to 401, but DISABLED for debugging');
+        console.log('🚪 Current path:', currentPath);
+        console.log('🚪 Is auth route:', isAuthRoute);
+        // window.location.href = '/login'; // ← COMMENTED OUT FOR DEBUGGING
       }
     }
     return Promise.reject(error);
   }
 );
 
-// Remove the redundant api.public - just use the main api instance
 export default api;
