@@ -660,8 +660,8 @@ export const checkPaymentStatus = async (req, res) => {
           } : null,
           action: {
             type: 'redirect',
-            destination: order ? `/orders/${order._id}` : '/orders',
-            message: 'View your order'
+            destination: '/orders',  // Changed from `/orders/${order._id}` to just '/orders'
+            message: 'View your orders'
           }
         });
 
