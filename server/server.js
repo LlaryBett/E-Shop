@@ -1,3 +1,4 @@
+// server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -26,34 +27,43 @@ import cartRoutes from './routes/cartRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
 import notificationsRoutes from './routes/notifications.js';
 import newsletterRoutes from './routes/newsletter.js';
-import contactRoutes from './routes/contact.js'; // ✅ NEW
+import contactRoutes from './routes/contact.js';
 import configRoutes from './routes/configRoutes.js';
 import mpesaRoutes from './routes/mpesa.js';
 
-
-// Import middleware
+// Middleware
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 
-// Load environment variables
+// Env
 dotenv.config();
 
 const app = express();
-app.set('trust proxy', 1);
+app.set('trust proxy', 1); // needed for secure cookies behind proxy (Render, Heroku, etc.)
 
 // Security middleware
 app.use(helmet());
 app.use(compression());
 
 const allowedOrigins = [
-  'http://localhost:5173', // Local development
-  'https://e-shop-lyart-beta.vercel.app' // Production frontend
+  'http://localhost:5173',
+  'https://e-shop-lyart-beta.vercel.app'
 ];
 
+// 🔍 Detailed CORS origin logging
 app.use(
   cors({
-    origin: allowedOrigins,
-    credentials: true, // Required for cookies
+    origin: function (origin, callback) {
+      console.log('🌍 Incoming request Origin:', origin);
+      if (!origin || allowedOrigins.includes(origin)) {
+        console.log('✅ Origin allowed:', origin);
+        callback(null, origin);
+      } else {
+        console.log('❌ Origin blocked:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
@@ -63,6 +73,12 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// 🔍 Cookie logging middleware
+app.use((req, res, next) => {
+  console.log('📦 Incoming cookies:', req.cookies);
+  next();
+});
 
 // Data sanitization
 app.use(mongoSanitize());
@@ -83,7 +99,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Mount API routes
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
@@ -99,15 +115,15 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/newsletter', newsletterRoutes);
-app.use('/api/contact', contactRoutes); // ✅ NEW
-app.use('/api/config', configRoutes); // ✅ ADD CONFIG ROUTES
+app.use('/api/contact', contactRoutes);
+app.use('/api/config', configRoutes);
 app.use('/api/mpesa', mpesaRoutes);
 
 // Error handlers
 app.use(notFound);
 app.use(errorHandler);
 
-// DB connection
+// DB connect
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI);
@@ -129,7 +145,7 @@ const startServer = async () => {
 
 startServer();
 
-// Graceful shutdowns
+// Graceful shutdown
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err.message);
   process.exit(1);
