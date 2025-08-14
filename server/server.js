@@ -45,24 +45,20 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(compression());
 
-// CORS
 const allowedOrigins = [
-  'https://e-shop-lyart-beta.vercel.app/', // Local development
-  'https://e-shop-lyart-beta.vercel.app/', // Production frontend
+  'http://localhost:5173', // Local development
+  'https://e-shop-lyart-beta.vercel.app' // Production frontend
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (e.g., mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-      
-      // Check if the origin is in the allowed list
+      if (!origin) return callback(null, true); // allow non-browser tools
+
       if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
+        callback(null, true);
       } else {
-        const msg = `The CORS policy for this site does not allow access from ${origin}.`;
-        return callback(new Error(msg), false);
+        callback(new Error(`CORS not allowed for origin: ${origin}`));
       }
     },
     credentials: true,
