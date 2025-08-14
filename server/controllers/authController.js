@@ -9,13 +9,13 @@ const sendTokenResponse = (user, statusCode, res) => {
   const cookieExpireDays = parseInt(process.env.JWT_COOKIE_EXPIRE || '7', 10);
 
   const options = {
-    expires: new Date(Date.now() + cookieExpireDays * 24 * 60 * 60 * 1000),
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
-    domain: process.env.NODE_ENV === 'production' ? process.env.DOMAIN : 'localhost'
-  };
+  expires: new Date(Date.now() + cookieExpireDays * 24 * 60 * 60 * 1000),
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'None', // allow cross-site
+  path: '/'
+};
+
 
   res.status(statusCode)
     .cookie('token', token, options)
