@@ -40,10 +40,10 @@ api.interceptors.response.use(
     
     // Store token if it's returned in login/register responses
     if (
-      (response.config.url?.includes('/auth/login') || 
+      response.config.url?.includes('/auth/login') || 
       response.config.url?.includes('/auth/register') ||
       response.config.url?.includes('/auth/reset-password')
-    ) 
+    ) {
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         console.log('🔑 Token stored in localStorage');
