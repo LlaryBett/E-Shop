@@ -1,6 +1,6 @@
 // CookieDebugger.jsx - Add this component to test cookies
 import React, { useState } from 'react';
-import authService from './services/authService'; // adjust path as needed
+import authService from '../services/authService'; // fixed import path
 
 const CookieDebugger = () => {
   const [testResults, setTestResults] = useState({});
