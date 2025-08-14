@@ -47,8 +47,7 @@ app.use(compression());
 
 // CORS configuration - FIXED for cross-origin cookies
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
+ 
   'https://e-shop-pwxx.vercel.app'
 ];
 
