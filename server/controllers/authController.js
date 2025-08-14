@@ -9,13 +9,12 @@ const sendTokenResponse = (user, statusCode, res) => {
   const cookieExpireDays = parseInt(process.env.JWT_COOKIE_EXPIRE || '7', 10);
 
   const options = {
-  expires: new Date(Date.now() + cookieExpireDays * 24 * 60 * 60 * 1000),
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'None', // allow cross-site
-  path: '/'
-};
-
+    expires: new Date(Date.now() + cookieExpireDays * 24 * 60 * 60 * 1000),
+    httpOnly: true,
+    secure: true, // ✅ Always true when using sameSite: 'None'
+    sameSite: 'None',
+    path: '/'
+  };
 
   res.status(statusCode)
     .cookie('token', token, options)
@@ -139,12 +138,11 @@ export const login = async (req, res, next) => {
 // @access  Private
 export const logout = async (req, res, next) => {
   const options = {
-    expires: new Date(Date.now()), // Immediately expire the cookie
-    httpOnly: true, // Prevent client-side JS access
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    sameSite: 'None', // Required for cross-site cookies (matches login)
-    path: '/', // Available on all paths
-    // Removed domain - let browser handle it automatically
+    expires: new Date(Date.now()),
+    httpOnly: true,
+    secure: true, // ✅ Change this from process.env.NODE_ENV === 'production'
+    sameSite: 'None',
+    path: '/',
   };
 
   res.cookie('token', '', options);
