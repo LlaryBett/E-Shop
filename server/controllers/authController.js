@@ -139,12 +139,12 @@ export const login = async (req, res, next) => {
 // @access  Private
 export const logout = async (req, res, next) => {
   const options = {
-    expires: new Date(Date.now()),
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
-    domain: process.env.NODE_ENV === 'production' ? process.env.DOMAIN : 'localhost'
+    expires: new Date(Date.now()), // Immediately expire the cookie
+    httpOnly: true, // Prevent client-side JS access
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: 'None', // Required for cross-site cookies (matches login)
+    path: '/', // Available on all paths
+    // Removed domain - let browser handle it automatically
   };
 
   res.cookie('token', '', options);
