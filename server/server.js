@@ -45,60 +45,59 @@ app.set('trust proxy', 1); // needed for secure cookies behind proxy (Render, He
 app.use(helmet());
 app.use(compression());
 
-
-// Replace your CORS configuration with this:
-
+// CORS configuration - FIXED for cross-origin cookies
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:3000',
   'https://e-shop-pwxx.vercel.app'
 ];
 
-// 🔍 Detailed CORS origin logging
 app.use(
   cors({
     origin: function (origin, callback) {
       console.log('🌍 Incoming request Origin:', origin);
-      if (!origin || allowedOrigins.includes(origin)) {
+      
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) {
+        console.log('✅ No origin - allowing');
+        return callback(null, true);
+      }
+      
+      if (allowedOrigins.includes(origin)) {
         console.log('✅ Origin allowed:', origin);
-        callback(null, origin);
+        callback(null, true); // ← FIXED: Changed from 'origin' to 'true'
       } else {
         console.log('❌ Origin blocked:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     },
-    credentials: true, // ✅ This is correct
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // ✅ Added OPTIONS
+    credentials: true, // ✅ Critical for cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type', 
       'Authorization', 
-      'Cookie',           // ✅ CRITICAL - This was missing!
-      'X-Requested-With', // ✅ Good to have
-      'Accept'            // ✅ Good to have
+      'Cookie',
+      'X-Requested-With',
+      'Accept'
     ],
-    exposedHeaders: ['Set-Cookie'], // ✅ CRITICAL - This was missing!
-    optionsSuccessStatus: 200,      // ✅ For legacy browser support
-    preflightContinue: false,       // ✅ Let CORS handle preflight
-    maxAge: 86400                   // ✅ Cache preflight for 24 hours
+    exposedHeaders: ['Set-Cookie'],
+    optionsSuccessStatus: 200,
+    preflightContinue: false,
+    maxAge: 86400
   })
 );
 
-// 🔍 Enhanced cookie logging middleware
+// Body & cookie parser - MOVED BEFORE logging middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
+// Enhanced logging middleware
 app.use((req, res, next) => {
   console.log('📦 Incoming cookies:', req.cookies);
   console.log('📦 Raw cookie header:', req.headers.cookie);
   console.log('📦 User-Agent:', req.headers['user-agent']?.substring(0, 50) + '...');
   console.log('📦 Request URL:', req.method, req.url);
-  next();
-});
-
-// Body & cookie parser
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
-
-// 🔍 Cookie logging middleware
-app.use((req, res, next) => {
-  console.log('📦 Incoming cookies:', req.cookies);
   next();
 });
 

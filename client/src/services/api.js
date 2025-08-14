@@ -1,3 +1,4 @@
+// api.js - Enhanced with better debugging
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.MODE === 'production'
@@ -13,13 +14,34 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Enhanced debugging functions
+const debugCookies = () => {
+  const allCookies = document.cookie;
+  console.log('🔍 All browser cookies:', allCookies || 'No cookies found');
+  
+  if (allCookies) {
+    const cookieArray = allCookies.split('; ').map(cookie => {
+      const [name, value] = cookie.split('=');
+      return { name, value: value?.substring(0, 20) + '...' };
+    });
+    console.log('🔍 Parsed cookies:', cookieArray);
+  }
+  
+  // Check specifically for token cookie
+  const tokenCookie = allCookies.split('; ').find(row => row.startsWith('token='));
+  console.log('🔍 Token cookie:', tokenCookie ? 'Found' : 'Not found');
+};
+
 // Add request interceptor for debugging
 api.interceptors.request.use(
   (config) => {
     console.log('🚀 Making request to:', config.url);
     console.log('🚀 With credentials:', config.withCredentials);
     console.log('🚀 Headers:', config.headers);
-    console.log('🚀 All cookies in browser:', document.cookie);
+    
+    // Enhanced cookie debugging
+    debugCookies();
+    
     return config;
   },
   (error) => {
@@ -28,7 +50,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor with debugging
+// Enhanced response interceptor
 api.interceptors.response.use(
   (response) => {
     console.log('✅ Response from:', response.config.url);
@@ -36,13 +58,27 @@ api.interceptors.response.use(
     console.log('✅ Set-Cookie header:', response.headers['set-cookie']);
     console.log('✅ All response headers:', response.headers);
     
-    // After login, check if cookie was set
+    // Special handling for login response
     if (response.config.url?.includes('/auth/login') && response.status === 200) {
-      console.log('🍪 After login - All cookies:', document.cookie);
+      console.log('🍪 Login successful - checking cookies...');
       
-      // Check if our token cookie exists
-      const hasTokenCookie = document.cookie.includes('token=');
-      console.log('🍪 Token cookie exists:', hasTokenCookie);
+      // Wait a bit for cookie to be set, then check
+      setTimeout(() => {
+        debugCookies();
+        
+        // Try to manually check if cookie was set
+        const cookieWasSet = document.cookie.includes('token=');
+        console.log('🍪 Cookie set after login:', cookieWasSet);
+        
+        if (!cookieWasSet) {
+          console.error('🚨 COOKIE NOT SET AFTER LOGIN!');
+          console.log('🔧 Possible issues:');
+          console.log('  1. Browser blocking third-party cookies');
+          console.log('  2. Secure cookie settings');
+          console.log('  3. SameSite policy');
+          console.log('  4. Domain mismatch');
+        }
+      }, 100);
     }
     
     return response;
@@ -56,7 +92,10 @@ api.interceptors.response.use(
       const currentPath = window.location.pathname;
       const isAuthRoute = ['/login', '/reset-password', '/verify-email', '/forgot-password']
         .some(route => currentPath.includes(route));
-        
+      
+      console.log('🚪 401 Error - checking cookies:');
+      debugCookies();
+      
       if (!isAuthRoute) {
         console.log('🚪 Would redirect to login due to 401, but DISABLED for debugging');
         console.log('🚪 Current path:', currentPath);
