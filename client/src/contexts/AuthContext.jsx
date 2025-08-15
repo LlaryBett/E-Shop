@@ -17,13 +17,21 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const isAuthenticated = !!user;
+
   useEffect(() => {
     const initializeAuth = async () => {
+      if (!authService.isAuthenticated()) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Just fetch from backend — cookies are sent automatically
         const currentUser = await authService.getMe();
         setUser(currentUser);
-      } catch {
+      } catch (err) {
+        console.error('Failed to fetch user on init:', err);
         setUser(null);
       } finally {
         setLoading(false);
@@ -37,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.login({ email, password });
       setUser(response.user);
+      return response;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
       throw error;
@@ -56,70 +65,32 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await authService.logout(); // Clears cookie in backend
+      await authService.logout();
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error.response?.data || error.message);
     }
   };
 
+  // ✅ Safe private methods
+  const safeCall = async (fn, ...args) => {
+    if (!isAuthenticated) {
+      toast.error('You must be logged in to perform this action');
+      return;
+    }
+    return fn(...args);
+  };
+
   const updateProfile = (updates) => {
-    if (user) {
-      setUser((prev) => ({ ...prev, ...updates }));
-    }
+    if (isAuthenticated) setUser((prev) => ({ ...prev, ...updates }));
   };
 
-  const subscribeNewsletter = async (email) => {
-    try {
-      const response = await userService.subscribeNewsletter(email);
-      toast.success(response.message || 'Subscribed successfully');
-      return response;
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Subscription failed');
-      throw error;
-    }
-  };
-
-  const submitContactForm = async (formData) => {
-    try {
-      const message = await userService.submitContactForm(formData);
-      toast.success(message || 'Message sent successfully');
-      return message;
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Message failed to send');
-      throw error;
-    }
-  };
-
-  const getAllContactMessages = async () => {
-    try {
-      return await userService.getAllContactMessages();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to fetch messages');
-      throw error;
-    }
-  };
-
-  const updateContactMessageStatus = async (id, status, replyContent) => {
-    try {
-      const message = await userService.updateContactMessageStatus(id, status, replyContent);
-      toast.success('Status updated');
-      return message;
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Update failed');
-      throw error;
-    }
-  };
-
-  const deleteContactMessage = async (id) => {
-    try {
-      await userService.deleteContactMessage(id);
-      toast.success('Message deleted');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Delete failed');
-      throw error;
-    }
-  };
+  const subscribeNewsletter = (email) => safeCall(userService.subscribeNewsletter, email);
+  const submitContactForm = (formData) => safeCall(userService.submitContactForm, formData);
+  const getAllContactMessages = () => safeCall(userService.getAllContactMessages);
+  const updateContactMessageStatus = (id, status, replyContent) =>
+    safeCall(userService.updateContactMessageStatus, id, status, replyContent);
+  const deleteContactMessage = (id) => safeCall(userService.deleteContactMessage, id);
 
   const value = {
     user,
@@ -133,7 +104,7 @@ export const AuthProvider = ({ children }) => {
     getAllContactMessages,
     updateContactMessageStatus,
     deleteContactMessage,
-    isAuthenticated: !!user,
+    isAuthenticated,
     isAdmin: user?.role === 'admin',
   };
 
