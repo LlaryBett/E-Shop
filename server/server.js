@@ -45,7 +45,8 @@ app.use(compression());
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://e-shop-pwxx.vercel.app'
+  'https://e-shop-pwxx.vercel.app ',
+  "https://e-shop-lyart-beta.vercel.app"
 ];
 
 // Simplified CORS configuration for JWT in Authorization header
