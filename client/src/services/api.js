@@ -1,11 +1,11 @@
+// 1. UPDATE YOUR EXISTING api.js - Add verification error handling
 import axios from 'axios';
 
 const API_BASE_URL =
   import.meta.env.MODE === 'production'
-    ? 'https://e-shop-3-2mab.onrender.com/api' // Update this in production
+    ? 'https://e-shop-3-2mab.onrender.com/api'
     : 'https://e-shop-3-2mab.onrender.com/api';
 
-// Authenticated API instance — automatically attaches JWT from localStorage
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -13,7 +13,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor — attach token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -25,7 +24,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor — handle expired or missing token
+// UPDATED: Enhanced response interceptor to handle verification
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -42,11 +41,17 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    
+    // NEW: Handle email verification required errors
+    if (error.response?.status === 403 && error.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+      // Let the calling component handle this - don't redirect automatically
+      return Promise.reject(error);
+    }
+    
     return Promise.reject(error);
   }
 );
 
-// Public API instance — no token attached
 api.public = axios.create({
   baseURL: API_BASE_URL,
   headers: {

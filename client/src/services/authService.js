@@ -1,3 +1,4 @@
+// 3. UPDATE YOUR EXISTING authService - Add verification check method
 import api from './api';
 
 class AuthService {
@@ -5,7 +6,7 @@ class AuthService {
   async login(data) {
     const response = await api.post('/auth/login', data);
     if (response.data.token) {
-      localStorage.setItem('token', response.data.token); // store JWT
+      localStorage.setItem('token', response.data.token);
     }
     return response.data;
   }
@@ -20,9 +21,9 @@ class AuthService {
 
   async logout() {
     try {
-      localStorage.removeItem('token'); // remove JWT locally
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
-      await api.post('/auth/logout'); // optional backend logout
+      await api.post('/auth/logout');
     } catch (error) {
       console.error('Logout error:', error.response?.data || error.message);
       throw error;
@@ -30,7 +31,7 @@ class AuthService {
   }
 
   async getMe() {
-    const response = await api.get('/auth/me'); // JWT automatically added by interceptor
+    const response = await api.get('/auth/me');
     return response.data.user;
   }
 
@@ -69,6 +70,15 @@ class AuthService {
   isAuthenticated() {
     return !!localStorage.getItem('token');
   }
+
+  // NEW: Helper to check if verification error occurred
+  isVerificationError(error) {
+    return error.response?.status === 403 && error.response?.data?.code === 'EMAIL_NOT_VERIFIED';
+  }
 }
 
 export default new AuthService();
+
+// 4. HOW TO USE IN YOUR CHECKOUT COMPONENT
+// In your checkout/order component, handle the verification error like this:
+

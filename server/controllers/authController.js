@@ -72,8 +72,12 @@ export const register = async (req, res, next) => {
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
+// @desc    Login user (modern flow - allows login but tracks verification status)
+// @route   POST /api/auth/login
+// @access  Public
 export const login = async (req, res, next) => {
   try {
+    // Input validation
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -85,28 +89,63 @@ export const login = async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password');
+    // Find user with password (explicitly selected)
+    const user = await User.findOne({ email })
+      .select('+password +loginAttempts +lockUntil');
 
+    // Account lock check (brute force protection)
+    if (user?.lockUntil && user.lockUntil > Date.now()) {
+      const retryIn = Math.ceil((user.lockUntil - Date.now()) / 1000);
+      return res.status(429).json({
+        success: false,
+        message: `Account temporarily locked. Try again in ${retryIn} seconds.`
+      });
+    }
+
+    // Credential check
     if (!user || !(await user.comparePassword(password))) {
+      // Increment failed attempts
+      if (user) {
+        user.loginAttempts += 1;
+        if (user.loginAttempts >= 5) {
+          user.lockUntil = Date.now() + 15 * 60 * 1000; // 15min lock
+        }
+        await user.save({ validateBeforeSave: false });
+      }
+
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials',
+        remainingAttempts: user ? 5 - user.loginAttempts : undefined
       });
     }
 
+    // Account status checks
     if (!user.isActive) {
-      return res.status(401).json({
+      return res.status(403).json({
         success: false,
-        message: 'Account is deactivated',
+        message: 'Account deactivated. Contact support.',
       });
     }
 
+    // Reset login attempts on success
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 
+    // Modern response - always return token but include verification status
     sendTokenResponse(user, 200, res);
+
+    // Optional: Log security event
+    console.log(`🔒 User ${user.email} logged in from ${req.ip}`);
   } catch (error) {
-    next(error);
+    // Security: Never leak error details
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Authentication service unavailable'
+    });
   }
 };
 

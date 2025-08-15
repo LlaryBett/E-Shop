@@ -23,8 +23,20 @@ export const createOrder = async (req, res, next) => {
     console.log('🛒 New order request received:', {
       userId: req.user.id,
       paymentMethod: req.body.paymentMethod,
-      items: req.body.items?.length
+      items: req.body.items?.length,
+      isEmailVerified: req.user.isEmailVerified // Log this for debugging
     });
+
+    // Update the property name to match the user object
+    if (!req.user.isEmailVerified) { // Changed from isVerified to isEmailVerified
+      console.log('❌ Unverified user attempted checkout:', req.user.email);
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your email address before placing an order. Check your inbox for the verification link.',
+        code: 'EMAIL_NOT_VERIFIED',
+        requiresVerification: true
+      });
+    }
 
     // Input validation
     const errors = validationResult(req);

@@ -1,3 +1,4 @@
+// 2. UPDATE YOUR EXISTING AuthContext - Add verification state and helpers
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
 import userService from '../services/userService';
@@ -16,8 +17,12 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // NEW: Add verification prompt state
+  const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
 
   const isAuthenticated = !!user;
+  // NEW: Add verification check
+  const isVerified = user?.isVerified || false;
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -72,12 +77,36 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Safe private methods
-  const safeCall = async (fn, ...args) => {
+  // NEW: Add verification helper functions
+  const handleVerificationRequired = () => {
+    setShowVerificationPrompt(true);
+  };
+
+  const closeVerificationPrompt = () => {
+    setShowVerificationPrompt(false);
+  };
+
+  const resendVerification = async () => {
+    try {
+      await authService.resendVerificationEmail();
+      toast.success('Verification email sent! Check your inbox.');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to resend verification email');
+    }
+  };
+
+  // UPDATED: Enhanced safeCall to check verification for checkout actions
+  const safeCall = async (fn, requiresVerification = false, ...args) => {
     if (!isAuthenticated) {
       toast.error('You must be logged in to perform this action');
       return;
     }
+    
+    if (requiresVerification && !isVerified) {
+      handleVerificationRequired();
+      return;
+    }
+    
     return fn(...args);
   };
 
@@ -85,12 +114,12 @@ export const AuthProvider = ({ children }) => {
     if (isAuthenticated) setUser((prev) => ({ ...prev, ...updates }));
   };
 
-  const subscribeNewsletter = (email) => safeCall(userService.subscribeNewsletter, email);
-  const submitContactForm = (formData) => safeCall(userService.submitContactForm, formData);
-  const getAllContactMessages = () => safeCall(userService.getAllContactMessages);
+  const subscribeNewsletter = (email) => safeCall(userService.subscribeNewsletter, false, email);
+  const submitContactForm = (formData) => safeCall(userService.submitContactForm, false, formData);
+  const getAllContactMessages = () => safeCall(userService.getAllContactMessages, false);
   const updateContactMessageStatus = (id, status, replyContent) =>
-    safeCall(userService.updateContactMessageStatus, id, status, replyContent);
-  const deleteContactMessage = (id) => safeCall(userService.deleteContactMessage, id);
+    safeCall(userService.updateContactMessageStatus, false, id, status, replyContent);
+  const deleteContactMessage = (id) => safeCall(userService.deleteContactMessage, false, id);
 
   const value = {
     user,
@@ -106,6 +135,12 @@ export const AuthProvider = ({ children }) => {
     deleteContactMessage,
     isAuthenticated,
     isAdmin: user?.role === 'admin',
+    // NEW: Add verification-related values
+    isVerified,
+    showVerificationPrompt,
+    handleVerificationRequired,
+    closeVerificationPrompt,
+    resendVerification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

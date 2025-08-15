@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CreditCard, Truck, MapPin, User, Mail, Phone, Lock, Shield, CheckCircle, Eye, Fingerprint, X, Tag, Check,ChevronDown } from 'lucide-react';
+import { CreditCard, Truck, MapPin, User, Mail, Phone, Lock, Shield, CheckCircle, Eye, Fingerprint, X, Tag, Check, ChevronDown } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCheckout } from '../contexts/CheckoutContext';
 import OrderService from '../services/orderService';
+import authService from '../services/authService'; // <-- Add this import
 import toast from 'react-hot-toast';
 
 const Checkout = () => {
@@ -16,8 +17,6 @@ const Checkout = () => {
 
   // For shipping options, use shippingMethods
   const shippingOptions = shippingMethods;
-
-  
 
   // Autofill shipping address from user profile (me payload)
   const getDefaultShippingAddress = () => {
@@ -409,7 +408,7 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
   }
 
   setIsProcessing(true);
-  
+
   try {
     const orderData = {
       items,
@@ -440,9 +439,59 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
   }
 };
 
-  // Allow viewing security details even without items
-  if (items.length === 0 && !location.state?.showSecurityDetails) {
-    navigate('/cart');
+  // Check for empty cart and email verification on mount
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    setIsCheckingAuth(true);
+    
+    if (items.length === 0 && !location.state?.showSecurityDetails) {
+      toast.error('Your cart is empty', {
+        duration: 3000,
+        position: 'top-center'
+      });
+      navigate('/cart');
+      return;
+    }
+
+    if (user && !user.isEmailVerified) { // Changed from emailVerified to isEmailVerified
+      toast.error('Please verify your email before placing an order', {
+        duration: 3000,
+        position: 'top-center'
+      });
+      
+      // Use Promise and setTimeout to handle the redirect smoothly
+      const redirect = () => new Promise(resolve => setTimeout(resolve, 2000));
+      redirect().then(() => {
+        navigate('/verify-email-prompt', {
+          state: {
+            returnTo: '/checkout',
+            message: 'Please verify your email before placing an order'
+          }
+        });
+      });
+      return;
+    }
+    
+    setIsCheckingAuth(false);
+  }, [items.length, location.state, user, navigate]);
+
+  // Early return with loading state or redirect conditions
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-6">
+          {/* Keep consistent height during loading */}
+          <div className="h-[80vh] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Remove the previous early return and keep the rest
+  if ((items.length === 0 && !location.state?.showSecurityDetails) || (user && !user.isEmailVerified)) { // Changed here too
     return null;
   }
 
@@ -1279,6 +1328,8 @@ const [showMobileSummary, setShowMobileSummary] = useState(false);
           </div>
         </div>
       </div>
+
+      {/* Add VerificationPrompt at the end */}
     </div>
   );
 };
