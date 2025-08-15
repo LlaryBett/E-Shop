@@ -574,26 +574,7 @@ export const getOrderInvoice = async (req, res, next) => {
 
 
 
-const sendOrderConfirmationEmail = async (order, user) => {
-  const message = `
-    Dear ${user.name},
-    
-    Thank you for your order! Your order #${order.orderNumber} has been confirmed.
-    
-    Order Total: Ksh ${order.pricing.total.toFixed(2)}
-    
-    We'll send you another email when your order ships.
-    
-    Best regards,
-    E-Shop Team
-  `;
 
-  await sendEmail({
-    email: user.email,
-    subject: `Order Confirmation - ${order.orderNumber}`,
-    message,
-  });
-};
 
 const sendOrderStatusEmail = async (order) => {
   const user = await User.findById(order.user);
@@ -726,11 +707,7 @@ export const checkPaymentStatus = async (req, res) => {
           paymentStatus: 'failed',
           message: pendingOrder.failureReason || 'Payment failed.',
           details: 'This could be due to insufficient funds, wrong PIN, or cancelled transaction.',
-          nextSteps: [
-            'Check your M-Pesa balance',
-            'Ensure you entered the correct PIN',
-            'Try the payment again'
-          ],
+          
           action: {
             type: 'retry',
             message: 'Retry Payment',

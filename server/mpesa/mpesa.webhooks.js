@@ -6,12 +6,11 @@ import { PendingOrder } from '../models/PendingOrder.js';
 import NotificationService from '../middleware/NotificationService.js';
 import Product from '../models/Product.js';
 import Coupon from '../models/Coupon.js';
+import { sendEmail } from '../utils/sendEmail.js';
 
 /**
  * STK Callback Handler (for Lipa Na M-Pesa Online)
  */
-
-
 export const handleSTKCallback = async (req, res) => {
   try {
     // Log the raw request for debugging
@@ -55,19 +54,28 @@ export const handleSTKCallback = async (req, res) => {
       // Notify user about payment failure
       const user = await User.findById(pendingOrder.userId);
       if (user) {
-        // Send notification
-        await NotificationService.sendOrderNotification(pendingOrder.userId, {
-          status: 'payment_failed',
-          reason: ResultDesc,
-          orderReference: MerchantRequestID
-        });
+        try {
+          // Send notification
+          await NotificationService.sendOrderNotification(pendingOrder.userId, {
+            status: 'payment_failed',
+            reason: ResultDesc,
+            orderReference: MerchantRequestID
+          });
 
-        // Send email notification
-        await sendEmail({
-          email: user.email,
-          subject: 'Payment Failed',
-          message: `Your payment for order reference ${MerchantRequestID} failed. Reason: ${ResultDesc}. Please try again.`
-        });
+          // Send email notification
+          await sendEmail({
+            email: user.email,
+            subject: 'Payment Failed',
+            message: `Your payment for order reference ${MerchantRequestID} failed. Reason: ${ResultDesc}. Please try again.`,
+            greeting: 'Hello',
+            name: user.name,
+            showContactSupport: true
+          });
+          
+          console.log('✅ Payment failure notification sent to user:', user.email);
+        } catch (notificationError) {
+          console.error('❌ Failed to send failure notification:', notificationError);
+        }
       }
 
       // Always return 200 to M-Pesa
@@ -87,10 +95,11 @@ export const handleSTKCallback = async (req, res) => {
 
     console.log('📦 Payment metadata:', metadata);
 
+    let order;
     try {
       // Create order
       console.log('📝 Creating order from pending data...');
-      const order = new Order({
+      order = new Order({
         user: pendingOrder.userId,
         items: pendingOrder.items,
         shippingAddress: pendingOrder.shippingAddress,
@@ -124,6 +133,40 @@ export const handleSTKCallback = async (req, res) => {
         }
       }
 
+      // Update coupon usage if coupon was applied
+      if (pendingOrder.appliedCoupon && pendingOrder.appliedCoupon._id) {
+        try {
+          await Coupon.findByIdAndUpdate(pendingOrder.appliedCoupon._id, {
+            $inc: { usedCount: 1 }
+          });
+          console.log('✅ Coupon usage updated');
+        } catch (couponError) {
+          console.error('❌ Failed to update coupon usage:', couponError);
+        }
+      }
+
+      // Send success notifications and email
+      console.log('📧 Sending success notifications...');
+      const user = await User.findById(order.user);
+      
+      if (user) {
+        try {
+          // Send order confirmation notification
+          await NotificationService.sendOrderNotification(order.user, {
+            status: 'order_confirmed',
+            orderNumber: order.orderNumber,
+            orderId: order._id
+          });
+          console.log('✅ Order confirmation notification sent');
+
+          // Send order confirmation email
+          await sendOrderConfirmationEmail(order, user);
+          console.log('✅ Order confirmation email sent to:', user.email);
+        } catch (notificationError) {
+          console.error('❌ Failed to send success notifications:', notificationError);
+        }
+      }
+
       // Mark pending order as processed
       await PendingOrder.findByIdAndUpdate(pendingOrder._id, {
         status: 'processed',
@@ -133,6 +176,13 @@ export const handleSTKCallback = async (req, res) => {
       console.log('🎉 Order process completed successfully');
     } catch (orderError) {
       console.error('❌ Error processing order:', orderError);
+      
+      // If order creation failed, mark pending order as failed
+      await PendingOrder.findByIdAndUpdate(pendingOrder._id, {
+        status: 'failed',
+        failureReason: 'Order processing failed'
+      });
+      
       // Still return 200 to M-Pesa but log the error
       return res.status(200).send();
     }
@@ -145,6 +195,45 @@ export const handleSTKCallback = async (req, res) => {
   }
 };
 
+/**
+ * Helper function to send order confirmation email
+ */
+const sendOrderConfirmationEmail = async (order, user) => {
+  const itemsList = order.items.map(item => 
+    `- ${item.title} x${item.quantity} (Ksh ${item.price.toFixed(2)} each)`
+  ).join('\n');
+
+  const message = `
+Thank you for your order! Your order #${order.orderNumber} has been confirmed and is being processed.
+
+Order Details:
+${itemsList}
+
+Subtotal: Ksh ${order.pricing.subtotal.toFixed(2)}
+${order.pricing.discount > 0 ? `Discount: -Ksh ${order.pricing.discount.toFixed(2)}` : ''}
+Shipping: Ksh ${order.pricing.shipping.toFixed(2)}
+Tax: Ksh ${order.pricing.tax.toFixed(2)}
+Total: Ksh ${order.pricing.total.toFixed(2)}
+
+M-Pesa Receipt: ${order.paymentInfo.mpesaReceiptNumber}
+
+We'll send you another email when your order ships.
+
+Thank you for shopping with us!
+  `;
+
+  await sendEmail({
+    email: user.email,
+    subject: `Order Confirmation - ${order.orderNumber}`,
+    message,
+    greeting: 'Dear',
+    name: user.name,
+    actionUrl: `${process.env.CLIENT_URL}/orders/${order._id}`,
+    actionText: 'View Order Details',
+    showContactSupport: true,
+    footerText: 'This is a confirmation of your recent order.'
+  });
+};
 
 /**
  * B2C Payment Result Handler
