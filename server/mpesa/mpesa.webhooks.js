@@ -222,17 +222,18 @@ We'll send you another email when your order ships.
 Thank you for shopping with us!
   `;
 
-  await sendEmail({
-    email: user.email,
-    subject: `Order Confirmation - ${order.orderNumber}`,
-    message,
-    greeting: 'Dear',
-    name: user.name,
-    actionUrl: `${process.env.CLIENT_URL}/orders/${order._id}`,
-    actionText: 'View Order Details',
-    showContactSupport: true,
-    footerText: 'This is a confirmation of your recent order.'
-  });
+ await sendEmail({
+  email: user.email,
+  subject: `Order Confirmation - ${order.orderNumber}`,
+  message,
+  greeting: 'Dear',
+  name: user.name,
+  actionUrl: `${process.env.CLIENT_URL}/orders`,
+  actionText: 'View Your Orders',
+  showContactSupport: true,
+  footerText: 'This is a confirmation of your recent order.'
+});
+
 };
 
 /**
