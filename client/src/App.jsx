@@ -38,6 +38,8 @@ import Categories from './pages/Categories';
 import Shipping from './pages/Shipping';
 import SearchResults from './pages/SearchResults'; // Add this import
 import ResetPassword from './pages/ResetPassword'; // Import the ResetPassword component
+import Wallet from './pages/Wallet'; // Import the Wallet component
+import Promotions from './pages/Promotions'; // Import Promotions component
 
 function App() {
   return (
@@ -87,6 +89,8 @@ function App() {
                                   <Route path="/reset-password/:token" element={<ResetPassword />} />
                                   <Route path="/verify-email/:token" element={<VerifyEmail />} />
                                   <Route path="/shipping" element={<Shipping />} />
+                                  <Route path="/wallet" element={<Wallet />} /> {/* Add wallet route */}
+                                  <Route path="/promotions" element={<Promotions />} /> {/* Add promotions route */}
                                   {/* ...add any other non-admin routes here... */}
                                 </Routes>
                               </main>

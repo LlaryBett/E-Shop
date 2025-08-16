@@ -522,7 +522,10 @@ const Header = () => {
 
           {/* Wallet + Cart Row */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-            <Link to="/wallet" className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg">
+            <Link 
+              to="/wallet" 
+              className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg group"
+            >
               <Wallet className="h-4 w-4" />
               <span className="text-xs font-medium">KES 0.00</span>
             </Link>
@@ -836,14 +839,12 @@ const Header = () => {
                   <Link
                     to="/wallet"
                     className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-all duration-300 group"
-                    aria-label="Wallet"
                   >
                     <Wallet className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
                     <div className="text-sm">
-  <div className="text-xs text-green-600 dark:text-green-500">Wallet Bal</div>
-  <div className="font-semibold text-base">KES 0.00</div>
-</div>
-
+                      <div className="text-xs text-green-600 dark:text-green-500">Wallet Bal</div>
+                      <div className="font-semibold text-base">KES 0.00</div>
+                    </div>
                   </Link>
                 </div>
               </div>

@@ -24,7 +24,7 @@ const contactMessageSchema = new mongoose.Schema(
     category: {
       type: String,
       default: 'general',
-      enum: ['general', 'support', 'feedback', 'sales'],
+      enum: ['general', 'support', 'feedback', 'sales', 'orders'],
     },
     status: {
       type: String,

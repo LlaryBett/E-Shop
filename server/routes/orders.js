@@ -15,6 +15,9 @@ import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Apply protect middleware before any routes
+router.use(protect);
+
 // Enhanced validation rules
 const orderValidation = [
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
@@ -46,23 +49,17 @@ const orderValidation = [
     .withMessage('Valid shipping method is required'),
 ];
 
-// Protected routes
-router.use(protect);
-
-
-router.get('/payment-status/:pendingOrderId', checkPaymentStatus);
-
-// @desc    Create new order
-// @route   POST /api/orders
-// @access  Private
+// Routes
 router.post('/', orderValidation, createOrder);
 router.get('/', getOrders);
+router.get('/payment-status/:pendingOrderId', checkPaymentStatus);
 router.get('/:id', getOrder);
-router.get('/:id/invoice', getOrderInvoice); // <-- Add this route
-router.post('/:id/reorder', reorderOrder); // <-- Add reorder route
+router.get('/:id/invoice', getOrderInvoice);
+router.post('/:id/reorder', reorderOrder);
 router.put('/:id/cancel', cancelOrder);
 
-// Admin routes
+// Admin routes at the end
 router.put('/:id/status', authorize('admin'), updateOrderStatus);
 
 export default router;
+

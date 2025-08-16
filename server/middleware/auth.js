@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-// Protect routes - require authentication
+// 🔐 Protect routes - require authentication
 export const protect = async (req, res, next) => {
   let token;
 
@@ -9,11 +9,12 @@ export const protect = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
-  // Check for token in cookies
-  else if (req.cookies.token) {
+  // Check for token in cookies safely
+  else if (req.cookies?.token) {
     token = req.cookies.token;
   }
 
+  // If no token found
   if (!token) {
     return res.status(401).json({
       success: false,
@@ -24,10 +25,10 @@ export const protect = async (req, res, next) => {
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Get user from token
     const user = await User.findById(decoded.id).select('-password');
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -52,26 +53,26 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// Grant access to specific roles
+// 🔑 Grant access to specific roles
 export const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: `User role ${req.user.role} is not authorized to access this route`,
+        message: `User role ${req.user?.role || 'unknown'} is not authorized to access this route`,
       });
     }
     next();
   };
 };
 
-// Optional authentication - doesn't require login but adds user if logged in
+// 🟢 Optional authentication - doesn't require login but adds user if logged in
 export const optionalAuth = async (req, res, next) => {
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
-  } else if (req.cookies.token) {
+  } else if (req.cookies?.token) {
     token = req.cookies.token;
   }
 
@@ -79,12 +80,12 @@ export const optionalAuth = async (req, res, next) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.id).select('-password');
-      
+
       if (user && user.isActive) {
         req.user = user;
       }
     } catch (error) {
-      // Token invalid, but continue without user
+      // Token invalid, ignore and continue
     }
   }
 

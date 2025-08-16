@@ -24,3 +24,25 @@
 .animate-slide-up {
   animation: slide-up 0.3s ease-out forwards;
 }
+
+@keyframes blink-attention {
+  0% {
+    transform: scale(1);
+    background-color: #2563eb;
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    background-color: #1d4ed8;
+    box-shadow: 0 0 15px 0 rgba(37, 99, 235, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    background-color: #2563eb;
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+}
+
+.blink-attention {
+  animation: blink-attention 1s ease-in-out infinite;
+}

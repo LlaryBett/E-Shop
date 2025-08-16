@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { Search, Filter, Grid, List, Star, Heart, ShoppingCart, Shield, Award, RefreshCw, Truck, X } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
@@ -44,12 +44,18 @@ const Shop = () => {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    // Read category or filter from URL query params
+    // Read category, filter, or brand from URL query params
     const categoryFromUrl = searchParams.get('category');
     const filterFromUrl = searchParams.get('filter');
+    const brandFromUrl = searchParams.get('brand'); // Add this line
     let filtersToSend = { ...filters };
 
-    // If filter is present in URL, map it to categories or handle special cases
+    // Add brand filter if present in URL
+    if (brandFromUrl) {
+      filtersToSend.brands = [brandFromUrl];
+    }
+
+    // Handle other filters...
     if (filterFromUrl) {
       if (filterFromUrl === 'promos') {
         filtersToSend.categories = ['Promos'];
@@ -87,13 +93,19 @@ const Shop = () => {
 
         setProducts(response.products);
 
-        // Apply local filtering if a filter is set (to handle backend not filtering)
+        // Apply local filtering
         let filtered = response.products;
-        if (filtersToSend.categories && filtersToSend.categories.length > 0) {
-          filtered = filtered.filter(
-            p => filtersToSend.categories.includes(p.category?.name)
-          );
+        
+        // Filter by brand if brandFromUrl exists
+        if (brandFromUrl) {
+          filtered = filtered.filter(p => p.brand?._id === brandFromUrl);
         }
+        
+        // Apply other filters
+        if (filtersToSend.categories && filtersToSend.categories.length > 0) {
+          filtered = filtered.filter(p => filtersToSend.categories.includes(p.category?.name));
+        }
+        
         setFilteredProducts(filtered);
 
         // Extract unique categories
@@ -180,6 +192,9 @@ const Shop = () => {
     }
   }, [showFilters]);
 
+  const location = useLocation();
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-36 lg:pt-24">
@@ -199,28 +214,26 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
       <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-4">
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 lg:mb-0">Shop</h1>
-            
-            {/* Quality Guarantee Banner */}
-            {/* <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
-              <div className="flex items-center space-x-3">
-                <Shield className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Quality Guarantee</h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-300">Premium quality with 30-day money-back guarantee</p>
-                </div>
-                <button
-                  onClick={() => setShowQualityModal(true)}
-                  className="text-xs text-yellow-600 dark:text-yellow-400 font-medium hover:underline whitespace-nowrap"
-                >
-                  Our Promise →
-                </button>
-              </div>
-            </div> */}
-          </div>
-          
+        {/* Add Breadcrumb Navigation */}
+        <nav className="mb-6">
+          <ol className="flex items-center space-x-2 text-sm">
+            <li>
+              <Link to="/" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
+                Home
+              </Link>
+            </li>
+            {pathSegments.map((segment, index) => (
+              <li key={index} className="flex items-center space-x-2">
+                <span className="text-gray-400">/</span>
+                <span className="capitalize text-gray-900 dark:text-white">
+                  {segment}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </nav>
+
+        <div className="mb-6">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             <div className="flex items-center flex-wrap gap-2 w-full">
               <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">

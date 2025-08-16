@@ -24,21 +24,24 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+const PROTECTED_ROUTES = ['/orders', '/profile', '/wishlist', '/cart', '/checkout'];
+
 // UPDATED: Enhanced response interceptor to handle verification
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
+      const isProtectedRoute = PROTECTED_ROUTES.some(route => currentPath.startsWith(route));
       const isAuthRoute =
         ['/login', '/reset-password', '/verify-email', '/forgot-password'].some((route) =>
           currentPath.includes(route)
         );
 
-      if (!isAuthRoute) {
+      if (isProtectedRoute && !isAuthRoute) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        window.location.href = `/login?returnTo=${encodeURIComponent(currentPath)}`;
       }
     }
     

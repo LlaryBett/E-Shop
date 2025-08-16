@@ -143,9 +143,11 @@ const Home = () => {
     setNewsletterLoading(true);
     try {
       await subscribeNewsletter(newsletterEmail);
+      toast.success('Successfully subscribed to newsletter!');
       setNewsletterEmail('');
     } catch (err) {
-      // Error toast handled in context
+      // Show the error message from backend
+      toast.error(err.response?.data?.message || 'Failed to subscribe');
     }
     setNewsletterLoading(false);
   };
@@ -253,7 +255,10 @@ const Home = () => {
       <div className="max-w-[1320px] mx-auto px-4 lg:px-6 pb-4 mt-6 overflow-x-auto">
   <div className="grid grid-cols-3 gap-2 sm:gap-4 min-w-full">
     {/* CLUB Card */}
-    <div className="bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm text-[10px] sm:text-xs">
+    <Link
+      to="/wallet"
+      className="bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm text-[10px] sm:text-xs hover:bg-gray-100 dark:hover:bg-gray-750 transition-all duration-200"
+    >
       <div className="flex items-center space-x-1 sm:space-x-2">
         <Award className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
         <div>
@@ -264,10 +269,13 @@ const Home = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
 
     {/* Leaflet Card */}
-    <div className="bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm text-[10px] sm:text-xs">
+    <Link
+      to="/promotions?type=leaflet"
+      className="bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm text-[10px] sm:text-xs hover:bg-gray-100 dark:hover:bg-gray-750 transition-all duration-200"
+    >
       <div className="flex items-center space-x-1 sm:space-x-2">
         <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
         <div>
@@ -278,10 +286,14 @@ const Home = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
 
     {/* Hurry Card */}
-    <div className="bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm text-[10px] sm:text-xs">
+    <Link
+      to="/orders"
+      state={{ fromQuickLink: true }}
+      className="bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm text-[10px] sm:text-xs hover:bg-gray-100 dark:hover:bg-gray-750 transition-all duration-200"
+    >
       <div className="flex items-center space-x-1 sm:space-x-2">
         <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400" />
         <div>
@@ -292,7 +304,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   </div>
 </div>
 
@@ -304,9 +316,10 @@ const Home = () => {
         </h2>
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 sm:gap-4">
           {brands.map((brand) => (
-            <div
+            <Link
               key={brand._id}
-              className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-2 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-750 transition-all duration-200 cursor-pointer group"
+              to={`/shop?brand=${encodeURIComponent(brand._id)}`}
+              className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-2 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-750 transition-all duration-200 group"
             >
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden mb-2 border border-gray-300 dark:border-gray-600 group-hover:scale-105 transition-transform duration-200">
                 <img
@@ -315,10 +328,10 @@ const Home = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="text-xs sm:text-sm text-center font-medium text-gray-700 dark:text-gray-200 truncate w-full">
+              <span className="text-xs sm:text-sm text-center font-medium text-gray-700 dark:text-gray-200 truncate w-full group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {brand.name}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -765,8 +778,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ...existing code... */}
-
+      {/* Check This Out */}
       <section className="py-3 sm:py-4 md:py-6">
         <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6">
           <div className="flex items-center justify-between mb-4 sm:mb-6">

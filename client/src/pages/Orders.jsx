@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Package, Truck, CheckCircle, XCircle, Clock, Eye, Download, Search, Filter } from 'lucide-react';
 import OrderService from '../services/orderService';
 import ProductService from '../services/productService';
@@ -7,6 +7,9 @@ import { useCart } from '../contexts/CartContext';
 import toast from 'react-hot-toast';
 
 const Orders = () => {
+  const location = useLocation();
+  const fromQuickLink = location.state?.fromQuickLink;
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -340,17 +343,32 @@ const Orders = () => {
                       </button>
                     )}
                     <div className="flex flex-wrap gap-2">
-                      <button
-                        className="flex-1 min-w-[100px] px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm"
-                        onClick={() => handleReorderItems(order._id)}
-                      >
-                        Reorder Items
-                      </button>
-                      <button
-                        className="flex-1 min-w-[100px] px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm"
+                      <div className="relative flex-1">
+                        <button
+                          className={`reorder-btn relative w-full min-w-[100px] px-3 py-2 sm:px-4 sm:py-3 ${
+                            fromQuickLink
+                              ? "bg-blue-600 text-white hover:bg-blue-700 blink-attention"
+                              : "border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          } rounded-lg transition-colors text-xs sm:text-sm`}
+                          onClick={() => handleReorderItems(order._id)}
+                        >
+                          Reorder Items
+                        </button>
+
+                        {/* Tooltip */}
+                        {fromQuickLink && (
+                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-40 bg-gray-800 text-white text-xs sm:text-sm p-2 rounded-lg shadow-lg animate-bounce">
+                           👇 Click here to reorder!
+                            <div className="absolute left-1/2 -bottom-2 -translate-x-1/2 w-3 h-3 bg-gray-800 rotate-45"></div>
+                          </div>
+                        )}
+                      </div>
+                      <Link
+                        to="/contact"
+                        className="flex-1 min-w-[100px] px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm text-center"
                       >
                         Get Help
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </div>
