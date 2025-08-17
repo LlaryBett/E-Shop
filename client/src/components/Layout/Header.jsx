@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet, Sun, Moon } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet, Sun, Moon, ChefHat, Milk } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCategories } from '../../contexts/CategoryContext'; // Add this import
 import userService from '../../services/userService';
 
 const Header = () => {
@@ -13,326 +14,82 @@ const Header = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showCategoriesMenu, setShowCategoriesMenu] = useState(false);
-  const [activeTab, setActiveTab] = useState(566); // Default to Promos
-  const [activeNavTab, setActiveNavTab] = useState(null); // For navigation mega menus
+  const [activeTab, setActiveTab] = useState(null); // Changed to null initially
+  const [activeNavTab, setActiveNavTab] = useState(null);
   const [mouseInsideNavDropdown, setMouseInsideNavDropdown] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const { getTotalItems } = useCart();
   const { isDark, toggleTheme } = useTheme();
+  const { categories, loading: categoriesLoading } = useCategories(); // Use categories context
   const navigate = useNavigate();
   const [defaultAddress, setDefaultAddress] = useState(null);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
   const [mobileAccordionOpen, setMobileAccordionOpen] = useState(null);
 
-  // Categories data structure for mega menu
-  const categories = {
-    566: {
-      name: "Promos",
-      icon: Star,
-      count: 150,
-      description: "Special offers and discounts on selected items",
-      subcategories: [
-        {
-          name: "Flash Deals",
-          items: [
-            { name: "Electronics Sale", slug: "electronics-sale" },
-            { name: "Fashion Week", slug: "fashion-week" },
-            { name: "Home & Garden", slug: "home-garden" }
-          ]
-        },
-        {
-          name: "Seasonal Offers",
-          items: [
-            { name: "Summer Collection", slug: "summer-collection" },
-            { name: "Back to School", slug: "back-to-school" },
-            { name: "Holiday Specials", slug: "holiday-specials" }
-          ]
-        },
-        {
-          name: "Bundle Deals",
-          items: [
-            { name: "Tech Bundles", slug: "tech-bundles" },
-            { name: "Beauty Sets", slug: "beauty-sets" },
-            { name: "Family Packs", slug: "family-packs" }
-          ]
-        }
-      ]
-    },
-    2138: {
-      name: "Food Cupboard",
-      icon: Package,
-      count: 500,
-      description: "Pantry essentials, snacks, and non-perishable items",
-      subcategories: [
-        {
-          name: "Grains & Cereals",
-          items: [
-            { name: "Rice", slug: "rice" },
-            { name: "Wheat Flour", slug: "wheat-flour" },
-            { name: "Oats", slug: "oats" },
-            { name: "Quinoa", slug: "quinoa" }
-          ]
-        },
-        {
-          name: "Canned Goods",
-          items: [
-            { name: "Tomatoes", slug: "canned-tomatoes" },
-            { name: "Beans", slug: "canned-beans" },
-            { name: "Tuna", slug: "canned-tuna" },
-            { name: "Corn", slug: "canned-corn" }
-          ]
-        },
-        {
-          name: "Snacks",
-          items: [
-            { name: "Chips", slug: "chips" },
-            { name: "Cookies", slug: "cookies" },
-            { name: "Nuts", slug: "nuts" },
-            { name: "Crackers", slug: "crackers" }
-          ]
-        },
-        {
-          name: "Beverages",
-          items: [
-            { name: "Coffee", slug: "coffee" },
-            { name: "Tea", slug: "tea" },
-            { name: "Juice", slug: "juice" },
-            { name: "Soda", slug: "soda" }
-          ]
-        },
-        {
-          name: "Condiments",
-          items: [
-            { name: "Ketchup", slug: "ketchup" },
-            { name: "Mustard", slug: "mustard" },
-            { name: "Olive Oil", slug: "olive-oil" },
-            { name: "Vinegar", slug: "vinegar" }
-          ]
-        }
-      ]
-    },
-    3245: {
-      name: "Fresh Food",
-      icon: Apple,
-      count: 200,
-      description: "Fresh fruits, vegetables, meat, and dairy products",
-      subcategories: [
-        {
-          name: "Fruits",
-          items: [
-            { name: "Apples", slug: "apples" },
-            { name: "Bananas", slug: "bananas" },
-            { name: "Oranges", slug: "oranges" },
-            { name: "Berries", slug: "berries" }
-          ]
-        },
-        {
-          name: "Vegetables",
-          items: [
-            { name: "Spinach", slug: "spinach" },
-            { name: "Carrots", slug: "carrots" },
-            { name: "Broccoli", slug: "broccoli" },
-            { name: "Tomatoes", slug: "fresh-tomatoes" }
-          ]
-        },
-        {
-          name: "Meat & Poultry",
-          items: [
-            { name: "Chicken", slug: "chicken" },
-            { name: "Beef", slug: "beef" },
-            { name: "Pork", slug: "pork" },
-            { name: "Fish", slug: "fish" }
-          ]
-        },
-        {
-          name: "Dairy",
-          items: [
-            { name: "Milk", slug: "milk" },
-            { name: "Cheese", slug: "cheese" },
-            { name: "Yogurt", slug: "yogurt" },
-            { name: "Butter", slug: "butter" }
-          ]
-        },
-        {
-          name: "Bakery",
-          items: [
-            { name: "Bread", slug: "bread" },
-            { name: "Pastries", slug: "pastries" },
-            { name: "Cakes", slug: "cakes" },
-            { name: "Muffins", slug: "muffins" }
-          ]
-        }
-      ]
-    },
-    4567: {
-      name: "Electronics",
-      icon: Smartphone,
-      count: 300,
-      description: "Latest gadgets, computers, and electronic devices",
-      subcategories: [
-        {
-          name: "Smartphones",
-          items: [
-            { name: "iPhone", slug: "iphone" },
-            { name: "Samsung Galaxy", slug: "samsung-galaxy" },
-            { name: "Google Pixel", slug: "google-pixel" },
-            { name: "OnePlus", slug: "oneplus" }
-          ]
-        },
-        {
-          name: "Computers",
-          items: [
-            { name: "Laptops", slug: "laptops" },
-            { name: "Desktops", slug: "desktops" },
-            { name: "Tablets", slug: "tablets" },
-            { name: "Accessories", slug: "computer-accessories" }
-          ]
-        },
-        {
-          name: "Audio",
-          items: [
-            { name: "Headphones", slug: "headphones" },
-            { name: "Speakers", slug: "speakers" },
-            { name: "Earbuds", slug: "earbuds" },
-            { name: "Sound Systems", slug: "sound-systems" }
-          ]
-        },
-        {
-          name: "Gaming",
-          items: [
-            { name: "PlayStation", slug: "playstation" },
-            { name: "Xbox", slug: "xbox" },
-            { name: "Nintendo", slug: "nintendo" },
-            { name: "PC Gaming", slug: "pc-gaming" }
-          ]
-        },
-        {
-          name: "Smart Home",
-          items: [
-            { name: "Smart TV", slug: "smart-tv" },
-            { name: "Smart Lights", slug: "smart-lights" },
-            { name: "Security Cameras", slug: "security-cameras" },
-            { name: "Smart Speakers", slug: "smart-speakers" }
-          ]
-        }
-      ]
-    },
-    5678: {
-      name: "Fashion",
-      icon: Shirt,
-      count: 400,
-      description: "Clothing, shoes, and accessories for all occasions",
-      subcategories: [
-        {
-          name: "Men's Clothing",
-          items: [
-            { name: "Shirts", slug: "mens-shirts" },
-            { name: "Pants", slug: "mens-pants" },
-            { name: "Suits", slug: "mens-suits" },
-            { name: "Casual Wear", slug: "mens-casual" }
-          ]
-        },
-        {
-          name: "Women's Clothing",
-          items: [
-            { name: "Dresses", slug: "womens-dresses" },
-            { name: "Tops", slug: "womens-tops" },
-            { name: "Skirts", slug: "womens-skirts" },
-            { name: "Formal Wear", slug: "womens-formal" }
-          ]
-        },
-        {
-          name: "Shoes",
-          items: [
-            { name: "Sneakers", slug: "sneakers" },
-            { name: "Formal Shoes", slug: "formal-shoes" },
-            { name: "Boots", slug: "boots" },
-            { name: "Sandals", slug: "sandals" }
-          ]
-        },
-        {
-          name: "Accessories",
-          items: [
-            { name: "Bags", slug: "bags" },
-            { name: "Watches", slug: "watches" },
-            { name: "Jewelry", slug: "jewelry" },
-            { name: "Belts", slug: "belts" }
-          ]
-        },
-        {
-          name: "Kids Fashion",
-          items: [
-            { name: "Boys Clothing", slug: "boys-clothing" },
-            { name: "Girls Clothing", slug: "girls-clothing" },
-            { name: "Kids Shoes", slug: "kids-shoes" },
-            { name: "School Uniforms", slug: "school-uniforms" }
-          ]
-        }
-      ]
-    },
-    6789: {
-      name: "Home & Garden",
-      icon: Home,
-      count: 350,
-      description: "Everything for your home, garden, and outdoor spaces",
-      subcategories: [
-        {
-          name: "Furniture",
-          items: [
-            { name: "Living Room", slug: "living-room-furniture" },
-            { name: "Bedroom", slug: "bedroom-furniture" },
-            { name: "Dining Room", slug: "dining-room-furniture" },
-            { name: "Office", slug: "office-furniture" }
-          ]
-        },
-        {
-          name: "Home Decor",
-          items: [
-            { name: "Wall Art", slug: "wall-art" },
-            { name: "Lighting", slug: "lighting" },
-            { name: "Rugs", slug: "rugs" },
-            { name: "Curtains", slug: "curtains" }
-          ]
-        },
-        {
-          name: "Kitchen",
-          items: [
-            { name: "Cookware", slug: "cookware" },
-            { name: "Appliances", slug: "kitchen-appliances" },
-            { name: "Utensils", slug: "kitchen-utensils" },
-            { name: "Storage", slug: "kitchen-storage" }
-          ]
-        },
-        {
-          name: "Garden",
-          items: [
-            { name: "Plants", slug: "plants" },
-            { name: "Garden Tools", slug: "garden-tools" },
-            { name: "Outdoor Furniture", slug: "outdoor-furniture" },
-            { name: "Fertilizers", slug: "fertilizers" }
-          ]
-        },
-        {
-          name: "Cleaning",
-          items: [
-            { name: "Cleaning Supplies", slug: "cleaning-supplies" },
-            { name: "Laundry", slug: "laundry" },
-            { name: "Vacuum Cleaners", slug: "vacuum-cleaners" },
-            { name: "Storage Solutions", slug: "storage-solutions" }
-          ]
-        }
-      ]
-    }
+  // Icon mapping for dynamic icons
+  const iconMap = {
+    'ChefHat': ChefHat,
+    'Milk': Milk,
+    'Package': Package,
+    'Apple': Apple,
+    'Smartphone': Smartphone,
+    'Shirt': Shirt,
+    'Home': Home,
+    'Star': Star,
+    'Gift': Gift
   };
 
-  // Map navItems to shop route with filter
-  const navItems = [
-    { name: 'Promos', path: '/shop?filter=promos', icon: Star },
-    { name: 'Food & Cupboard', path: '/shop?filter=food-cupboard', icon: Package },
-    { name: 'Electronics', path: '/shop?filter=electronics', icon: Smartphone },
-    { name: 'Home & Garden', path: '/shop?filter=home-garden', icon: Home },
-    { name: 'Voucher', path: '/shop?filter=voucher', icon: Gift },
-  ];
+  // Helper function to get icon component
+  const getIconComponent = (iconName) => {
+    return iconMap[iconName] || Package; // Default to Package if icon not found
+  };
+
+  // Transform API categories to match your existing structure
+  const transformedCategories = React.useMemo(() => {
+    if (!categories || categories.length === 0) return {};
+    
+    const transformed = {};
+    categories.forEach((category, index) => {
+      // Use a consistent key - prefer _id, then id, then slug, then index
+      const key = category._id || category.id || category.slug || index;
+      transformed[key] = {
+        ...category, // Keep all original properties
+        name: category.name,
+        icon: getIconComponent(category.icon),
+        count: category.count || 0,
+        description: category.description,
+        slug: category.slug,
+        isNavItem: category.isNavItem,
+        navPosition: category.navPosition,
+        navIcon: category.navIcon,
+        subcategories: category.subcategories || []
+      };
+    });
+    return transformed;
+  }, [categories]);
+
+  // Get navigation items (categories with isNavItem: true)
+  const navItems = React.useMemo(() => {
+    if (!categories || categories.length === 0) return [];
+    
+    return categories
+      .filter(category => category.isNavItem)
+      .sort((a, b) => (a.navPosition || 0) - (b.navPosition || 0))
+      .map(category => ({
+        name: category.name,
+        path: `/shop?filter=${category.slug}`,
+        icon: getIconComponent(category.navIcon || category.icon),
+        slug: category.slug
+      }));
+  }, [categories]);
+
+  // Set default active tab to first category when categories load
+  useEffect(() => {
+    if (categories && categories.length > 0 && activeTab === null) {
+      const firstCategory = categories[0];
+      setActiveTab(firstCategory._id || firstCategory.id || firstCategory.slug || 0);
+    }
+  }, [categories, activeTab]);
 
   // Handle scroll effect
   useEffect(() => {
@@ -405,7 +162,6 @@ const Header = () => {
       return;
     }
     userService.getAddresses().then(addresses => {
-      // addresses is an array, not an object
       const shippingAddresses = addresses?.filter(a => a.type === "shipping") || [];
       const foundDefault = shippingAddresses.find(a => a.isDefault) || shippingAddresses[0];
       setDefaultAddress(foundDefault);
@@ -438,6 +194,16 @@ const Header = () => {
     setActiveNavTab(null);
   };
 
+  // Find category data for dropdown
+  const getCategoryDataForNav = (navItemName) => {
+    const category = categories?.find(cat => cat.name === navItemName);
+    return category ? {
+      name: category.name,
+      description: category.description,
+      subcategories: category.subcategories || []
+    } : null;
+  };
+
   return (
     <>
       <header 
@@ -467,7 +233,6 @@ const Header = () => {
               </Link>
             </div>
             <div className="flex items-center space-x-2">
-              {/* Theme Toggle Button (Mobile) */}
               <button
                 onClick={toggleTheme}
                 className="p-2 text-gray-700 dark:text-gray-300"
@@ -476,7 +241,6 @@ const Header = () => {
                 {isDark ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
               </button>
               <button
-                // Redirect to login or profile on mobile
                 onClick={() => {
                   if (isAuthenticated) {
                     navigate('/profile');
@@ -806,12 +570,12 @@ const Header = () => {
                 <nav className="hidden lg:flex items-center space-x-6 flex-1 justify-center" role="navigation">
                   {navItems.map((item) => (
                     <div 
-                      key={item.name}
+                      key={item.slug}
                       onMouseEnter={() => setActiveNavTab(item.name)}
                       onMouseLeave={handleNavMouseLeave}
                     >
                       <Link
-                        to={item.path}
+                        to={`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}`}
                         className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
                       >
                         <item.icon className="h-4 w-4" />
@@ -820,19 +584,6 @@ const Header = () => {
                       </Link>
                     </div>
                   ))}
-                  <div
-                    onMouseEnter={() => setActiveNavTab('Fashion')}
-                    onMouseLeave={handleNavMouseLeave}
-                  >
-                    <Link
-                      to="/shop?filter=fashion"
-                      className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 tracking-widest"
-                    >
-                      <Shirt className="h-4 w-4" />
-                      <span className="uppercase text-xs">Fashion</span>
-                      <ChevronDown className="h-3 w-3 opacity-60" />
-                    </Link>
-                  </div>
                 </nav>
 
                 <div className="hidden lg:block flex-shrink-0">
@@ -850,7 +601,7 @@ const Header = () => {
               </div>
 
               {/* Categories Mega Menu Dropdown */}
-              {showCategoriesMenu && (
+              {showCategoriesMenu && !categoriesLoading && transformedCategories && Object.keys(transformedCategories).length > 0 && (
                 <div 
                   className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
                   style={{ marginTop: '-1px' }}
@@ -860,70 +611,90 @@ const Header = () => {
                   <div className="flex">
                     <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
                       <div className="space-y-2">
-                        {Object.entries(categories).map(([id, category]) => (
-                          <button
-                            key={id}
-                            onMouseOver={() => setActiveTab(parseInt(id))}
-                            className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
-                              activeTab === parseInt(id)
-                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            <category.icon className="h-5 w-5" />
-                            <div className="min-w-0">
-                              <div className="font-medium text-sm">{category.name}</div>
-                              <div className="text-xs text-gray-500">{category.count} items</div>
-                            </div>
-                          </button>
-                        ))}
+                        {categories.map((category, index) => {
+                          const key = category._id || category.id || category.slug || index;
+                          return (
+                            <button
+                              key={key}
+                              onMouseOver={() => setActiveTab(key)}
+                              className={`w-full flex items-center space-x-3 px-3 py-3 text-left rounded-lg transition-all duration-200 ${
+                                activeTab === key
+                                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {React.createElement(getIconComponent(category.icon), { className: "h-5 w-5" })}
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm">{category.name}</div>
+                                <div className="text-xs text-gray-500">{category.count || 0} items</div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                     <div className="flex-1 p-6">
-                      {Object.entries(categories).map(([id, category]) => (
-                        <div
-                          key={id}
-                          className={`${activeTab === parseInt(id) ? 'block' : 'hidden'}`}
-                        >
-                          <div className="mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                              {category.name}
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {category.description}
-                            </p>
+                      {categories.map((category, index) => {
+                        const key = category._id || category.id || category.slug || index;
+                        const isActive = activeTab === key;
+                        
+                        return (
+                          <div
+                            key={key}
+                            className={`${isActive ? 'block' : 'hidden'}`}
+                          >
+                            <div className="mb-4">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                {category.name}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {category.description}
+                              </p>
+                            </div>
+                            {category.subcategories && category.subcategories.length > 0 ? (
+                              <ul className="masonry" style={{ columnCount: Math.min(category.subcategories.length, 5) }}>
+                                {category.subcategories.map((subcategory, subIndex) => (
+                                  <li key={subcategory._id || subcategory.id || subIndex} className="mb-3 break-inside-avoid">
+                                    <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                      {subcategory.name}
+                                    </div>
+                                    {subcategory.items && subcategory.items.length > 0 && (
+                                      <ul className="space-y-1">
+                                        {subcategory.items.map((item, itemIndex) => (
+                                          <li key={item._id || item.id || itemIndex} className="py-1">
+                                            <Link
+                                              to={`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}&parent=${encodeURIComponent(category.name)}`}
+                                              className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                              onClick={() => {
+                                                setActiveNavTab(null);
+                                                setShowCategoriesMenu(false);
+                                                navigate(`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}&parent=${encodeURIComponent(category.name)}`);
+                                              }}
+                                            >
+                                              {item.name}
+                                            </Link>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="text-center py-8">
+                                <p className="text-gray-500 dark:text-gray-400">No subcategories available</p>
+                              </div>
+                            )}
                           </div>
-                          <ul className="masonry" style={{ columnCount: 5 }}>
-                            {category.subcategories.map((subcategory, index) => (
-                              <li key={index} className="mb-3 break-inside-avoid">
-                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                  {subcategory.name}
-                                </div>
-                                <ul className="space-y-1">
-                                  {subcategory.items.map((item, itemIndex) => (
-                                    <li key={itemIndex} className="py-1">
-                                      <Link
-                                        to={`/category/${item.slug}`}
-                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                        onClick={() => setShowCategoriesMenu(false)}
-                                      >
-                                        {item.name}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Nav Items Mega Menu Dropdowns */}
-              {activeNavTab && activeNavTab !== 'Fashion' && (
+              {activeNavTab && (
                 <div 
                   className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
                   style={{ marginTop: '-1px' }}
@@ -932,47 +703,8 @@ const Header = () => {
                 >
                   <div className="p-6">
                     {(() => {
-                      let categoryData;
-                      if (activeNavTab === 'Promos') categoryData = categories[566];
-                      else if (activeNavTab === 'Food & Cupboard') categoryData = categories[2138];
-                      else if (activeNavTab === 'Electronics') categoryData = categories[4567];
-                      else if (activeNavTab === 'Home & Garden') categoryData = categories[6789];
-                      else if (activeNavTab === 'Voucher') {
-                        categoryData = {
-                          name: "Vouchers & Gift Cards",
-                          description: "Digital vouchers and gift cards for all occasions",
-                          subcategories: [
-                            {
-                              name: "Shopping Vouchers",
-                              items: [
-                                { name: "Electronics Vouchers", slug: "electronics-vouchers" },
-                                { name: "Fashion Vouchers", slug: "fashion-vouchers" },
-                                { name: "Food Vouchers", slug: "food-vouchers" },
-                                { name: "General Shopping", slug: "general-vouchers" }
-                              ]
-                            },
-                            {
-                              name: "Gift Cards",
-                              items: [
-                                { name: "Birthday Cards", slug: "birthday-cards" },
-                                { name: "Holiday Cards", slug: "holiday-cards" },
-                                { name: "Anniversary Cards", slug: "anniversary-cards" },
-                                { name: "Custom Cards", slug: "custom-cards" }
-                              ]
-                            },
-                            {
-                              name: "Digital Codes",
-                              items: [
-                                { name: "Gaming Codes", slug: "gaming-codes" },
-                                { name: "App Store Credits", slug: "app-store-credits" },
-                                { name: "Streaming Services", slug: "streaming-vouchers" },
-                                { name: "Online Services", slug: "online-services" }
-                              ]
-                            }
-                          ]
-                        };
-                      }
-
+                      const categoryData = getCategoryDataForNav(activeNavTab);
+                      
                       return categoryData ? (
                         <>
                           <div className="mb-4">
@@ -983,80 +715,42 @@ const Header = () => {
                               {categoryData.description}
                             </p>
                           </div>
-                          <ul className="masonry" style={{ columnCount: 5 }}>
-                            {categoryData.subcategories.map((subcategory, index) => (
-                              <li key={index} className="mb-3 break-inside-avoid">
-                                <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                  {subcategory.name}
-                                </div>
-                                <ul className="space-y-1">
-                                  {subcategory.items.map((subItem, itemIndex) => (
-                                    <li key={itemIndex} className="py-1">
-                                      <Link
-                                        to={`/category/${subItem.slug}`}
-                                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                        onClick={() => {
-                                          setActiveNavTab(null);
-                                          setMouseInsideNavDropdown(false);
-                                        }}
-                                      >
-                                        {subItem.name}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </li>
-                            ))}
-                          </ul>
+                          {categoryData.subcategories && categoryData.subcategories.length > 0 && (
+                            <ul className="masonry" style={{ columnCount: Math.min(categoryData.subcategories.length, 5) }}>
+                              {categoryData.subcategories.map((subcategory, index) => (
+                                <li key={subcategory._id || subcategory.id || index} className="mb-3 break-inside-avoid">
+                                  <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                    {subcategory.name}
+                                  </div>
+                                  {subcategory.items && subcategory.items.length > 0 && (
+                                    <ul className="space-y-1">
+                                      {subcategory.items.map((subItem, itemIndex) => (
+                                        <li key={subItem._id || subItem.id || itemIndex} className="py-1">
+                                          <Link
+                                            to={`/shop?category=${subItem.slug}&name=${encodeURIComponent(subItem.name)}&parent=${encodeURIComponent(categoryData.name)}`}
+                                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
+                                            onClick={() => {
+                                              setActiveNavTab(null);
+                                              setMouseInsideNavDropdown(false);
+                                            }}
+                                          >
+                                            {subItem.name}
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </>
-                      ) : null;
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500 dark:text-gray-400">No subcategories available</p>
+                        </div>
+                      );
                     })()}
-                  </div>
-                </div>
-              )}
-
-              {/* Fashion Mega Menu Dropdown */}
-              {activeNavTab === 'Fashion' && (
-                <div 
-                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
-                  style={{ marginTop: '-1px' }}
-                  onMouseEnter={() => handleDropdownMouseEnter('Fashion')}
-                  onMouseLeave={handleDropdownMouseLeave}
-                >
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        {categories[5678].name}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {categories[5678].description}
-                      </p>
-                    </div>
-                    <ul className="masonry" style={{ columnCount: 5 }}>
-                      {categories[5678].subcategories.map((subcategory, index) => (
-                        <li key={index} className="mb-3 break-inside-avoid">
-                          <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 mb-2">
-                            {subcategory.name}
-                          </div>
-                          <ul className="space-y-1">
-                            {subcategory.items.map((item, itemIndex) => (
-                              <li key={itemIndex} className="py-1">
-                                <Link
-                                  to={`/category/${item.slug}`}
-                                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
-                                  onClick={() => {
-                                    setActiveNavTab(null);
-                                    setMouseInsideNavDropdown(false);
-                                  }}
-                                >
-                                  {item.name}
-                                </Link>
-                              </li>
-                            ))}
-                        </ul>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </div>
               )}
@@ -1073,126 +767,117 @@ const Header = () => {
         />
       )}
 
-     {/* Mobile Hamburger Menu Drawer */}
-{isMobileMenuOpen && (
-  <div className="fixed inset-0 z-50 flex">
-    {/* Drawer */}
-    <div className="w-64 max-w-full bg-white dark:bg-gray-900 h-full shadow-2xl flex flex-col">
-      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
-        <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Menu
-        </span>
-        <button
-          onClick={() => setIsMobileMenuOpen(false)}
-          className="p-2 text-gray-700 dark:text-gray-300"
-          aria-label="Close menu"
-        >
-          <X className="h-6 w-6" />
-        </button>
-      </div>
-      <nav className="flex-1 overflow-y-auto">
-        <ul className="py-2">
-          <li className="border-b border-gray-200 dark:border-gray-700">
-            <Link
-              to="/"
-              className="flex items-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Home className="h-5 w-5 mr-3" />
-              Home
-            </Link>
-          </li>
-          <li className="border-b border-gray-200 dark:border-gray-700">
-            <button
-              className="flex items-center w-full px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              onClick={() => setMobileCategoriesOpen((v) => !v)}
-            >
-              <Grid3X3 className="h-5 w-5 mr-3" />
-              Categories
-              <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${mobileCategoriesOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {mobileCategoriesOpen && (
-              <ul className="pl-6 pr-2 py-2 space-y-1">
-                {Object.entries(categories).map(([id, category]) => (
-                  <li key={id}>
-                    <button
-                      className="flex items-center w-full py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600"
-                      onClick={() =>
-                        setMobileAccordionOpen(mobileAccordionOpen === id ? null : id)
-                      }
-                    >
-                      <category.icon className="h-4 w-4 mr-2" />
-                      {category.name}
-                      <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${mobileAccordionOpen === id ? 'rotate-180' : ''}`} />
-                    </button>
-                    {mobileAccordionOpen === id && (
-                      <ul className="pl-5 py-1 space-y-1">
-                        {category.subcategories.map((subcategory, subIdx) => (
-                          <li key={subIdx}>
-                            <div className="font-semibold text-xs text-blue-600 dark:text-blue-400 mb-1 mt-2">
-                              {subcategory.name}
-                            </div>
-                            <ul>
-                              {subcategory.items.map((item, itemIdx) => (
-                                <li key={itemIdx}>
-                                  <Link
-                                    to={`/category/${item.slug}`}
-                                    className="block py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-                                    onClick={() => {
-                                      setIsMobileMenuOpen(false);
-                                      setMobileCategoriesOpen(false);
-                                      setMobileAccordionOpen(null);
-                                    }}
-                                  >
-                                    {item.name}
-                                  </Link>
+      {/* Mobile Hamburger Menu Drawer */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Drawer */}
+          <div className="w-64 max-w-full bg-white dark:bg-gray-900 h-full shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Menu
+              </span>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 text-gray-700 dark:text-gray-300"
+                aria-label="Close menu"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto">
+              <ul className="py-2">
+                <li className="border-b border-gray-200 dark:border-gray-700">
+                  <Link
+                    to="/"
+                    className="flex items-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Home className="h-5 w-5 mr-3" />
+                    Home
+                  </Link>
+                </li>
+                <li className="border-b border-gray-200 dark:border-gray-700">
+                  <button
+                    className="flex items-center w-full px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    onClick={() => setMobileCategoriesOpen((v) => !v)}
+                  >
+                    <Grid3X3 className="h-5 w-5 mr-3" />
+                    Categories
+                    <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${mobileCategoriesOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {mobileCategoriesOpen && !categoriesLoading && categories && (
+                    <ul className="pl-6 pr-2 py-2 space-y-1">
+                      {categories.map((category) => (
+                        <li key={category._id || category.id || category.slug}>
+                          <button
+                            className="flex items-center w-full py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600"
+                            onClick={() =>
+                              setMobileAccordionOpen(mobileAccordionOpen === category.slug ? null : category.slug)
+                            }
+                          >
+                            {React.createElement(getIconComponent(category.icon), { className: "h-4 w-4 mr-2" })}
+                            {category.name}
+                            <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${mobileAccordionOpen === category.slug ? 'rotate-180' : ''}`} />
+                          </button>
+                          {mobileAccordionOpen === category.slug && category.subcategories && (
+                            <ul className="pl-5 py-1 space-y-1">
+                              {category.subcategories.map((subcategory, subIdx) => (
+                                <li key={subcategory._id || subcategory.id || subIdx}>
+                                  <div className="font-semibold text-xs text-blue-600 dark:text-blue-400 mb-1 mt-2">
+                                    {subcategory.name}
+                                  </div>
+                                  {subcategory.items && subcategory.items.length > 0 && (
+                                    <ul>
+                                      {subcategory.items.map((item, itemIdx) => (
+                                        <li key={item._id || item.id || itemIdx}>
+                                          <Link
+                                            to={`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}&parent=${encodeURIComponent(category.name)}`}
+                                            className="block py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                                            onClick={() => {
+                                              setIsMobileMenuOpen(false);
+                                              setMobileCategoriesOpen(false);
+                                              setMobileAccordionOpen(null);
+                                              navigate(`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}&parent=${encodeURIComponent(category.name)}`);
+                                            }}
+                                          >
+                                            {item.name}
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
                                 </li>
                               ))}
                             </ul>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+                {/* Dynamic nav items in mobile menu */}
+                {navItems.map((item) => (
+                  <li key={item.slug} className="border-b border-gray-200 dark:border-gray-700">
+                    <Link
+                      to={`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}`}
+                      className="flex items-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <item.icon className="h-5 w-5 mr-3" />
+                      {item.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
-            )}
-          </li>
-          {/* Other nav items */}
-          {navItems.map((item) => (
-            <li key={item.name} className="border-b border-gray-200 dark:border-gray-700">
-              <Link
-                to={item.path}
-                className="flex items-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <item.icon className="h-5 w-5 mr-3" />
-                {item.name}
-              </Link>
-            </li>
-          ))}
-          <li className="border-b border-gray-200 dark:border-gray-700">
-            <Link
-              to="/shop?filter=fashion"
-              className="flex items-center px-6 py-3 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Shirt className="h-5 w-5 mr-3" />
-              Fashion
-            </Link>
-          </li>
-        </ul>
-      </nav>
-      {/* Optional: Add sign in/out/profile links here for mobile */}
-    </div>
-    {/* Overlay */}
-    <div
-      className="flex-1 bg-black/20 backdrop-blur-sm"
-      onClick={() => setIsMobileMenuOpen(false)}
-    />
-  </div>
-)}
-
+            </nav>
+          </div>
+          {/* Overlay */}
+          <div
+            className="flex-1 bg-black/20 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        </div>
+      )}
 
       {/* Backdrop for user menu */}
       {showUserMenu && (

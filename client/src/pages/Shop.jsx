@@ -195,6 +195,17 @@ const Shop = () => {
   const location = useLocation();
   const pathSegments = location.pathname.split('/').filter(Boolean);
   
+  // New effect for handling category slug from URL
+  const categorySlug = searchParams.get('category');
+  const categoryName = searchParams.get('name');
+
+  useEffect(() => {
+    if (categorySlug) {
+      // Apply filter based on category
+      // Your filtering logic here
+    }
+  }, [categorySlug]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-36 lg:pt-24">

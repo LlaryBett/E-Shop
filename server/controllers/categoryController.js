@@ -21,47 +21,37 @@ const getIconForCategory = (slug) => {
 // @access  Public
 export const getCategories = async (req, res, next) => {
   try {
-    // Check if mega menu format is requested
-    const megaMenu = req.query.megaMenu === 'true';
-    
-    if (megaMenu) {
-      return getMegaMenuCategories(req, res, next);
-    }
-
-    // Original implementation with proper population
     const categories = await Category.find({ isActive: true })
-      .populate({
-        path: 'subcategories',
-        match: { isActive: true },
-        select: 'name slug description image menuConfig'
-      })
-      .sort({ sortOrder: 1, name: 1 })
-      .select('name slug description image parent subcategories isActive sortOrder seoKeywords createdAt updatedAt menuConfig');
+      .sort({ sortOrder: 1, name: 1 });
 
-    // Add product count for each category
-    const categoriesWithCount = await Promise.all(
-      categories.map(async (category) => {
-        const Product = mongoose.model('Product');
-        const productCount = await Product.countDocuments({ 
-          category: category._id,
+    const transformed = await Promise.all(
+      categories.map(async (cat) => {
+        const productCount = await mongoose.model('Product').countDocuments({ 
+          category: cat._id,
           isActive: true 
         });
-        
+
         return {
-          ...category.toObject(),
-          productCount,
-          icon: getIconForCategory(category.slug)
+          name: cat.name,
+          icon: cat.icon,
+          count: productCount,
+          description: cat.description,
+          image: cat.image,
+          isNavItem: cat.isNavItem,
+          navPosition: cat.navPosition,
+          navIcon: cat.navIcon,
+          slug: cat.slug,
+          subcategories: cat.subcategories // Directly use nested data
         };
       })
     );
 
-    res.status(200).json({
-      success: true,
-      count: categoriesWithCount.length,
-      data: categoriesWithCount
+    res.status(200).json({ 
+      success: true, 
+      count: transformed.length,
+      data: transformed 
     });
   } catch (error) {
-    console.error('Error in getCategories:', error);
     next(error);
   }
 };
@@ -71,60 +61,47 @@ export const getCategories = async (req, res, next) => {
 // @access  Public
 export const getMegaMenuCategories = async (req, res, next) => {
   try {
+    // 1. Get all active categories (no parent filter needed)
     const categories = await Category.find({ 
       isActive: true,
-      parent: null // Only get top-level categories
-    })
-    .sort({ sortOrder: 1, name: 1 })
-    .populate({
-      path: 'subcategories',
-      match: { isActive: true },
-      select: 'name slug image menuConfig',
-      populate: {
-        path: 'subcategories', // For nested subcategories if needed
-        match: { isActive: true },
-        select: 'name slug'
-      }
-    });
+      'menuConfig.displayInMegaMenu': true 
+    }).sort({ 'menuConfig.columnPosition': 1, sortOrder: 1, name: 1 });
 
-    // Transform to frontend-friendly format matching your original structure
+    // 2. Get product counts (if needed)
+    const Product = mongoose.model('Product');
     const megaMenuData = {};
-    
+
     for (const category of categories) {
-      const Product = mongoose.model('Product');
-      
-      // Get product count for this category and all its subcategories
-      const categoryIds = [category._id, ...category.subcategories.map(sub => sub._id)];
-      const productCount = await Product.countDocuments({ 
-        category: { $in: categoryIds },
-        isActive: true 
+      const productCount = await Product.countDocuments({
+        category: category._id,
+        isActive: true
       });
 
-      // Transform subcategories to match frontend format
-      const subcategories = category.subcategories.map(sub => ({
-        name: sub.name,
-        items: sub.menuConfig?.featuredItems?.length > 0 
-          ? sub.menuConfig.featuredItems 
-          : [{ name: sub.name, slug: sub.slug }]
-      }));
-
-      // Use a generated ID or the MongoDB _id
+      // 3. Transform to frontend format
       const categoryKey = category._id.toString();
       
       megaMenuData[categoryKey] = {
         name: category.name,
-        icon: getIconForCategory(category.slug),
+        icon: category.icon,
         count: productCount,
         description: category.description,
-        slug: category.slug,
-        subcategories: subcategories
+        image: category.image.url,
+        isNavItem: category.isNavItem,
+        navPosition: category.navPosition,
+        navIcon: category.navIcon,
+        subcategories: category.subcategories.map(sub => ({
+          name: sub.name,
+          items: sub.items || [] // Directly use nested items
+        }))
       };
     }
 
     res.status(200).json({
       success: true,
+      count: categories.length,
       data: megaMenuData
     });
+
   } catch (error) {
     console.error('Error in getMegaMenuCategories:', error);
     next(error);
@@ -139,40 +116,28 @@ export const getCategory = async (req, res, next) => {
     const category = await Category.findOne({
       slug: req.params.slug,
       isActive: true
-    })
-    .populate({
-      path: 'subcategories',
-      match: { isActive: true },
-      select: 'name slug description image'
-    })
-    .populate('parent', 'name slug');
+    });
 
     if (!category) {
-      return res.status(404).json({
+      return res.status(404).json({ 
         success: false,
-        message: 'Category not found',
+        message: 'Category not found'
       });
     }
 
-    // Get product count
-    const Product = mongoose.model('Product');
-    const productCount = await Product.countDocuments({ 
+    const productCount = await mongoose.model('Product').countDocuments({
       category: category._id,
-      isActive: true 
+      isActive: true
     });
-
-    const categoryData = {
-      ...category.toObject(),
-      productCount,
-      icon: getIconForCategory(category.slug)
-    };
 
     res.status(200).json({
       success: true,
-      data: categoryData,
+      data: {
+        ...category.toObject(),
+        productCount
+      }
     });
   } catch (error) {
-    console.error('Error in getCategory:', error);
     next(error);
   }
 };
@@ -182,79 +147,77 @@ export const getCategory = async (req, res, next) => {
 // @access  Private/Admin
 export const createCategory = async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array(),
-      });
-    }
+    const { 
+      name, 
+      description, 
+      icon = 'Package', 
+      image, 
+      subcategories = [], 
+      isNavItem = false,
+      navPosition = 0,
+      navIcon = icon,
+      menuConfig = {
+        displayInMegaMenu: false,
+        columnPosition: 1
+      }
+    } = req.body;
 
-    const { name, description, parent, isActive, sortOrder, menuConfig } = req.body;
-
-    // Check if category with same name exists
-    const existingCategory = await Category.findOne({ 
-      name: { $regex: new RegExp(`^${name}$`, 'i') } 
-    });
-    
-    if (existingCategory) {
-      return res.status(400).json({
-        success: false,
-        message: 'Category with this name already exists'
-      });
-    }
-
-    // Process image
-    const imageData = {
-      url: req.file?.location || req.file?.path || '',
-      publicId: req.file?.filename || ''
-    };
-
-    // Create category
+    // 1. Create category with nested subcategories
     const category = new Category({
       name,
       description,
-      image: imageData,
-      parent: parent || null,
-      isActive: isActive !== false,
-      sortOrder: sortOrder || 0,
-      menuConfig: {
-        featuredItems: menuConfig?.featuredItems || [],
-        displayInMegaMenu: menuConfig?.displayInMegaMenu || false,
-        columnPosition: menuConfig?.columnPosition || 1
-      }
+      icon,
+      image: typeof image === 'string' 
+        ? { url: image, publicId: '' } 
+        : image || { url: '', publicId: '' },
+      isActive: true,
+      sortOrder: 0,
+      isNavItem,
+      navPosition,
+      navIcon,
+      menuConfig,
+      subcategories: subcategories.map(sub => ({
+        name: sub.name,
+        items: sub.items.map(item => ({
+          name: item.name,
+          slug: item.slug
+        }))
+      }))
     });
 
+    // 2. Save everything in one operation
     await category.save();
 
-    // Update parent if this is a subcategory
-    if (parent) {
-      await Category.findByIdAndUpdate(
-        parent,
-        { $addToSet: { subcategories: category._id } }, // Use $addToSet to avoid duplicates
-        { new: true }
-      );
-    }
-
-    // Return the created category with populated fields
-    const createdCategory = await Category.findById(category._id)
-      .populate('parent', 'name slug')
-      .populate('subcategories', 'name slug');
+    // 3. Prepare response (matches schema structure)
+    const responseData = {
+      _id: category._id,
+      name: category.name,
+      icon: category.icon,
+      image: category.image.url,
+      description: category.description,
+      isNavItem: category.isNavItem,
+      navPosition: category.navPosition,
+      navIcon: category.navIcon,
+      subcategories: category.subcategories.map(sub => ({
+        name: sub.name,
+        items: sub.items.map(item => ({
+          name: item.name,
+          slug: item.slug
+        }))
+      }))
+    };
 
     res.status(201).json({
       success: true,
-      data: {
-        ...createdCategory.toObject(),
-        icon: getIconForCategory(createdCategory.slug)
-      }
+      data: responseData
     });
 
   } catch (error) {
-    console.error('Error in createCategory:', error);
+    console.error("Error in createCategory:", error);
     next(error);
   }
 };
+
 
 // @desc    Update category
 // @route   PUT /api/categories/:id
@@ -369,43 +332,14 @@ export const deleteCategory = async (req, res, next) => {
 // @access  Public
 export const getCategoryTree = async (req, res, next) => {
   try {
-    const categories = await Category.find({
-      parent: null,
-      isActive: true
-    })
-    .populate({
-      path: 'subcategories',
-      match: { isActive: true },
-      populate: {
-        path: 'subcategories',
-        match: { isActive: true },
-      },
-    })
-    .sort({ sortOrder: 1, name: 1 });
-
-    // Add icons and product counts
-    const categoriesWithExtras = await Promise.all(
-      categories.map(async (category) => {
-        const Product = mongoose.model('Product');
-        const productCount = await Product.countDocuments({ 
-          category: category._id,
-          isActive: true 
-        });
-        
-        return {
-          ...category.toObject(),
-          productCount,
-          icon: getIconForCategory(category.slug)
-        };
-      })
-    );
+    const categories = await Category.find({ isActive: true })
+      .sort({ sortOrder: 1, name: 1 });
 
     res.status(200).json({
       success: true,
-      data: categoriesWithExtras,
+      data: categories
     });
   } catch (error) {
-    console.error('Error in getCategoryTree:', error);
     next(error);
   }
 };

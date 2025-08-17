@@ -171,14 +171,21 @@ export const createProduct = async (req, res, next) => {
       sku,
     } = req.body;
 
-    // Find category by name or ID
-    const categoryDoc = await Category.findOne({
+    // Find category by name or ID (avoid ObjectId casting errors)
+    const categoryQuery = { 
       $or: [
-        { _id: category },
-        { name: category.trim() }
+        { name: category.trim() },
+        { slug: category.trim() }
       ]
-    });
+    };
     
+    // Only add ObjectId query if it's a valid ObjectId format
+    if (/^[0-9a-fA-F]{24}$/.test(category)) {
+      categoryQuery.$or.push({ _id: category });
+    }
+
+    const categoryDoc = await Category.findOne(categoryQuery);
+        
     if (!categoryDoc) {
       return res.status(400).json({
         success: false,
@@ -186,14 +193,38 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
-    // Find brand by name or ID
-    const brandDoc = await Brand.findOne({
+    // Validate subcategory exists within the selected category
+    if (subcategory) {
+      const subcategoryExists = categoryDoc.subcategories.some(subcat => 
+        subcat.name === subcategory.trim() || 
+        subcat.slug === subcategory.trim()
+      );
+      
+      if (!subcategoryExists) {
+        // Get all available subcategories for helpful error message
+        const availableSubcategories = categoryDoc.subcategories.map(sub => sub.name);
+        return res.status(400).json({
+          success: false,
+          message: `Subcategory '${subcategory}' not found in category '${categoryDoc.name}'`,
+          availableSubcategories,
+        });
+      }
+    }
+
+    // Find brand by name or ID (avoid ObjectId casting errors)
+    const brandQuery = { 
       $or: [
-        { _id: brand },
         { name: brand.trim() }
       ]
-    });
+    };
     
+    // Only add ObjectId query if it's a valid ObjectId format
+    if (/^[0-9a-fA-F]{24}$/.test(brand)) {
+      brandQuery.$or.push({ _id: brand });
+    }
+
+    const brandDoc = await Brand.findOne(brandQuery);
+        
     if (!brandDoc) {
       return res.status(400).json({
         success: false,
@@ -201,12 +232,47 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
+    // Generate SKU if not provided
+    const generateProductSKU = (category, subcategory, title) => {
+      const categoryCode = category.name.substring(0, 3).toUpperCase();
+      const subcategoryCode = subcategory ? subcategory.substring(0, 3).toUpperCase() : 'GEN';
+      const titleCode = title.substring(0, 3).toUpperCase();
+      const timestamp = Date.now().toString().slice(-6);
+      
+      return `${categoryCode}-${subcategoryCode}-${titleCode}-${timestamp}`;
+    };
+
+    const productSku = sku || generateProductSKU(categoryDoc, subcategory, title);
+
+    // ✅ FIX 1: Transform images from string array to object array
+    const transformedImages = Array.isArray(images) 
+      ? images.map((imageUrl, index) => ({
+          url: typeof imageUrl === 'string' ? imageUrl : imageUrl.url,
+          publicId: typeof imageUrl === 'object' ? imageUrl.publicId || '' : '',
+          altText: typeof imageUrl === 'object' ? imageUrl.altText || `${title} - Image ${index + 1}` : `${title} - Image ${index + 1}`,
+          isPrimary: index === 0
+        }))
+      : [];
+
+    // ✅ FIX 2: Transform variants to match schema requirements
+    const transformedVariants = Array.isArray(variants) 
+      ? variants.map(variant => ({
+          name: variant.name || variant.size || 'Size', // Use 'name' field as required by schema
+          value: variant.value || variant.size || variant.count || 'Default', // Use 'value' field as required by schema
+          price: variant.price || 0,
+          stock: variant.stock || 0,
+          sku: variant.sku || '',
+          // Keep original fields for reference
+          originalData: variant
+        }))
+      : [];
+
     const product = await Product.create({
       title,
       description,
       price,
       salePrice,
-      images,
+      images: transformedImages, // ✅ Use transformed images
       category: categoryDoc._id,
       subcategory,
       brand: brandDoc._id,
@@ -214,12 +280,12 @@ export const createProduct = async (req, res, next) => {
       reviewCount,
       stock,
       tags,
-      variants,
+      variants: transformedVariants, // ✅ Use transformed variants
       featured,
       trending,
       createdAt,
       updatedAt,
-      sku,
+      sku: productSku,
       createdBy: req.user.id
     });
 
@@ -228,19 +294,26 @@ export const createProduct = async (req, res, next) => {
       .populate('brand', 'name logo')
       .populate('category', 'name slug');
 
+    // Add subcategory info to the response
+    if (subcategory && categoryDoc.subcategories) {
+      const subcatInfo = categoryDoc.subcategories.find(sub => 
+        sub.name === subcategory || sub.slug === subcategory
+      );
+      populatedProduct._doc.subcategoryInfo = subcatInfo || null;
+    }
+
     // Send notification to all admins (example event)
     try {
       // Find all admin users
       const admins = await mongoose.model('User').find({ role: 'admin' }).select('_id');
       const adminIds = admins.map(admin => admin._id);
 
-      // This does NOT consult NotificationEvent.js directly:
-      // await NotificationService.sendPromotionNotification(adminIds, { ... });
-
       // To consult NotificationEvent.js, use:
       await NotificationService.triggerEvent(adminIds, 'product_created', {
         title: populatedProduct.title,
-        productId: populatedProduct._id
+        productId: populatedProduct._id,
+        category: categoryDoc.name,
+        subcategory: subcategory || 'General'
       });
     } catch (notifError) {
       console.error('Failed to send admin notification:', notifError);
