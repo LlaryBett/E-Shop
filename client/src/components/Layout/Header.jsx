@@ -196,12 +196,7 @@ const Header = () => {
 
   // Find category data for dropdown
   const getCategoryDataForNav = (navItemName) => {
-    const category = categories?.find(cat => cat.name === navItemName);
-    return category ? {
-      name: category.name,
-      description: category.description,
-      subcategories: category.subcategories || []
-    } : null;
+    return categories?.find(cat => cat.name === navItemName) || null;
   };
 
   return (
@@ -663,12 +658,11 @@ const Header = () => {
                                         {subcategory.items.map((item, itemIndex) => (
                                           <li key={item._id || item.id || itemIndex} className="py-1">
                                             <Link
-                                              to={`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}&parent=${encodeURIComponent(category.name)}`}
+                                              to={`/shop?category=${category.slug}&subcategory=${item.slug}&name=${encodeURIComponent(item.name)}`}
                                               className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
                                               onClick={() => {
                                                 setActiveNavTab(null);
                                                 setShowCategoriesMenu(false);
-                                                navigate(`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}&parent=${encodeURIComponent(category.name)}`);
                                               }}
                                             >
                                               {item.name}
@@ -727,7 +721,7 @@ const Header = () => {
                                       {subcategory.items.map((subItem, itemIndex) => (
                                         <li key={subItem._id || subItem.id || itemIndex} className="py-1">
                                           <Link
-                                            to={`/shop?category=${subItem.slug}&name=${encodeURIComponent(subItem.name)}&parent=${encodeURIComponent(categoryData.name)}`}
+                                            to={`/shop?category=${categoryData.slug}&subcategory=${subItem.slug}&name=${encodeURIComponent(subItem.name)}`}
                                             className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 block"
                                             onClick={() => {
                                               setActiveNavTab(null);
@@ -831,13 +825,13 @@ const Header = () => {
                                       {subcategory.items.map((item, itemIdx) => (
                                         <li key={item._id || item.id || itemIdx}>
                                           <Link
-                                            to={`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}&parent=${encodeURIComponent(category.name)}`}
+                                            to={`/shop?category=${category.slug}&subcategory=${item.slug}&name=${encodeURIComponent(item.name)}`}
+                                            
                                             className="block py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                                             onClick={() => {
                                               setIsMobileMenuOpen(false);
                                               setMobileCategoriesOpen(false);
                                               setMobileAccordionOpen(null);
-                                              navigate(`/shop?category=${item.slug}&name=${encodeURIComponent(item.name)}&parent=${encodeURIComponent(category.name)}`);
                                             }}
                                           >
                                             {item.name}
@@ -881,10 +875,7 @@ const Header = () => {
 
       {/* Backdrop for user menu */}
       {showUserMenu && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm" 
-          onClick={() => setShowUserMenu(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm" onClick={() => setShowUserMenu(false)} />
       )}
     </>
   );

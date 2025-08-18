@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link, useLocation } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Search, Filter, Grid, List, Star, Heart, ShoppingCart, Shield, Award, RefreshCw, Truck, X } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
@@ -26,10 +26,17 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState({}); // Changed to object for brand mapping
+  const [brands, setBrands] = useState({});
 
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+
+  // Extract URL parameters
+  const category = searchParams.get('category');
+  const subcategory = searchParams.get('subcategory');
+  const name = searchParams.get('name');
+  const query = searchParams.get('query'); // For search results
+  const brandId = searchParams.get('brand'); // Add this line
 
   // Check for quality guarantee parameter and open modal
   useEffect(() => {
@@ -43,48 +50,22 @@ const Shop = () => {
     }
   }, [searchParams, setSearchParams]);
 
+  // Main product fetching effect
   useEffect(() => {
-    // Read category, filter, or brand from URL query params
-    const categoryFromUrl = searchParams.get('category');
-    const filterFromUrl = searchParams.get('filter');
-    const brandFromUrl = searchParams.get('brand'); // Add this line
-    let filtersToSend = { ...filters };
-
-    // Add brand filter if present in URL
-    if (brandFromUrl) {
-      filtersToSend.brands = [brandFromUrl];
-    }
-
-    // Handle other filters...
-    if (filterFromUrl) {
-      if (filterFromUrl === 'promos') {
-        filtersToSend.categories = ['Promos'];
-      } else if (filterFromUrl === 'food-cupboard') {
-        filtersToSend.categories = ['Food Cupboard'];
-      } else if (filterFromUrl === 'electronics') {
-        filtersToSend.categories = ['Electronics'];
-      } else if (filterFromUrl === 'home-garden') {
-        filtersToSend.categories = ['Home & Garden'];
-      } else if (filterFromUrl === 'voucher') {
-        filtersToSend.categories = ['Voucher'];
-      } else if (filterFromUrl === 'fashion') {
-        filtersToSend.categories = ['Fashion'];
-      }
-    } else if (categoryFromUrl) {
-      filtersToSend.categories = [categoryFromUrl];
-    }
-
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setError(null);
 
+        console.log('URL Parameters:', { category, subcategory, name, query });
+
+        // Fetch all products from your API
         const response = await ProductService.getProducts(
-          1,
-          100,
-          filtersToSend,
+          1, // page
+          100, // limit
+          {}, // empty filters - we'll filter client-side
           sortBy,
-          searchQuery
+          query || '' // search query if exists
         );
 
         if (!response.success) {
@@ -93,28 +74,13 @@ const Shop = () => {
 
         setProducts(response.products);
 
-        // Apply local filtering
-        let filtered = response.products;
-        
-        // Filter by brand if brandFromUrl exists
-        if (brandFromUrl) {
-          filtered = filtered.filter(p => p.brand?._id === brandFromUrl);
-        }
-        
-        // Apply other filters
-        if (filtersToSend.categories && filtersToSend.categories.length > 0) {
-          filtered = filtered.filter(p => filtersToSend.categories.includes(p.category?.name));
-        }
-        
-        setFilteredProducts(filtered);
-
-        // Extract unique categories
+        // Extract categories and brands for filters (do this before filtering)
         const uniqueCategories = [...new Set(
           response.products
             .map(p => p.category?.name)
             .filter(Boolean)
         )];
-        // Create brand mapping {id: name}
+        
         const brandMap = response.products.reduce((acc, product) => {
           if (product.brand?._id) {
             acc[product.brand._id] = product.brand.name;
@@ -127,24 +93,200 @@ const Shop = () => {
         
       } catch (err) {
         console.error('Error fetching products:', err);
-        setError(err.message || 'Failed to load products. Please try again later.');
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, [filters, sortBy, searchQuery, searchParams]);
+  }, [category, subcategory, name, query, sortBy]); // Re-run when URL parameters change
 
+  // Apply all filters (URL parameters + sidebar filters)
+  // Update the filtering logic in your useEffect around line 120-180
+  // Replace the existing filtering section with this:
+
+  useEffect(() => {
+    let filtered = [...products];
+
+    // Apply URL-based filters first
+    if (category) {
+      filtered = filtered.filter(product => 
+        product.category?.slug === category || 
+        product.categorySlug === category ||
+        product.category?.name?.toLowerCase().replace(/\s+/g, '-') === category
+      );
+    }
+
+    if (subcategory) {
+      filtered = filtered.filter(product => {
+        // Check subcategory fields
+        const subcategoryMatch = 
+          product.subcategory?.slug === subcategory ||
+          product.subcategorySlug === subcategory ||
+          product.subcategory?.name?.toLowerCase().replace(/\s+/g, '-') === subcategory ||
+          // Check if product has subcategories array
+          product.subcategories?.some(sub => 
+            sub.slug === subcategory || 
+            sub.name?.toLowerCase().replace(/\s+/g, '-') === subcategory
+          );
+
+        // IMPORTANT: Also check the 'item' field which seems to be the actual product type
+        const itemMatch = 
+          product.item?.slug === subcategory ||
+          product.item?.name?.toLowerCase().replace(/\s+/g, '-') === subcategory;
+
+        return subcategoryMatch || itemMatch;
+      });
+    }
+
+    // Add brand URL parameter filtering
+    if (brandId) {
+      filtered = filtered.filter(product => product.brand?._id === brandId);
+    }
+
+    if (query) {
+      const searchTerm = query.toLowerCase();
+      filtered = filtered.filter(product =>
+        product.title?.toLowerCase().includes(searchTerm) ||
+        product.description?.toLowerCase().includes(searchTerm) ||
+        product.tags?.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+        product.brand?.name?.toLowerCase().includes(searchTerm) ||
+        // Also search in item name
+        product.item?.name?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Apply sidebar filters (rest remains the same)
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter(product => 
+        filters.categories.includes(product.category?.name)
+      );
+    }
+
+    // Update brand filter to work with both URL parameter and checkbox filters
+    if (filters.brands.length > 0 || brandId) {
+      filtered = filtered.filter(product => 
+        filters.brands.includes(product.brand?._id) || 
+        (brandId && product.brand?._id === brandId)
+      );
+    }
+
+    if (filters.priceRange) {
+      filtered = filtered.filter(product => {
+        const price = product.salePrice || product.price;
+        return price >= filters.priceRange[0] && price <= filters.priceRange[1];
+      });
+    }
+
+    if (filters.rating > 0) {
+      filtered = filtered.filter(product => 
+        (product.rating || 0) >= filters.rating
+      );
+    }
+
+    if (filters.inStock) {
+      filtered = filtered.filter(product => product.stock > 0);
+    }
+
+    if (filters.onSale) {
+      filtered = filtered.filter(product => product.salePrice);
+    }
+
+    // Apply sorting
+    const sortedFiltered = [...filtered].sort((a, b) => {
+      const { field, direction } = sortBy;
+      let aValue, bValue;
+
+      switch (field) {
+        case 'price':
+          aValue = a.salePrice || a.price;
+          bValue = b.salePrice || b.price;
+          break;
+        case 'rating':
+          aValue = a.rating || 0;
+          bValue = b.rating || 0;
+          break;
+        case 'title':
+          aValue = a.title?.toLowerCase() || '';
+          bValue = b.title?.toLowerCase() || '';
+          break;
+        case 'createdAt':
+        default:
+          aValue = new Date(a.createdAt || 0);
+          bValue = new Date(b.createdAt || 0);
+          break;
+      }
+
+      if (direction === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredProducts(sortedFiltered);
+  }, [products, filters, sortBy, category, subcategory, query, brandId]); // Add brandId to dependencies
+
+  // Get breadcrumbs based on URL parameters
+  const getBreadcrumbs = () => {
+    const crumbs = [
+      { name: 'Home', path: '/' },
+      { name: 'Shop', path: '/shop' }
+    ];
+
+    if (category) {
+      const categoryName = category.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+      
+      crumbs.push({
+        name: categoryName,
+        path: `/shop?category=${category}`
+      });
+    }
+
+    if (subcategory) {
+      const subcategoryName = subcategory.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+      
+      crumbs.push({
+        name: subcategoryName,
+        path: `/shop?category=${category}&subcategory=${subcategory}`
+      });
+    }
+
+    return crumbs;
+  };
+
+  // Get page title based on URL parameters
+  const getPageTitle = () => {
+    if (name) return name;
+    if (subcategory) {
+      return subcategory.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+    }
+    if (category) {
+      return category.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+    }
+    if (query) return `Search results for "${query}"`;
+    return 'All Products';
+  };
+
+  // Handler functions
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleCategoryFilter = (category) => {
+  const handleCategoryFilter = (categoryName) => {
     const currentCategories = filters.categories || [];
-    const newCategories = currentCategories.includes(category)
-      ? currentCategories.filter(c => c !== category)
-      : [...currentCategories, category];
+    const newCategories = currentCategories.includes(categoryName)
+      ? currentCategories.filter(c => c !== categoryName)
+      : [...currentCategories, categoryName];
     handleFilterChange('categories', newCategories);
   };
 
@@ -154,6 +296,15 @@ const Shop = () => {
       ? currentBrands.filter(b => b !== brandId)
       : [...currentBrands, brandId];
     handleFilterChange('brands', newBrands);
+    
+    // Update URL when brand filter changes
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (newBrands.length === 1) {
+      newSearchParams.set('brand', newBrands[0]);
+    } else {
+      newSearchParams.delete('brand');
+    }
+    setSearchParams(newSearchParams);
   };
 
   const handleAddToCart = (product) => {
@@ -181,7 +332,8 @@ const Shop = () => {
       onSale: false,
     });
     setSearchQuery('');
-    setSearchParams({});
+    const newSearchParams = new URLSearchParams();
+    setSearchParams(newSearchParams);
   };
 
   // Lock body scroll when filters are open on mobile
@@ -192,24 +344,13 @@ const Shop = () => {
     }
   }, [showFilters]);
 
-  const location = useLocation();
-  const pathSegments = location.pathname.split('/').filter(Boolean);
-  
-  // New effect for handling category slug from URL
-  const categorySlug = searchParams.get('category');
-  const categoryName = searchParams.get('name');
-
-  useEffect(() => {
-    if (categorySlug) {
-      // Apply filter based on category
-      // Your filtering logic here
-    }
-  }, [categorySlug]);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-36 lg:pt-24">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading products...</p>
+        </div>
       </div>
     );
   }
@@ -217,7 +358,15 @@ const Shop = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-36 lg:pt-24">
-        <div className="text-red-500 text-lg">{error}</div>
+        <div className="text-center">
+          <div className="text-red-500 text-lg mb-4">{error}</div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -225,24 +374,56 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
       <div className="max-w-[1320px] mx-auto px-4 lg:px-6 py-4">
-        {/* Add Breadcrumb Navigation */}
+        {/* Updated Breadcrumb */}
         <nav className="mb-6">
           <ol className="flex items-center space-x-2 text-sm">
-            <li>
-              <Link to="/" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
-                Home
-              </Link>
-            </li>
-            {pathSegments.map((segment, index) => (
+            {getBreadcrumbs().map((crumb, index) => (
               <li key={index} className="flex items-center space-x-2">
-                <span className="text-gray-400">/</span>
-                <span className="capitalize text-gray-900 dark:text-white">
-                  {segment}
-                </span>
+                {index > 0 && <span className="text-gray-400">/</span>}
+                {index === getBreadcrumbs().length - 1 ? (
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {crumb.name}
+                  </span>
+                ) : (
+                  <Link
+                    to={crumb.path}
+                    className="text-gray-500 dark:text-gray-400 hover:text-blue-600"
+                  >
+                    {crumb.name}
+                  </Link>
+                )}
               </li>
             ))}
           </ol>
         </nav>
+
+        {/* Category Header with improved styling for context-loaded products */}
+        {searchParams.get('name') && (
+          <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  {searchParams.get('name')}
+                </h1>
+                {searchParams.get('parent') && (
+                  <p className="text-lg text-gray-600 dark:text-gray-400">
+                    {searchParams.get('parent')} • {searchParams.get('name')}
+                  </p>
+                )}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  {filteredProducts.length} products available
+                </p>
+              </div>
+              
+              {/* Add a badge to indicate if products were loaded via context */}
+              {searchParams.get('parent') && (
+                <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
+                  Specialized Collection
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mb-6">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -307,6 +488,7 @@ const Shop = () => {
         )}
 
         <div className="flex gap-8">
+          {/* Filter Sidebar - Same as before */}
           <div 
             id="filter-sidebar"
             className={`
@@ -430,16 +612,27 @@ const Shop = () => {
             </div>
           </div>
 
+          {/* Products Display */}
           <div className="flex-1">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-gray-600 dark:text-gray-400">
                 Showing {filteredProducts.length} products
+                {searchParams.get('parent') && (
+                  <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
+                    from {searchParams.get('parent')}
+                  </span>
+                )}
               </p>
             </div>
 
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400 text-lg">No products found</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
+                  {searchParams.get('name') 
+                    ? `No ${searchParams.get('name')} products found` 
+                    : 'No products found'
+                  }
+                </p>
                 <button
                   onClick={clearFilters}
                   className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -540,7 +733,7 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Quality Guarantee Modal */}
+      {/* Quality Guarantee Modal - Same as before */}
       {showQualityModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -560,7 +753,7 @@ const Shop = () => {
               </button>
             </div>
 
-            {/* Modal Content */}
+            {/* Modal Content - Same as original */}
             <div className="p-6 space-y-6">
               {/* Hero Section */}
               <div className="text-center">

@@ -21,6 +21,19 @@ class CategoryService {
     return response.data.data;
   }
 
+  // Get products by subcategory item
+  async getSubcategoryProducts(categorySlug, itemSlug, options = {}) {
+    const { page = 1, limit = 20, sort = '-createdAt' } = options;
+    
+    const response = await api.get(
+      `/categories/${categorySlug}/subcategory/${itemSlug}/products`,
+      {
+        params: { page, limit, sort }
+      }
+    );
+    return response.data;
+  }
+
   // Admin methods
   async createCategory(categoryData) {
     const response = await api.post('/categories', categoryData, {

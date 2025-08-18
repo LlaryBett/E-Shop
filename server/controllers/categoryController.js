@@ -343,3 +343,110 @@ export const getCategoryTree = async (req, res, next) => {
     next(error);
   }
 };
+// @desc    Get products by subcategory item
+// @route   GET /api/categories/:categorySlug/subcategory/:itemSlug/products
+// @access  Public
+export const getProductsBySubcategoryItem = async (req, res, next) => {
+  try {
+    const { categorySlug, itemSlug } = req.params;
+    const { page = 1, limit = 20, sort = '-createdAt' } = req.query;
+    
+    // Find the category first
+    const category = await Category.findOne({ 
+      slug: categorySlug, 
+      isActive: true 
+    });
+    
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: 'Category not found'
+      });
+    }
+
+    // Find the specific subcategory item to get its details
+    let subcategoryItem = null;
+    let subcategoryGroup = null;
+    
+    for (const subcat of category.subcategories) {
+      const foundItem = subcat.items?.find(item => item.slug === itemSlug);
+      if (foundItem) {
+        subcategoryItem = foundItem;
+        subcategoryGroup = subcat;
+        break;
+      }
+    }
+
+    if (!subcategoryItem) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subcategory item not found'
+      });
+    }
+
+    // Find products that match both category and subcategory item
+    const Product = mongoose.model('Product');
+    
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+    
+    const products = await Product.find({
+      category: category._id,
+      $or: [
+        { subcategoryItemSlug: itemSlug },
+        { subcategoryItemId: subcategoryItem._id || subcategoryItem.id },
+        // Fallback: match by subcategory item name
+        { subcategory: subcategoryItem.name }
+      ],
+      isActive: true
+    })
+    .populate('category', 'name slug')
+    .populate('brand', 'name logo')
+    .sort(sort)
+    .skip(skip)
+    .limit(parseInt(limit));
+
+    // Get total count for pagination
+    const totalProducts = await Product.countDocuments({
+      category: category._id,
+      $or: [
+        { subcategoryItemSlug: itemSlug },
+        { subcategoryItemId: subcategoryItem._id || subcategoryItem.id },
+        { subcategory: subcategoryItem.name }
+      ],
+      isActive: true
+    });
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalProducts / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      totalProducts,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        limit: parseInt(limit)
+      },
+      categoryInfo: {
+        name: category.name,
+        slug: category.slug
+      },
+      subcategoryInfo: {
+        groupName: subcategoryGroup.name,
+        itemName: subcategoryItem.name,
+        itemSlug: subcategoryItem.slug
+      },
+      data: products
+    });
+
+  } catch (error) {
+    console.error('Error in getProductsBySubcategoryItem:', error);
+    next(error);
+  }
+};

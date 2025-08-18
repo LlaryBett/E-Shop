@@ -34,15 +34,43 @@ const productSchema = new mongoose.Schema({
       trim: true,
     }
   }],
+  
+  // ✅ FIXED: Proper 3-level hierarchy structure
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
     required: [true, 'Please select a category'],
   },
   subcategory: {
-    type: String,
-    trim: true,
+    _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: [true, 'Please provide subcategory ID'],
+    },
+    name: {
+      type: String,
+      required: [true, 'Please provide subcategory name'],
+      trim: true,
+    }
   },
+  item: {
+    _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: [true, 'Please provide item ID'],
+    },
+    name: {
+      type: String,
+      required: [true, 'Please provide item name'],
+      trim: true,
+    },
+    slug: {
+      type: String,
+      required: [true, 'Please provide item slug'],
+      trim: true,
+      lowercase: true,
+      index: true, // ✅ For fast URL routing and queries
+    }
+  },
+  
   brand: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Brand',
@@ -124,31 +152,37 @@ const productSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-
-  // ✅ New field to group products into sections
   sections: [{
     type: String,
-    enum: ['featured', 'trending', 'picks', 'check-this-out'], // Add more as needed
+    enum: ['featured', 'trending', 'picks', 'check-this-out'],
     lowercase: true,
     trim: true
   }],
-
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
 });
 
-// Indexes for optimized querying
+// ✅ UPDATED: Indexes for optimized querying with proper hierarchy
 productSchema.index({ title: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1 });
+productSchema.index({ 'subcategory._id': 1 });
+productSchema.index({ 'item._id': 1 });
+productSchema.index({ 'item.slug': 1 });
 productSchema.index({ brand: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ featured: 1 });
 productSchema.index({ trending: 1 });
-productSchema.index({ sections: 1 }); // ✅ index for sections
+productSchema.index({ sections: 1 });
+
+// ✅ UPDATED: Compound indexes for common hierarchy queries
+productSchema.index({ category: 1, 'subcategory._id': 1 });
+productSchema.index({ category: 1, 'subcategory._id': 1, 'item._id': 1 });
+productSchema.index({ category: 1, 'item.slug': 1 });
+productSchema.index({ category: 1, isActive: 1 });
 
 // Virtual fields
 productSchema.virtual('currentPrice').get(function () {
@@ -166,6 +200,11 @@ productSchema.virtual('stockStatus').get(function () {
   if (this.stock === 0) return 'out-of-stock';
   if (this.stock <= this.lowStockThreshold) return 'low-stock';
   return 'in-stock';
+});
+
+// ✅ ADDED: Virtual for full category path
+productSchema.virtual('categoryPath').get(function () {
+  return `${this.category.name} > ${this.subcategory.name} > ${this.item.name}`;
 });
 
 // Pre-save middleware to auto-generate SKU if missing

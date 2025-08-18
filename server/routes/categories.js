@@ -8,6 +8,7 @@ import {
   deleteCategory,
   getCategoryTree,
   getMegaMenuCategories,
+  getProductsBySubcategoryItem,
 } from '../controllers/categoryController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
@@ -52,6 +53,10 @@ router.put(
   updateCategory
 );
 router.delete('/:id', protect, authorize('admin'), deleteCategory);
+
+// Add this route
+router.get('/:categorySlug/subcategory/:itemSlug/products', getProductsBySubcategoryItem);
+
 // Add this with your other routes
 
 

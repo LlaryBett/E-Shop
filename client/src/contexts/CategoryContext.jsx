@@ -68,12 +68,27 @@ export const CategoryProvider = ({ children }) => {
     fetchCategories();
   }, []);
 
+ // Add this method to your CategoryProvider component, before the value object
+
+  // Fetch products by subcategory
+  const fetchSubcategoryProducts = async (categorySlug, itemSlug, options = {}) => {
+    try {
+      const data = await categoryService.getSubcategoryProducts(categorySlug, itemSlug, options);
+      return data;
+    } catch (err) {
+      console.error(`Error fetching products for ${categorySlug}/${itemSlug}:`, err);
+      throw err;
+    }
+  };
+
+  // Then add it to your value object:
   const value = {
     categories,
     selectedCategory,
     loading,
     fetchCategories,
     fetchCategoryBySlug,
+    fetchSubcategoryProducts, // Add this line
     createCategory,
     updateCategory,
     deleteCategory,

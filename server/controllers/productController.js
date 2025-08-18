@@ -158,6 +158,7 @@ export const createProduct = async (req, res, next) => {
       images,
       category,
       subcategory,
+      item, // ✅ NEW: Now expecting item parameter
       brand,
       rating,
       reviewCount,
@@ -171,7 +172,7 @@ export const createProduct = async (req, res, next) => {
       sku,
     } = req.body;
 
-    // Find category by name or ID (avoid ObjectId casting errors)
+    // Find category by name or ID
     const categoryQuery = { 
       $or: [
         { name: category.trim() },
@@ -179,7 +180,6 @@ export const createProduct = async (req, res, next) => {
       ]
     };
     
-    // Only add ObjectId query if it's a valid ObjectId format
     if (/^[0-9a-fA-F]{24}$/.test(category)) {
       categoryQuery.$or.push({ _id: category });
     }
@@ -193,32 +193,62 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
-    // Validate subcategory exists within the selected category
-    if (subcategory) {
-      const subcategoryExists = categoryDoc.subcategories.some(subcat => 
-        subcat.name === subcategory.trim() || 
-        subcat.slug === subcategory.trim()
-      );
-      
-      if (!subcategoryExists) {
-        // Get all available subcategories for helpful error message
-        const availableSubcategories = categoryDoc.subcategories.map(sub => sub.name);
-        return res.status(400).json({
-          success: false,
-          message: `Subcategory '${subcategory}' not found in category '${categoryDoc.name}'`,
-          availableSubcategories,
-        });
-      }
+    // ✅ FIXED: Proper 3-level hierarchy validation
+    let subcategoryInfo = null;
+    let itemInfo = null;
+
+    // Step 1: Find the subcategory group
+    const subcategoryGroup = categoryDoc.subcategories.find(subcat => 
+      subcat.name === subcategory.trim() || 
+      subcat.slug === subcategory.trim() ||
+      subcat._id.toString() === subcategory.trim()
+    );
+
+    if (!subcategoryGroup) {
+      const availableSubcategories = categoryDoc.subcategories.map(sub => sub.name);
+      return res.status(400).json({
+        success: false,
+        message: `Subcategory '${subcategory}' not found in category '${categoryDoc.name}'`,
+        availableSubcategories,
+      });
     }
 
-    // Find brand by name or ID (avoid ObjectId casting errors)
+    // Step 2: Find the item within that subcategory group
+    const itemDoc = subcategoryGroup.items?.find(itemObj => 
+      itemObj.name === item.trim() || 
+      itemObj.slug === item.trim() ||
+      itemObj._id.toString() === item.trim() ||
+      itemObj.id === item.trim()
+    );
+
+    if (!itemDoc) {
+      const availableItems = subcategoryGroup.items?.map(itm => itm.name) || [];
+      return res.status(400).json({
+        success: false,
+        message: `Item '${item}' not found in subcategory '${subcategory}'`,
+        availableItems,
+      });
+    }
+
+    // ✅ Prepare structured subcategory and item info
+    subcategoryInfo = {
+      _id: subcategoryGroup._id,
+      name: subcategoryGroup.name
+    };
+
+    itemInfo = {
+      _id: itemDoc._id || itemDoc.id,
+      name: itemDoc.name,
+      slug: itemDoc.slug
+    };
+
+    // Find brand by name or ID
     const brandQuery = { 
       $or: [
         { name: brand.trim() }
       ]
     };
     
-    // Only add ObjectId query if it's a valid ObjectId format
     if (/^[0-9a-fA-F]{24}$/.test(brand)) {
       brandQuery.$or.push({ _id: brand });
     }
@@ -232,19 +262,19 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
-    // Generate SKU if not provided
-    const generateProductSKU = (category, subcategory, title) => {
+    // ✅ UPDATED: Generate SKU with proper hierarchy
+    const generateProductSKU = (category, subcategoryName, itemName, title) => {
       const categoryCode = category.name.substring(0, 3).toUpperCase();
-      const subcategoryCode = subcategory ? subcategory.substring(0, 3).toUpperCase() : 'GEN';
-      const titleCode = title.substring(0, 3).toUpperCase();
+      const subcategoryCode = subcategoryName ? subcategoryName.substring(0, 3).toUpperCase() : 'GEN';
+      const itemCode = itemName ? itemName.substring(0, 3).toUpperCase() : 'ITM';
       const timestamp = Date.now().toString().slice(-6);
       
-      return `${categoryCode}-${subcategoryCode}-${titleCode}-${timestamp}`;
+      return `${categoryCode}-${subcategoryCode}-${itemCode}-${timestamp}`;
     };
 
-    const productSku = sku || generateProductSKU(categoryDoc, subcategory, title);
+    const productSku = sku || generateProductSKU(categoryDoc, subcategoryInfo.name, itemInfo.name, title);
 
-    // ✅ FIX 1: Transform images from string array to object array
+    // Transform images from string array to object array
     const transformedImages = Array.isArray(images) 
       ? images.map((imageUrl, index) => ({
           url: typeof imageUrl === 'string' ? imageUrl : imageUrl.url,
@@ -254,33 +284,34 @@ export const createProduct = async (req, res, next) => {
         }))
       : [];
 
-    // ✅ FIX 2: Transform variants to match schema requirements
+    // Transform variants to match schema requirements
     const transformedVariants = Array.isArray(variants) 
       ? variants.map(variant => ({
-          name: variant.name || variant.size || 'Size', // Use 'name' field as required by schema
-          value: variant.value || variant.size || variant.count || 'Default', // Use 'value' field as required by schema
+          name: variant.name || variant.size || 'Size',
+          value: variant.value || variant.size || variant.count || 'Default',
           price: variant.price || 0,
           stock: variant.stock || 0,
           sku: variant.sku || '',
-          // Keep original fields for reference
           originalData: variant
         }))
       : [];
 
+    // ✅ FIXED: Create product with proper hierarchy structure
     const product = await Product.create({
       title,
       description,
       price,
       salePrice,
-      images: transformedImages, // ✅ Use transformed images
+      images: transformedImages,
       category: categoryDoc._id,
-      subcategory,
+      subcategory: subcategoryInfo, // ✅ Object with _id and name
+      item: itemInfo,              // ✅ Object with _id, name, and slug
       brand: brandDoc._id,
       rating,
       reviewCount,
       stock,
       tags,
-      variants: transformedVariants, // ✅ Use transformed variants
+      variants: transformedVariants,
       featured,
       trending,
       createdAt,
@@ -293,31 +324,6 @@ export const createProduct = async (req, res, next) => {
     const populatedProduct = await Product.findById(product._id)
       .populate('brand', 'name logo')
       .populate('category', 'name slug');
-
-    // Add subcategory info to the response
-    if (subcategory && categoryDoc.subcategories) {
-      const subcatInfo = categoryDoc.subcategories.find(sub => 
-        sub.name === subcategory || sub.slug === subcategory
-      );
-      populatedProduct._doc.subcategoryInfo = subcatInfo || null;
-    }
-
-    // Send notification to all admins (example event)
-    try {
-      // Find all admin users
-      const admins = await mongoose.model('User').find({ role: 'admin' }).select('_id');
-      const adminIds = admins.map(admin => admin._id);
-
-      // To consult NotificationEvent.js, use:
-      await NotificationService.triggerEvent(adminIds, 'product_created', {
-        title: populatedProduct.title,
-        productId: populatedProduct._id,
-        category: categoryDoc.name,
-        subcategory: subcategory || 'General'
-      });
-    } catch (notifError) {
-      console.error('Failed to send admin notification:', notifError);
-    }
 
     res.status(201).json({
       success: true,
