@@ -18,16 +18,16 @@ import toast from 'react-hot-toast';
 // Updated Visa Promo Banner component with minimal top margin
 const VisaPromoBanner = () => {
   return (
-    <section className="relative overflow-hidden mt-2">
-      <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
-        <div className="w-full bg-gradient-to-r from-blue-900 to-blue-700 text-white text-center border-b border-blue-800 shadow-sm rounded-b-2xl px-3 py-2 sm:py-3 overflow-hidden">
-          <p className="text-xs sm:text-sm md:text-base font-medium animate-pulse leading-snug">
-            🎉 Use code <span className="font-bold text-yellow-300">VISA500</span> to save 500 KES with Visa.
-            <a href="/terms" className="underline ml-1 hover:opacity-80 whitespace-nowrap">T&Cs Apply</a>
-          </p>
-        </div>
-      </div>
-    </section>
+    <section className="relative overflow-hidden mt-4 sm:mt-1">
+  <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
+    <div className="w-full bg-gradient-to-r from-blue-900 to-blue-700 text-white text-center border border-blue-800 shadow-sm rounded-2xl px-2 py-2 sm:px-3 sm:py-3 overflow-hidden">
+      <p className="text-[11px] xs:text-xs sm:text-sm md:text-base font-medium animate-pulse leading-snug">
+        ⚡ Get <span className="font-bold text-yellow-300">FREE delivery</span> on orders above 2,000 KES.
+      </p>
+    </div>
+  </div>
+</section>
+
   );
 };
 
@@ -50,17 +50,17 @@ const Home = () => {
   const banners = [
     {
       id: 1,
-      image: "/assets/Gray and Black Minimalist Fashion Style Banner (1).jpg",
+      image: "/assets/Banner ecommerce smartwatch electronics store product promotion dropshipping offer instagram stories (1).mp4",
       ctaLink: "/shop/new-arrivals"
     },
     {
       id: 2,
-      image: "/assets/Black White Minimalist Gaming Banner Landscape.jpg",
+      image: "/assets/22af748c6ba4975c1ba122c769ba8ed99f3ade899c16be44a3c4e849924d9a08.jpg",
       ctaLink: "/shop/audio"
     },
     {
       id: 3,
-      image: "/assets/Yellow and Green Modern Food Delivery Service Banner Landscape.jpg",
+      image: "/assets/Blue Photo Beauty Skincare Blog Banner (2).jpg",
       ctaLink: "/shop/organic"
     },
     {
@@ -152,16 +152,23 @@ const Home = () => {
     setNewsletterLoading(false);
   };
 
-  // Add these handler functions to actually use the context methods
-  const handleAddToCart = (product) => {
+  // Update the handlers to prevent event bubbling
+  const handleAddToCart = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
     addToCart(product);
+    toast.success('Added to cart!');
   };
 
-  const handleWishlistToggle = (product) => {
+  const handleWishlistToggle = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (isInWishlist(product._id || product.id)) {
       removeFromWishlist(product._id || product.id);
+      toast.success('Removed from wishlist');
     } else {
-      addToWishlist({ id: product._id || product.id });
+      addToWishlist(product);
+      toast.success('Added to wishlist!');
     }
   };
 
@@ -198,15 +205,26 @@ const Home = () => {
                   key={banner.id}
                   className="w-full h-full flex-shrink-0 relative"
                 >
-                  <img
-                    src={banner.image}
-                    alt={`Banner ${banner.id}`}
-                    className="w-full h-full object-cover object-center"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
+                  {banner.image.endsWith('.mp4') ? (
+                    <video
+                      src={banner.image}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover object-center"
+                    />
+                  ) : (
+                    <img
+                      src={banner.image}
+                      alt={`Banner ${banner.id}`}
+                      className="w-full h-full object-cover object-center"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  )}
                   {/* Shop Now button removed */}
                 </div>
               ))}
@@ -383,72 +401,74 @@ const Home = () => {
           >
             {featuredProducts.map((product) => (
               <SwiperSlide key={product._id || product.id}>
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
-                  <div className="aspect-square overflow-hidden relative">
-                    <img 
-                      src={product.images?.[0]?.url || product.images?.[0] || ''}
-                      alt={product.title}
-                      className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
-                    />
-                    {product.salePrice && (
-                      <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
-                        -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
-                    <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
-                      <span className="line-clamp-2">
-                        {product.title}
-                      </span>
-                    </h3>
-                    <div className="mt-1">
-                      <div className="flex items-baseline">
-                        <p className="text-base font-bold sm:text-lg text-red-600">
-                          KES {product.salePrice || product.price}
-                        </p>
-                        {product.salePrice && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
-                            KES {product.price}
-                          </span>
-                        )}
-                      </div>
+                <Link to={`/product/${product._id || product.id}`} className="block">
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+                    <div className="aspect-square overflow-hidden relative">
+                      <img 
+                        src={product.images?.[0]?.url || product.images?.[0] || ''}
+                        alt={product.title}
+                        className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
+                      />
                       {product.salePrice && (
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                          Save KES {Math.floor(product.price - product.salePrice)}
-                        </p>
+                        <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                          -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                        </div>
                       )}
                     </div>
-                    <div className="flex-grow"></div>
-                    <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
-                      >
-                        <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Add to Cart</span>
-                      </button>
-                      <button
-                        onClick={() => handleWishlistToggle(product)}
-                        className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
-                          isInWishlist(product._id)
-                            ? 'bg-red-50 border-red-200 text-red-600'
-                            : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                        } flex items-center justify-center`}
-                      >
-                        <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
-                      </button>
+                    <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
+                      <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
+                        <span className="line-clamp-2">
+                          {product.title}
+                        </span>
+                      </h3>
+                      <div className="mt-1">
+                        <div className="flex items-baseline">
+                          <p className="text-base font-bold sm:text-lg text-red-600">
+                            KES {product.salePrice || product.price}
+                          </p>
+                          {product.salePrice && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                              KES {product.price}
+                            </span>
+                          )}
+                        </div>
+                        {product.salePrice && (
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                            Save KES {Math.floor(product.price - product.salePrice)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-grow"></div>
+                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                        <button
+                          onClick={(e) => handleAddToCart(e, product)}
+                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+                        >
+                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>Add to Cart</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleWishlistToggle(e, product)}
+                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                            isInWishlist(product._id)
+                              ? 'bg-red-50 border-red-200 text-red-600'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                          } flex items-center justify-center`}
+                        >
+                          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </SwiperSlide>
             ))}
           </Swiper>
 
           <div className="text-center mt-6 sm:mt-8">
             <Link
-              to="/shop"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors w-full max-w-xs mx-auto"
+              to="/shop?sort=check-this-out"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors max-w-xs mx-auto"
             >
               View All Products
             </Link>
@@ -588,72 +608,74 @@ const Home = () => {
           >
             {newArrivalProducts.map((product) => (
               <SwiperSlide key={product._id || product.id}>
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
-                  <div className="aspect-square overflow-hidden relative">
-                    <img 
-                      src={product.images?.[0]?.url || product.images?.[0] || ''}
-                      alt={product.title}
-                      className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
-                    />
-                    {product.salePrice && (
-                      <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
-                        -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
-                    <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
-                      <span className="line-clamp-2">
-                        {product.title}
-                      </span>
-                    </h3>
-                    <div className="mt-1">
-                      <div className="flex items-baseline">
-                        <p className="text-base font-bold sm:text-lg text-red-600">
-                          KES {product.salePrice || product.price}
-                        </p>
-                        {product.salePrice && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
-                            KES {product.price}
-                          </span>
-                        )}
-                      </div>
+                <Link to={`/product/${product._id || product.id}`} className="block">
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+                    <div className="aspect-square overflow-hidden relative">
+                      <img 
+                        src={product.images?.[0]?.url || product.images?.[0] || ''}
+                        alt={product.title}
+                        className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
+                      />
                       {product.salePrice && (
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                          Save KES {Math.floor(product.price - product.salePrice)}
-                        </p>
+                        <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                          -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                        </div>
                       )}
                     </div>
-                    <div className="flex-grow"></div>
-                    <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
-                      >
-                        <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Add to Cart</span>
-                      </button>
-                      <button
-                        onClick={() => handleWishlistToggle(product)}
-                        className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
-                          isInWishlist(product._id)
-                            ? 'bg-red-50 border-red-200 text-red-600'
-                            : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                        } flex items-center justify-center`}
-                      >
-                        <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
-                      </button>
+                    <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
+                      <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
+                        <span className="line-clamp-2">
+                          {product.title}
+                        </span>
+                      </h3>
+                      <div className="mt-1">
+                        <div className="flex items-baseline">
+                          <p className="text-base font-bold sm:text-lg text-red-600">
+                            KES {product.salePrice || product.price}
+                          </p>
+                          {product.salePrice && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                              KES {product.price}
+                            </span>
+                          )}
+                        </div>
+                        {product.salePrice && (
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                            Save KES {Math.floor(product.price - product.salePrice)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-grow"></div>
+                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                        <button
+                          onClick={(e) => handleAddToCart(e, product)}
+                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+                        >
+                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>Add to Cart</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleWishlistToggle(e, product)}
+                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                            isInWishlist(product._id)
+                              ? 'bg-red-50 border-red-200 text-red-600'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                          } flex items-center justify-center`}
+                        >
+                          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </SwiperSlide>
             ))}
           </Swiper>
 
           <div className="text-center mt-6 sm:mt-8">
             <Link
-              to="/shop?sort=newest"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors w-full max-w-xs mx-auto"
+              to="/shop?sort=check-this-out"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors max-w-xs mx-auto"
             >
               View All Products
             </Link>
@@ -707,70 +729,72 @@ const Home = () => {
           >
             {trendingProducts.map((product, index) => (
               <SwiperSlide key={product._id || product.id}>
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
-                  <div className="aspect-square overflow-hidden relative">
-                    <img 
-                      src={product.images?.[0]?.url || product.images?.[0] || ''}
-                      alt={product.title}
-                      className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
-                    />
-                    <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
-                      #{index + 1} Trending
+                <Link to={`/product/${product._id || product.id}`} className="block">
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+                    <div className="aspect-square overflow-hidden relative">
+                      <img 
+                        src={product.images?.[0]?.url || product.images?.[0] || ''}
+                        alt={product.title}
+                        className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
+                      />
+                      <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                        #{index + 1} Trending
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
-                    <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
-                      <span className="line-clamp-2">
-                        {product.title}
-                      </span>
-                    </h3>
-                    <div className="mt-1">
-                      <div className="flex items-baseline">
-                        <p className="text-base font-bold sm:text-lg text-red-600">
-                          KES {product.salePrice || product.price}
-                        </p>
+                    <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
+                      <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
+                        <span className="line-clamp-2">
+                          {product.title}
+                        </span>
+                      </h3>
+                      <div className="mt-1">
+                        <div className="flex items-baseline">
+                          <p className="text-base font-bold sm:text-lg text-red-600">
+                            KES {product.salePrice || product.price}
+                          </p>
+                          {product.salePrice && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                              KES {product.price}
+                            </span>
+                          )}
+                        </div>
                         {product.salePrice && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
-                            KES {product.price}
-                          </span>
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                            Save KES {Math.floor(product.price - product.salePrice)}
+                          </p>
                         )}
                       </div>
-                      {product.salePrice && (
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                          Save KES {Math.floor(product.price - product.salePrice)}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex-grow"></div>
-                    <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
-                      >
-                        <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Add to Cart</span>
-                      </button>
-                      <button
-                        onClick={() => handleWishlistToggle(product)}
-                        className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
-                          isInWishlist(product._id)
-                            ? 'bg-red-50 border-red-200 text-red-600'
-                            : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                        } flex items-center justify-center`}
-                      >
-                        <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
-                      </button>
+                      <div className="flex-grow"></div>
+                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                        <button
+                          onClick={(e) => handleAddToCart(e, product)}
+                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+                        >
+                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>Add to Cart</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleWishlistToggle(e, product)}
+                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                            isInWishlist(product._id)
+                              ? 'bg-red-50 border-red-200 text-red-600'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                          } flex items-center justify-center`}
+                        >
+                          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </SwiperSlide>
             ))}
           </Swiper>
 
           <div className="text-center mt-6 sm:mt-8">
             <Link
-              to="/shop?sort=just-for-you"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors w-full max-w-xs mx-auto"
+              to="/shop?sort=check-this-out"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors max-w-xs mx-auto"
             >
               View All Products
             </Link>
@@ -827,64 +851,66 @@ const Home = () => {
              
               return (
                 <SwiperSlide key={product._id || product.id}>
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
-                    <div className="aspect-square overflow-hidden relative">
-                      <img 
-                        src={product.images?.[0]?.url || product.images?.[0] || ''}
-                        alt={product.title}
-                        className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
-                      />
-                      {product.salePrice && (
-                        <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
-                          -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
-                      <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
-                        <span className="line-clamp-2">
-                          {product.title}
-                        </span>
-                      </h3>
-                      <div className="mt-1">
-                        <div className="flex items-baseline">
-                          <p className="text-base font-bold sm:text-lg text-red-600">
-                            KES {product.salePrice || product.price}
-                          </p>
-                          {product.salePrice && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
-                              KES {product.price}
-                            </span>
-                          )}
-                        </div>
+                  <Link to={`/product/${product._id || product.id}`} className="block">
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+                      <div className="aspect-square overflow-hidden relative">
+                        <img 
+                          src={product.images?.[0]?.url || product.images?.[0] || ''}
+                          alt={product.title}
+                          className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
+                        />
                         {product.salePrice && (
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                            Save KES {Math.floor(product.price - product.salePrice)}
-                          </p>
+                          <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                            -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                          </div>
                         )}
                       </div>
-                      <div className="flex-grow"></div>
-                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
-                        >
-                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span>Add to Cart</span>
-                        </button>
-                        <button
-                          onClick={() => handleWishlistToggle(product)}
-                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
-                            isInWishlist(product._id)
-                              ? 'bg-red-50 border-red-200 text-red-600'
-                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                          } flex items-center justify-center`}
-                        >
-                          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
-                        </button>
+                      <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
+                        <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
+                          <span className="line-clamp-2">
+                            {product.title}
+                          </span>
+                        </h3>
+                        <div className="mt-1">
+                          <div className="flex items-baseline">
+                            <p className="text-base font-bold sm:text-lg text-red-600">
+                              KES {product.salePrice || product.price}
+                            </p>
+                            {product.salePrice && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
+                                KES {product.price}
+                              </span>
+                            )}
+                          </div>
+                          {product.salePrice && (
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                              Save KES {Math.floor(product.price - product.salePrice)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex-grow"></div>
+                        <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+                          <button
+                            onClick={(e) => handleAddToCart(e, product)}
+                            className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+                          >
+                            <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span>Add to Cart</span>
+                          </button>
+                          <button
+                            onClick={(e) => handleWishlistToggle(e, product)}
+                            className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+                              isInWishlist(product._id)
+                                ? 'bg-red-50 border-red-200 text-red-600'
+                                : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                            } flex items-center justify-center`}
+                          >
+                            <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </SwiperSlide>
               );
             })}
