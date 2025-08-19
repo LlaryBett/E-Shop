@@ -353,6 +353,8 @@ const Home = () => {
           ))}
         </div>
       </div>
+      
+
 
       {/* Enhanced Featured Products */}
       <section className="py-3 sm:py-4 md:py-6">
@@ -561,6 +563,8 @@ const Home = () => {
         </div>
       </section>
 
+      
+
       {/* New Arrivals */}
       <section className="py-3 sm:py-4 md:py-6">
         <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6">
@@ -682,6 +686,27 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+    
+
+<section className="relative overflow-hidden mt-4">
+  <div className="max-w-[1320px] mx-auto px-4 lg:px-6">
+    <div
+      className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
+      style={{ aspectRatio: '4.6875/1' }}
+    >
+      <Link to="/shop">
+        <img
+          src="/assets/E-SHOP BRAND.jpg"
+          alt="E-Shop Brand Banner"
+          className="w-full h-full object-cover object-center cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
+          loading="lazy"
+        />
+      </Link>
+    </div>
+  </div>
+</section>
+
 
       {/* Just for you */}
       <section className="py-3 sm:py-4 md:py-6">
