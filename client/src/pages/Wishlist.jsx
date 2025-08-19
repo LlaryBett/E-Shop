@@ -410,13 +410,13 @@ const Wishlist = () => {
           )}
 
           <div className="text-center mt-6 sm:mt-8">
-            <Link
-              to="/shop"
-              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 sm:px-6 sm:py-3 font-medium transition-colors w-full max-w-xs mx-auto text-xs sm:text-sm"
-            >
-              View All Products
-            </Link>
-          </div>
+                      <Link
+                        to="/shop?sort=check-this-out"
+                        className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium transition-colors max-w-xs mx-auto"
+                      >
+                        View All Products
+                      </Link>
+                    </div>
         </section>
       </div>
     </div>

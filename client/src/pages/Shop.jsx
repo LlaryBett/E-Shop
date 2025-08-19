@@ -479,138 +479,381 @@ const Shop = () => {
           </div>
         </div>
 
-        {/* Mobile Backdrop */}
-        {showFilters && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-            onClick={() => setShowFilters(false)}
-          />
-        )}
+     
 
-        <div className="flex gap-8">
-          {/* Filter Sidebar - Same as before */}
-          <div 
-            id="filter-sidebar"
-            className={`
-              fixed lg:static inset-y-0 left-0 z-40 w-4/5 max-w-sm lg:w-64
-              transform ${showFilters ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
-              transition-transform duration-300 ease-in-out
-              bg-white dark:bg-gray-800 shadow-xl lg:shadow-none
-              overflow-y-auto
-              space-y-6
-            `}
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md lg:shadow-none">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Clear All
-                </button>
-              </div>
+{/* Mobile Backdrop */}
+{showFilters && (
+  <div 
+    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+    onClick={() => setShowFilters(false)}
+  />
+)}
 
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3">Categories</h4>
-                <div className="space-y-2">
-                  {categories.map(category => (
-                    <label key={category} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={filters.categories?.includes(category) || false}
-                        onChange={() => handleCategoryFilter(category)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{category}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+{/* Floating Filter Button - Only visible on mobile/tablet */}
+<div className="lg:hidden">
+  <button
+    onClick={() => setShowFilters(true)}
+    className="fixed bottom-6 right-6 z-30 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110"
+  >
+    <div className="relative">
+      <Filter className="h-6 w-6" />
+      {/* Active filters badge */}
+      {(filters.categories?.length > 0 || 
+        filters.brands?.length > 0 || 
+        filters.rating > 0 || 
+        filters.inStock || 
+        filters.onSale || 
+        (filters.priceRange && filters.priceRange[1] < 2000)
+       ) && (
+        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          {[
+            ...(filters.categories || []),
+            ...(filters.brands || []),
+            filters.rating > 0 ? 1 : 0,
+            filters.inStock ? 1 : 0,
+            filters.onSale ? 1 : 0,
+            (filters.priceRange && filters.priceRange[1] < 2000) ? 1 : 0
+          ].filter(Boolean).length}
+        </div>
+      )}
+    </div>
+  </button>
+</div>
 
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3">Brands</h4>
-                <div className="space-y-2">
-                  {Object.entries(brands).map(([brandId, brandName]) => (
-                    <label key={brandId} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={filters.brands?.includes(brandId) || false}
-                        onChange={() => handleBrandFilter(brandId)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{brandName}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+<div className="flex gap-8">
+  {/* Desktop Sidebar - Hidden on mobile, visible on lg+ */}
+  <div className="hidden lg:block w-64">
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md sticky top-28">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
+        <button
+          onClick={clearFilters}
+          className="text-sm text-blue-600 hover:text-blue-700"
+        >
+          Clear All
+        </button>
+      </div>
 
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3">Price Range</h4>
-                <div className="space-y-2">
-                  <input
-                    type="range"
-                    min="0"
-                    max="2000"
-                    value={filters.priceRange?.[1] || 2000}
-                    onChange={(e) => handleFilterChange('priceRange', [0, parseInt(e.target.value)])}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>Ksh 0</span>
-                    <span>Ksh {filters.priceRange?.[1] || 2000}</span>
-                  </div>
-                </div>
-              </div>
+      {/* Desktop Filter Content */}
+      <div className="space-y-6">
+        {/* Categories */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3">Categories</h4>
+          <div className="space-y-2">
+            {categories.map(category => (
+              <label key={category} className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={filters.categories?.includes(category) || false}
+                  onChange={() => handleCategoryFilter(category)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{category}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3">Minimum Rating</h4>
-                <div className="space-y-2">
-                  {[4, 3, 2, 1].map(rating => (
-                    <label key={rating} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="rating"
-                        checked={filters.rating === rating}
-                        onChange={() => handleFilterChange('rating', rating)}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <div className="ml-2 flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                          />
-                        ))}
-                        <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">& up</span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
+        {/* Brands */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3">Brands</h4>
+          <div className="space-y-2">
+            {Object.entries(brands).map(([brandId, brandName]) => (
+              <label key={brandId} className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={filters.brands?.includes(brandId) || false}
+                  onChange={() => handleBrandFilter(brandId)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{brandName}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-              <div className="space-y-3">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={filters.inStock || false}
-                    onChange={(e) => handleFilterChange('inStock', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">In Stock Only</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={filters.onSale || false}
-                    onChange={(e) => handleFilterChange('onSale', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">On Sale</span>
-                </label>
-              </div>
+        {/* Price Range */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3">Price Range</h4>
+          <div className="space-y-2">
+            <input
+              type="range"
+              min="0"
+              max="2000"
+              value={filters.priceRange?.[1] || 2000}
+              onChange={(e) => handleFilterChange('priceRange', [0, parseInt(e.target.value)])}
+              className="w-full"
+            />
+            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+              <span>Ksh 0</span>
+              <span>Ksh {filters.priceRange?.[1] || 2000}</span>
             </div>
           </div>
+        </div>
+
+        {/* Rating */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3">Minimum Rating</h4>
+          <div className="space-y-2">
+            {[4, 3, 2, 1].map(rating => (
+              <label key={rating} className="flex items-center">
+                <input
+                  type="radio"
+                  name="rating"
+                  checked={filters.rating === rating}
+                  onChange={() => handleFilterChange('rating', rating)}
+                  className="text-blue-600 focus:ring-blue-500"
+                />
+                <div className="ml-2 flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                    />
+                  ))}
+                  <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">& up</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Additional Filters */}
+        <div className="space-y-3">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={filters.inStock || false}
+              onChange={(e) => handleFilterChange('inStock', e.target.checked)}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">In Stock Only</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={filters.onSale || false}
+              onChange={(e) => handleFilterChange('onSale', e.target.checked)}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">On Sale</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Mobile Bottom Drawer */}
+  <div 
+    className={`
+      lg:hidden fixed inset-x-0 bottom-0 z-50
+      transform transition-transform duration-300 ease-out
+      ${showFilters ? 'translate-y-0' : 'translate-y-full'}
+    `}
+  >
+    <div className="bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl max-h-[80vh] flex flex-col mx-4 mb-4">
+      {/* Drawer Handle */}
+      <div className="flex items-center justify-center py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+      </div>
+
+      {/* Drawer Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center space-x-2">
+          <Filter className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
+          <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
+            {filteredProducts.length} products
+          </span>
+        </div>
+        <button
+          onClick={() => setShowFilters(false)}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+        >
+          <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+        </button>
+      </div>
+
+      {/* Scrollable Filter Content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Active Filters Summary */}
+        {(filters.categories?.length > 0 || 
+          filters.brands?.length > 0 || 
+          filters.rating > 0 || 
+          filters.inStock || 
+          filters.onSale || 
+          (filters.priceRange && filters.priceRange[1] < 2000)
+         ) && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-200">Active Filters</span>
+              <button
+                onClick={clearFilters}
+                className="text-xs text-blue-600 hover:text-blue-700"
+              >
+                Clear All
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filters.categories?.map(cat => (
+                <span key={cat} className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs">
+                  {cat}
+                </span>
+              ))}
+              {filters.brands?.map(brandId => (
+                <span key={brandId} className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs">
+                  {brands[brandId]}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Categories */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+            Categories
+            {filters.categories?.length > 0 && (
+              <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
+                {filters.categories.length}
+              </span>
+            )}
+          </h4>
+          <div className="grid grid-cols-1 gap-2">
+            {categories.map(category => (
+              <label key={category} className="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg">
+                <input
+                  type="checkbox"
+                  checked={filters.categories?.includes(category) || false}
+                  onChange={() => handleCategoryFilter(category)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">{category}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Brands */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+            Brands
+            {filters.brands?.length > 0 && (
+              <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
+                {filters.brands.length}
+              </span>
+            )}
+          </h4>
+          <div className="grid grid-cols-1 gap-2">
+            {Object.entries(brands).map(([brandId, brandName]) => (
+              <label key={brandId} className="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg">
+                <input
+                  type="checkbox"
+                  checked={filters.brands?.includes(brandId) || false}
+                  onChange={() => handleBrandFilter(brandId)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">{brandName}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Price Range */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+            Price Range: Ksh 0 - {filters.priceRange?.[1] || 2000}
+          </h4>
+          <div className="space-y-3">
+            <input
+              type="range"
+              min="0"
+              max="2000"
+              value={filters.priceRange?.[1] || 2000}
+              onChange={(e) => handleFilterChange('priceRange', [0, parseInt(e.target.value)])}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb:bg-blue-600"
+            />
+            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+              <span>Ksh 0</span>
+              <span>Ksh 2000</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Rating */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3">Minimum Rating</h4>
+          <div className="space-y-2">
+            {[4, 3, 2, 1].map(rating => (
+              <label key={rating} className="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg">
+                <input
+                  type="radio"
+                  name="rating"
+                  checked={filters.rating === rating}
+                  onChange={() => handleFilterChange('rating', rating)}
+                  className="text-blue-600 focus:ring-blue-500"
+                />
+                <div className="ml-3 flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                    />
+                  ))}
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">& up</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Additional Options */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3">Other Options</h4>
+          <div className="space-y-2">
+            <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <span className="text-sm text-gray-700 dark:text-gray-300">In Stock Only</span>
+              <input
+                type="checkbox"
+                checked={filters.inStock || false}
+                onChange={(e) => handleFilterChange('inStock', e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </label>
+            <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <span className="text-sm text-gray-700 dark:text-gray-300">On Sale</span>
+              <input
+                type="checkbox"
+                checked={filters.onSale || false}
+                onChange={(e) => handleFilterChange('onSale', e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Drawer Footer */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+        <div className="flex gap-3">
+          <button
+            onClick={clearFilters}
+            className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors font-medium"
+          >
+            Reset
+          </button>
+          <button
+            onClick={() => setShowFilters(false)}
+            className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2"
+          >
+            <span>View {filteredProducts.length} Products</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ 
 
           {/* Products Display */}
           <div className="flex-1">
