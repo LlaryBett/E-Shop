@@ -404,65 +404,65 @@ const Home = () => {
             {featuredProducts.map((product) => (
               <SwiperSlide key={product._id || product.id}>
                 <Link to={`/product/${product._id || product.id}`} className="block">
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
-                    <div className="aspect-square overflow-hidden relative">
-                      <img 
-                        src={product.images?.[0]?.url || product.images?.[0] || ''}
-                        alt={product.title}
-                        className="w-full h-40 sm:h-48 object-cover rounded-t-lg"
-                      />
-                      {product.salePrice && (
-                        <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
-                          -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3 flex flex-col" style={{ minHeight: '140px' }}>
-                      <h3 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white leading-tight h-8 sm:h-10 overflow-hidden">
-                        <span className="line-clamp-2">
-                          {product.title}
-                        </span>
-                      </h3>
-                      <div className="mt-1">
-                        <div className="flex items-baseline">
-                          <p className="text-base font-bold sm:text-lg text-red-600">
-                            KES {product.salePrice || product.price}
-                          </p>
-                          {product.salePrice && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">
-                              KES {product.price}
-                            </span>
-                          )}
-                        </div>
-                        {product.salePrice && (
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                            Save KES {Math.floor(product.price - product.salePrice)}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex-grow"></div>
-                      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
-                        <button
-                          onClick={(e) => handleAddToCart(e, product)}
-                          className="flex-[0.85] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
-                        >
-                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span>Add to Cart</span>
-                        </button>
-                        <button
-                          onClick={(e) => handleWishlistToggle(e, product)}
-                          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
-                            isInWishlist(product._id)
-                              ? 'bg-red-50 border-red-200 text-red-600'
-                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                          } flex items-center justify-center`}
-                        >
-                          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900">
+    <div className="overflow-hidden relative">
+      <img 
+        src={product.images?.[0]?.url || product.images?.[0] || ''}
+        alt={product.title}
+        className="w-full max-h-32 sm:max-h-48 object-contain rounded-t-lg"
+      />
+      {product.salePrice && (
+        <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+          -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+        </div>
+      )}
+    </div>
+    <div className="p-2 sm:p-3 flex flex-col" style={{ minHeight: '120px' }}>
+      <h3 className="font-medium text-[10px] sm:text-sm text-gray-900 dark:text-white leading-tight h-6 sm:h-10 overflow-hidden">
+        <span className="line-clamp-2">
+          {product.title}
+        </span>
+      </h3>
+      <div className="mt-1">
+        <div className="flex items-baseline">
+          <p className="text-sm font-bold sm:text-lg text-red-600">
+            KES {product.salePrice || product.price}
+          </p>
+          {product.salePrice && (
+            <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 line-through ml-1 sm:ml-2">
+              KES {product.price}
+            </span>
+          )}
+        </div>
+        {product.salePrice && (
+          <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 mt-0.5">
+            Save KES {Math.floor(product.price - product.salePrice)}
+          </p>
+        )}
+      </div>
+      <div className="flex-grow"></div>
+      <div className="flex items-center gap-0.5 sm:gap-1 mt-1 pt-1">
+        <button
+          onClick={(e) => handleAddToCart(e, product)}
+          className="flex-[0.85] px-2 py-1 sm:px-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-[10px] sm:text-sm"
+        >
+          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+          <span>Add to Cart</span>
+        </button>
+        <button
+          onClick={(e) => handleWishlistToggle(e, product)}
+          className={`flex-[0.15] p-1.5 sm:p-2 rounded-lg border transition-colors ${
+            isInWishlist(product._id)
+              ? 'bg-red-50 border-red-200 text-red-600'
+              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+          } flex items-center justify-center`}
+        >
+          <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+        </button>
+      </div>
+    </div>
+  </div>
+</Link>
               </SwiperSlide>
             ))}
           </Swiper>
