@@ -21,52 +21,71 @@ const Wishlist = () => {
 
   useEffect(() => {
     const fetchRelatedProducts = async () => {
-      if (!items.length) return;
+      if (!items?.length) {
+      
+        return;
+      }
       
       try {
         setLoadingRelated(true);
+       // Debug: Log full items array
         
-        // Try different ways to access category information
-        const categoryIds = [];
-        
-        // Try to extract category from different possible structures
-        items.forEach(item => {
-          const product = item.product;
+        // Find first valid product
+        const validItem = items.find(item => item?.product && (item.product?._id || item.product?.id));
+        if (!validItem) {
           
-          // Try different ways the category ID might be stored
-          if (product.category?._id) {
-            categoryIds.push(product.category._id);
-          } else if (product.category?.id) {
-            categoryIds.push(product.category.id);
-          } else if (product.categoryId) {
-            categoryIds.push(product.categoryId);
-          } else if (typeof product.category === 'string') {
-            categoryIds.push(product.category);
-          }
-        });
-        
-        // Use the first category ID to fetch related products
-        if (categoryIds.length > 0) {
-          // Get the first product ID to exclude it from results
-          const excludeProductId = items[0].product._id || items[0].product.id;
-          
-          // As a fallback, if we can't get related products by category, use a hardcoded category
-          const products = await ProductService.getRelatedProducts(
-            excludeProductId, 
-            categoryIds[0] || "electronics" // Fallback to a default category
-          );
-          
-          setRelatedProducts(products || []);
-        } else {
-          // Fallback to get some products using a default category
-          const defaultCategory = "electronics";
-          const excludeProductId = items[0].product._id || items[0].product.id;
-          const products = await ProductService.getRelatedProducts(excludeProductId, defaultCategory);
-          
-          setRelatedProducts(products || []);
+          return;
         }
+
+        const firstProduct = validItem.product;
+     
+
+        // Safely get category ID
+        let categoryId;
+        if (firstProduct.category) {
+          if (typeof firstProduct.category === 'object') {
+            categoryId = firstProduct.category._id || firstProduct.category.id;
+          } else {
+            categoryId = firstProduct.category;
+          }
+        } else {
+          categoryId = firstProduct.categoryId;
+        }
+
+         // Debug: Log found category ID
+
+        if (!categoryId) {
+          
+          return;
+        }
+
+        const response = await ProductService.getRelatedProducts(
+          firstProduct._id || firstProduct.id, 
+          categoryId
+        );
+        
+        
+        // Handle various response structures
+        let products;
+        if (Array.isArray(response)) {
+          products = response;
+        } else if (Array.isArray(response?.data)) {
+          products = response.data;
+        } else if (Array.isArray(response?.data?.products)) {
+          products = response.data.products;
+        } else {
+          products = [];
+        }
+
+        // Debug: Log final products array
+        setRelatedProducts(products);
+
       } catch (error) {
-        // Silently handle errors
+        console.error('Detailed error in fetchRelatedProducts:', {
+          error,
+          errorMessage: error.message,
+          errorStack: error.stack
+        });
         setRelatedProducts([]);
       } finally {
         setLoadingRelated(false);
@@ -170,18 +189,22 @@ const Wishlist = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
-          {items.map((item) => {
+          {items.filter(item => item?.product).map((item) => {
             const product = item.product;
+            const productId = product?._id || product?.id;
+            
+            if (!productId) return null; // Skip invalid products
+            
             return (
               <div
-                key={product.id}
+                key={productId}
                 className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow h-full bg-white dark:bg-gray-900"
               >
                 <div className="h-36 sm:h-40 overflow-hidden relative">
-                  <Link to={`/product/${product.id}`}>
+                  <Link to={`/product/${productId}`}>
                     <img 
                       src={product.images?.[0]?.url || product.images?.[0] || ''}
-                      alt={product.title}
+                      alt={product.title || 'Product'}
                       className="w-full h-full object-cover rounded-t-lg"
                     />
                   </Link>
@@ -202,7 +225,7 @@ const Wishlist = () => {
 
                 <div className="px-3 pb-3 flex flex-col" style={{ minHeight: '120px' }}>
                   <h3 className="font-medium text-gray-900 dark:text-white text-sm sm:text-base leading-tight h-7 sm:h-8 overflow-hidden">
-                    <Link to={`/product/${product.id}`} className="hover:text-blue-600 transition-colors">
+                    <Link to={`/product/${productId}`} className="hover:text-blue-600 transition-colors">
                       <span className="line-clamp-2">
                         {product.title}
                       </span>

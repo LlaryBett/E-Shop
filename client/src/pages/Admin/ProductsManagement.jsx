@@ -27,6 +27,511 @@ import {
 import adminService from '../../services/adminService'; // adjust path if needed
 import * as XLSX from 'xlsx';
 
+const ProductModal = ({ 
+  isEdit = false,
+  formData,
+  formErrors,
+  modalLoading,
+  categories,
+  categoriesLoading,
+  brands,
+  brandsLoading,
+  subcategories,
+  items,
+  handleFormChange,
+  handleImageChange,
+  removeImage,
+  imagePreview,
+  setShowAddModal,
+  setShowEditModal,
+  setEditingProduct,
+  resetForm,
+  submitAddProduct,
+  submitEditProduct
+}) => {
+  const renderCategoryOptions = () => {
+    if (!Array.isArray(categories)) {
+      return <option value="">No categories available</option>;
+    }
+    return [
+      <option key="empty" value="">Select Category</option>,
+      ...categories.map(cat => (
+        <option key={cat._id} value={cat._id}>{cat.name}</option>
+      ))
+    ];
+  };
+
+  const renderBrandOptions = () => {
+    if (!Array.isArray(brands)) {
+      return <option value="">No brands available</option>;
+    }
+    return [
+      <option key="empty" value="">Select Brand</option>,
+      ...brands.map(brand => (
+        <option key={brand._id} value={brand._id}>{brand.name}</option>
+      ))
+    ];
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {isEdit ? 'Edit Product' : 'Add New Product'}
+          </h3>
+          <button 
+            onClick={() => {
+              if (isEdit) {
+                setShowEditModal(false);
+                setEditingProduct(null);
+              } else {
+                setShowAddModal(false);
+              }
+              resetForm();
+            }}
+            className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+            disabled={modalLoading}
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={(e) => e.preventDefault()} className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h4>
+              
+              {/* Product Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Product Name *
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                    formErrors.title ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="Enter product name"
+                  disabled={modalLoading}
+                />
+                {formErrors.title && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {formErrors.title}
+                  </p>
+                )}
+              </div>
+
+              {/* SKU */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  SKU *
+                </label>
+                <input
+                  type="text"
+                  name="sku"
+                  value={formData.sku}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                    formErrors.sku ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="Enter SKU"
+                  disabled={modalLoading}
+                />
+                {formErrors.sku && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {formErrors.sku}
+                  </p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  rows="4"
+                  value={formData.description}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter product description"
+                  disabled={modalLoading}
+                />
+              </div>
+            </div>
+
+            {/* Pricing and Inventory */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white">Pricing & Inventory</h4>
+              
+              {/* Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Regular Price (Ksh) *
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                    formErrors.price ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="0.00"
+                  disabled={modalLoading}
+                />
+                {formErrors.price && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {formErrors.price}
+                  </p>
+                )}
+              </div>
+
+              {/* Sale Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Sale Price (Ksh)
+                </label>
+                <input
+                  type="number"
+                  name="salePrice"
+                  step="0.01"
+                  value={formData.salePrice}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="0.00 (optional)"
+                  disabled={modalLoading}
+                />
+              </div>
+
+              {/* Stock */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Stock Quantity *
+                </label>
+                <input
+                  type="number"
+                  name="stock"
+                  value={formData.stock}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                    formErrors.stock ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="0"
+                  disabled={modalLoading}
+                />
+                {formErrors.stock && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {formErrors.stock}
+                  </p>
+                )}
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  disabled={modalLoading}
+                >
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="out-of-stock">Out of Stock</option>
+                  <option value="low-stock">Low Stock</option>
+                </select>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tags
+                </label>
+                <input
+                  type="text"
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="electronics, smartphone, mobile (comma separated)"
+                  disabled={modalLoading}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Category Hierarchy */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Category *
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleFormChange}
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  formErrors.category ? 'border-red-300' : 'border-gray-300'
+                }`}
+                disabled={categoriesLoading}
+              >
+                {categoriesLoading ? (
+                  <option value="">Loading categories...</option>
+                ) : (
+                  renderCategoryOptions()
+                )}
+              </select>
+              {formErrors.category && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.category}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Subcategory *
+              </label>
+              <select
+                name="subcategory"
+                value={formData.subcategory}
+                onChange={handleFormChange}
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  formErrors.subcategory ? 'border-red-300' : 'border-gray-300'
+                }`}
+                disabled={!formData.category}
+              >
+                <option value="">Select Subcategory</option>
+                {subcategories.map(sub => (
+                  <option key={sub._id} value={sub._id}>{sub.name}</option>
+                ))}
+              </select>
+              {formErrors.subcategory && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.subcategory}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Item *
+              </label>
+              <select
+                name="item"
+                value={formData.item}
+                onChange={handleFormChange}
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  formErrors.item ? 'border-red-300' : 'border-gray-300'
+                }`}
+                disabled={!formData.subcategory}
+              >
+                <option value="">Select Item</option>
+                {items.map(item => (
+                  <option key={item._id} value={item._id}>{item.name}</option>
+                ))}
+              </select>
+              {formErrors.item && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.item}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Brand *
+              </label>
+              <select
+                name="brand"
+                value={formData.brand}
+                onChange={handleFormChange}
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  formErrors.brand ? 'border-red-300' : 'border-gray-300'
+                }`}
+                disabled={brandsLoading}
+              >
+                {brandsLoading ? (
+                  <option value="">Loading brands...</option>
+                ) : (
+                  renderBrandOptions()
+                )}
+              </select>
+              {formErrors.brand && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.brand}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Additional Details */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Weight (kg)
+              </label>
+              <input
+                type="number"
+                name="weight"
+                step="0.01"
+                value={formData.weight}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="0.00"
+                disabled={modalLoading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Dimensions
+              </label>
+              <input
+                type="text"
+                name="dimensions"
+                value={formData.dimensions}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="L x W x H (cm)"
+                disabled={modalLoading}
+              />
+            </div>
+          </div>
+
+          {/* Featured and Trending Toggles */}
+          <div className="flex space-x-4 mt-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="featured"
+                checked={formData.featured}
+                onChange={(e) => handleFormChange({
+                  target: { name: 'featured', value: e.target.checked }
+                })}
+                className="rounded border-gray-300"
+              />
+              <span className="ml-2">Featured</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="trending"
+                checked={formData.trending}
+                onChange={(e) => handleFormChange({
+                  target: { name: 'trending', value: e.target.checked }
+                })}
+                className="rounded border-gray-300"
+              />
+              <span className="ml-2">Trending</span>
+            </label>
+          </div>
+
+          {/* Product Images */}
+          <div className="space-y-4 mb-6">
+            <h4 className="text-lg font-medium text-gray-900 dark:text-white">Product Images</h4>
+            
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Product Images (Max 5)
+              </label>
+              
+              {/* Image Preview Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                {imagePreview.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Upload Button */}
+              {formData.images.length < 5 && (
+                <div className="flex items-center justify-center w-full">
+                  <label className="w-full flex flex-col items-center px-4 py-6 bg-white dark:bg-gray-700 text-gray-400 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:border-gray-400 transition-colors">
+                    <Upload className="h-8 w-8 mb-2" />
+                    <span className="text-sm">Click to upload images</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      disabled={formData.images.length >= 5}
+                    />
+                  </label>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Supported formats: JPG, PNG, WEBP. Max 5 images.
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mt-8 flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={() => {
+                if (isEdit) {
+                  setShowEditModal(false);
+                  setEditingProduct(null);
+                } else {
+                  setShowAddModal(false);
+                }
+                resetForm();
+              }}
+              disabled={modalLoading}
+              className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={isEdit ? submitEditProduct : submitAddProduct}
+              disabled={modalLoading}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {modalLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  <span>{isEdit ? 'Updating...' : 'Creating...'}</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span>{isEdit ? 'Update Product' : 'Create Product'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const ProductsManagement = () => {
   // Backend product data
   const [products, setProducts] = useState([]);
@@ -316,499 +821,6 @@ const ProductsManagement = () => {
       imagePreview.forEach(url => URL.revokeObjectURL(url));
     };
   }, []);
-
-  // Modal Form Component
-  const ProductModal = ({ isEdit = false }) => {
-    const renderCategoryOptions = () => {
-      if (!Array.isArray(categories)) {
-        console.error('Categories is not an array:', categories);
-        return <option value="">No categories available</option>;
-      }
-
-      return [
-        <option key="empty" value="">Select Category</option>,
-        ...categories.map(cat => (
-          <option key={cat._id} value={cat._id}>
-            {cat.name}
-          </option>
-        ))
-      ];
-    };
-
-    const renderBrandOptions = () => {
-      if (!Array.isArray(brands)) {
-        console.error('Brands is not an array:', brands);
-        return <option value="">No brands available</option>;
-      }
-
-      return [
-        <option key="empty" value="">Select Brand</option>,
-        ...brands.map(brand => (
-          <option key={brand._id} value={brand._id}>
-            {brand.name}
-          </option>
-        ))
-      ];
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          {/* Header */}
-          <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {isEdit ? 'Edit Product' : 'Add New Product'}
-            </h3>
-            <button 
-              onClick={() => {
-                if (isEdit) {
-                  setShowEditModal(false);
-                  setEditingProduct(null);
-                } else {
-                  setShowAddModal(false);
-                }
-                resetForm();
-              }}
-              className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-              disabled={modalLoading}
-            >
-              <X className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={(e) => e.preventDefault()} className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h4>
-                
-                {/* Product Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Product Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleFormChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                      formErrors.title ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter product name"
-                    disabled={modalLoading}
-                  />
-                  {formErrors.title && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {formErrors.title}
-                    </p>
-                  )}
-                </div>
-
-                {/* SKU */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    SKU *
-                  </label>
-                  <input
-                    type="text"
-                    name="sku"
-                    value={formData.sku}
-                    onChange={handleFormChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                      formErrors.sku ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter SKU"
-                    disabled={modalLoading}
-                  />
-                  {formErrors.sku && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {formErrors.sku}
-                    </p>
-                  )}
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    rows="4"
-                    value={formData.description}
-                    onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter product description"
-                    disabled={modalLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Pricing and Inventory */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white">Pricing & Inventory</h4>
-                
-                {/* Price */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Regular Price (Ksh) *
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={handleFormChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                      formErrors.price ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="0.00"
-                    disabled={modalLoading}
-                  />
-                  {formErrors.price && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {formErrors.price}
-                    </p>
-                  )}
-                </div>
-
-                {/* Sale Price */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Sale Price (Ksh)
-                  </label>
-                  <input
-                    type="number"
-                    name="salePrice"
-                    step="0.01"
-                    value={formData.salePrice}
-                    onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="0.00 (optional)"
-                    disabled={modalLoading}
-                  />
-                </div>
-
-                {/* Stock */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Stock Quantity *
-                  </label>
-                  <input
-                    type="number"
-                    name="stock"
-                    value={formData.stock}
-                    onChange={handleFormChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                      formErrors.stock ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="0"
-                    disabled={modalLoading}
-                  />
-                  {formErrors.stock && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {formErrors.stock}
-                    </p>
-                  )}
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    disabled={modalLoading}
-                  >
-                    <option value="active">Active</option>
-                    <option value="draft">Draft</option>
-                    <option value="out-of-stock">Out of Stock</option>
-                    <option value="low-stock">Low Stock</option>
-                  </select>
-                </div>
-
-                {/* Tags */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tags
-                  </label>
-                  <input
-                    type="text"
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="electronics, smartphone, mobile (comma separated)"
-                    disabled={modalLoading}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Category Hierarchy */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Category *
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleFormChange}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    formErrors.category ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  disabled={categoriesLoading}
-                >
-                  {categoriesLoading ? (
-                    <option value="">Loading categories...</option>
-                  ) : (
-                    renderCategoryOptions()
-                  )}
-                </select>
-                {formErrors.category && (
-                  <p className="mt-1 text-sm text-red-600">{formErrors.category}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Subcategory *
-                </label>
-                <select
-                  name="subcategory"
-                  value={formData.subcategory}
-                  onChange={handleFormChange}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    formErrors.subcategory ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  disabled={!formData.category}
-                >
-                  <option value="">Select Subcategory</option>
-                  {subcategories.map(sub => (
-                    <option key={sub._id} value={sub._id}>{sub.name}</option>
-                  ))}
-                </select>
-                {formErrors.subcategory && (
-                  <p className="mt-1 text-sm text-red-600">{formErrors.subcategory}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Item *
-                </label>
-                <select
-                  name="item"
-                  value={formData.item}
-                  onChange={handleFormChange}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    formErrors.item ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  disabled={!formData.subcategory}
-                >
-                  <option value="">Select Item</option>
-                  {items.map(item => (
-                    <option key={item._id} value={item._id}>{item.name}</option>
-                  ))}
-                </select>
-                {formErrors.item && (
-                  <p className="mt-1 text-sm text-red-600">{formErrors.item}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Brand *
-                </label>
-                <select
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleFormChange}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    formErrors.brand ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  disabled={brandsLoading}
-                >
-                  {brandsLoading ? (
-                    <option value="">Loading brands...</option>
-                  ) : (
-                    renderBrandOptions()
-                  )}
-                </select>
-                {formErrors.brand && (
-                  <p className="mt-1 text-sm text-red-600">{formErrors.brand}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Additional Details */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Weight (kg)
-                </label>
-                <input
-                  type="number"
-                  name="weight"
-                  step="0.01"
-                  value={formData.weight}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="0.00"
-                  disabled={modalLoading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Dimensions
-                </label>
-                <input
-                  type="text"
-                  name="dimensions"
-                  value={formData.dimensions}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="L x W x H (cm)"
-                  disabled={modalLoading}
-                />
-              </div>
-            </div>
-
-            {/* Featured and Trending Toggles */}
-            <div className="flex space-x-4 mt-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="featured"
-                  checked={formData.featured}
-                  onChange={(e) => handleFormChange({
-                    target: { name: 'featured', value: e.target.checked }
-                  })}
-                  className="rounded border-gray-300"
-                />
-                <span className="ml-2">Featured</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="trending"
-                  checked={formData.trending}
-                  onChange={(e) => handleFormChange({
-                    target: { name: 'trending', value: e.target.checked }
-                  })}
-                  className="rounded border-gray-300"
-                />
-                <span className="ml-2">Trending</span>
-              </label>
-            </div>
-
-            {/* Product Images */}
-            <div className="space-y-4 mb-6">
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white">Product Images</h4>
-              
-              {/* Image Upload */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Product Images (Max 5)
-                </label>
-                
-                {/* Image Preview Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  {imagePreview.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Upload Button */}
-                {formData.images.length < 5 && (
-                  <div className="flex items-center justify-center w-full">
-                    <label className="w-full flex flex-col items-center px-4 py-6 bg-white dark:bg-gray-700 text-gray-400 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:border-gray-400 transition-colors">
-                      <Upload className="h-8 w-8 mb-2" />
-                      <span className="text-sm">Click to upload images</span>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageChange}
-                        disabled={formData.images.length >= 5}
-                      />
-                    </label>
-                  </div>
-                )}
-
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Supported formats: JPG, PNG, WEBP. Max 5 images.
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-8 flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={() => {
-                  if (isEdit) {
-                    setShowEditModal(false);
-                    setEditingProduct(null);
-                  } else {
-                    setShowAddModal(false);
-                  }
-                  resetForm();
-                }}
-                disabled={modalLoading}
-                className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={isEdit ? submitEditProduct : submitAddProduct}
-                disabled={modalLoading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                {modalLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>{isEdit ? 'Updating...' : 'Creating...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    <span>{isEdit ? 'Update Product' : 'Create Product'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
 
   // Submit add product
   const submitAddProduct = async () => {
@@ -1351,10 +1363,56 @@ const ProductsManagement = () => {
       </div>
 
       {/* Add Product Modal */}
-      {showAddModal && <ProductModal isEdit={false} />}
+      {showAddModal && (
+        <ProductModal 
+          isEdit={false}
+          formData={formData}
+          formErrors={formErrors}
+          modalLoading={modalLoading}
+          categories={categories}
+          categoriesLoading={categoriesLoading}
+          brands={brands}
+          brandsLoading={brandsLoading}
+          subcategories={subcategories}
+          items={items}
+          handleFormChange={handleFormChange}
+          handleImageChange={handleImageChange}
+          removeImage={removeImage}
+          imagePreview={imagePreview}
+          setShowAddModal={setShowAddModal}
+          setShowEditModal={setShowEditModal}
+          setEditingProduct={setEditingProduct}
+          resetForm={resetForm}
+          submitAddProduct={submitAddProduct}
+          submitEditProduct={submitEditProduct}
+        />
+      )}
 
       {/* Edit Product Modal */}
-      {showEditModal && <ProductModal isEdit={true} />}
+      {showEditModal && (
+        <ProductModal 
+          isEdit={true}
+          formData={formData}
+          formErrors={formErrors}
+          modalLoading={modalLoading}
+          categories={categories}
+          categoriesLoading={categoriesLoading}
+          brands={brands}
+          brandsLoading={brandsLoading}
+          subcategories={subcategories}
+          items={items}
+          handleFormChange={handleFormChange}
+          handleImageChange={handleImageChange}
+          removeImage={removeImage}
+          imagePreview={imagePreview}
+          setShowAddModal={setShowAddModal}
+          setShowEditModal={setShowEditModal}
+          setEditingProduct={setEditingProduct}
+          resetForm={resetForm}
+          submitAddProduct={submitAddProduct}
+          submitEditProduct={submitEditProduct}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

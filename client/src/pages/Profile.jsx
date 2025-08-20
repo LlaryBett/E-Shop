@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2, Bell, ShoppingBag, Heart, LogOut } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Edit3, Plus, Trash2, Bell, ShoppingBag, Heart, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNotifications } from '../contexts/NotificationsContext'; // Add the .jsx extension
+import { useNotifications } from '../contexts/NotificationsContext';
+import { useWishlist } from '../contexts/WishlistContext'; // Add this import
 import toast from 'react-hot-toast';
 import userService from '../services/userService';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const Profile = () => {
   const { user, logout } = useAuth();
+  const { items } = useWishlist(); // Add this hook
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
@@ -55,6 +57,12 @@ const Profile = () => {
     setSortBy,
     refresh: refreshNotifications
   } = useNotifications();
+
+  // Add getter for unread notifications count
+  const unreadNotificationsCount = getFilteredNotifications()?.filter(n => !n.isRead)?.length || 0;
+  
+  // Update getter to use items from wishlist context
+  const wishlistItemsCount = items?.length || 0;
 
   useEffect(() => {
     // If user context is updated after refresh, update state
@@ -313,7 +321,7 @@ const Profile = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full p-3 rounded-lg transition-colors flex items-center justify-center ${
+                    className={`w-full p-3 rounded-lg transition-colors flex items-center justify-center relative ${
                       activeTab === tab.id
                         ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -321,10 +329,25 @@ const Profile = () => {
                     title={tab.label}
                   >
                     <Icon className="h-5 w-5" />
+                    {/* Add notification badge */}
+                    {tab.id === 'notifications' && unreadNotificationsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                      </span>
+                    )}
                   </button>
                 );
               })}
               {/* --- Additional mobile-only icon buttons --- */}
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="w-full p-3 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  title="Admin Dashboard"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                </button>
+              )}
               <button
                 onClick={() => navigate('/orders')}
                 className="w-full p-3 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -332,13 +355,21 @@ const Profile = () => {
               >
                 <ShoppingBag className="h-5 w-5" />
               </button>
+
+              {/* Wishlist button with badge */}
               <button
                 onClick={() => navigate('/wishlist')}
-                className="w-full p-3 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="w-full p-3 rounded-lg transition-colors flex items-center justify-center relative text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 title="Wishlists"
               >
                 <Heart className="h-5 w-5" />
+                {wishlistItemsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {wishlistItemsCount > 9 ? '9+' : wishlistItemsCount}
+                  </span>
+                )}
               </button>
+
               <button
                 onClick={() => {
                   logout();
