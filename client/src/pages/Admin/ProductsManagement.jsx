@@ -48,22 +48,40 @@ const ProductsManagement = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
 
-  // Form state for add/edit
+  // Updated form state to match backend requirements
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    sku: '',
-    category: '',
     price: '',
     salePrice: '',
-    stock: '',
-    status: 'active',
     images: [],
+    category: '',
+    subcategory: '',
+    item: '',
+    brand: '',
+    rating: 0,
+    reviewCount: 0,
+    stock: '',
     tags: '',
-    weight: '',
-    dimensions: ''
+    variants: [],
+    featured: false,
+    trending: false,
+    sku: ''
   });
   const [formErrors, setFormErrors] = useState({});
+
+  // Add states for category hierarchy
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [items, setItems] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Update brands state and loading state
+  const [brands, setBrands] = useState([]);
+  const [brandsLoading, setBrandsLoading] = useState(true);
+
+  // Image upload state
+  const [imageUploading, setImageUploading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -73,9 +91,69 @@ const ProductsManagement = () => {
     }).catch(() => setLoading(false));
   }, []);
 
+  // Update categories fetch
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setCategoriesLoading(true);
+      try {
+        const response = await adminService.getCategories();
+        // Extract the data array from the response
+        const categoriesData = response?.data?.data || [];
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Update brands fetch
+  useEffect(() => {
+    const fetchBrands = async () => {
+      setBrandsLoading(true);
+      try {
+        const response = await adminService.getBrands();
+        // Extract the data array from the response
+        const brandsData = response?.data?.data || [];
+        setBrands(brandsData);
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+        setBrands([]);
+      } finally {
+        setBrandsLoading(false);
+      }
+    };
+    fetchBrands();
+  }, []);
+
+  // Update subcategories when category changes
+  useEffect(() => {
+    if (formData.category) {
+      const selectedCategory = categories.find(cat => 
+        cat._id === formData.category || cat.name === formData.category
+      );
+      setSubcategories(selectedCategory?.subcategories || []);
+      setFormData(prev => ({ ...prev, subcategory: '', item: '' }));
+    }
+  }, [formData.category, categories]);
+
+  // Update items when subcategory changes
+  useEffect(() => {
+    if (formData.subcategory) {
+      const selectedSubcategory = subcategories.find(sub => 
+        sub._id === formData.subcategory || sub.name === formData.subcategory
+      );
+      setItems(selectedSubcategory?.items || []);
+      setFormData(prev => ({ ...prev, item: '' }));
+    }
+  }, [formData.subcategory, subcategories]);
+
   // Get unique categories for filter dropdown
-  const categories = ['all', ...new Set(products.map(product => product.category?.name || product.category || ''))];
-  const statuses = ['all', 'active', 'out-of-stock', 'low-stock', 'draft'];
+  const categoryOptions = ['all', ...new Set(products.map(product => product.category?.name || product.category || ''))];
+  const statusOptions = ['all', 'active', 'out-of-stock', 'low-stock', 'draft'];
 
   // Filter products based on search term, category, and status
   const filteredProducts = products.filter(product => {
@@ -112,26 +190,31 @@ const ProductsManagement = () => {
     setFormData({
       title: '',
       description: '',
-      sku: '',
-      category: '',
       price: '',
       salePrice: '',
-      stock: '',
-      status: 'active',
       images: [],
+      category: '',
+      subcategory: '',
+      item: '',
+      brand: '',
+      rating: 0,
+      reviewCount: 0,
+      stock: '',
       tags: '',
-      weight: '',
-      dimensions: ''
+      variants: [],
+      featured: false,
+      trending: false,
+      sku: ''
     });
     setFormErrors({});
   };
 
   // Handle form input changes
   const handleFormChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
     // Clear error when user starts typing
     if (formErrors[name]) {
@@ -146,9 +229,11 @@ const ProductsManagement = () => {
   const validateForm = () => {
     const errors = {};
     if (!formData.title.trim()) errors.title = 'Product name is required';
-    if (!formData.sku.trim()) errors.sku = 'SKU is required';
     if (!formData.price || parseFloat(formData.price) <= 0) errors.price = 'Valid price is required';
-    if (!formData.category.trim()) errors.category = 'Category is required';
+    if (!formData.category) errors.category = 'Category is required';
+    if (!formData.subcategory) errors.subcategory = 'Subcategory is required';
+    if (!formData.item) errors.item = 'Item is required';
+    if (!formData.brand) errors.brand = 'Brand is required';
     if (!formData.stock || parseInt(formData.stock) < 0) errors.stock = 'Valid stock quantity is required';
     
     setFormErrors(errors);
@@ -169,6 +254,9 @@ const ProductsManagement = () => {
       description: product.description || '',
       sku: product.sku || '',
       category: product.category?.name || product.category || '',
+      subcategory: product.subcategory?.name || product.subcategory || '',
+      item: product.item?.name || product.item || '',
+      brand: product.brand?.name || product.brand || '',
       price: product.price || '',
       salePrice: product.salePrice || '',
       stock: product.stock || '',
@@ -181,147 +269,88 @@ const ProductsManagement = () => {
     setShowEditModal(true);
   };
 
-  // Submit add product
-  const submitAddProduct = async () => {
-    if (!validateForm()) return;
-
-    setModalLoading(true);
+  // Add image upload state
+  const [imagePreview, setImagePreview] = useState([]);
+  
+  // Add image handling functions
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files);
+    setImageUploading(true);
+    
     try {
-      const productData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        salePrice: formData.salePrice ? parseFloat(formData.salePrice) : null,
-        stock: parseInt(formData.stock),
-        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
-      };
+      const uploadResponse = await adminService.uploadProductImages(files);
+      const uploadedUrls = uploadResponse.data.urls || uploadResponse.data.images || [];
+      
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...uploadedUrls]
+      }));
 
-      const response = await adminService.createProduct(productData);
-      setProducts(prev => [response.data, ...prev]);
-      setShowAddModal(false);
-      resetForm();
-      // Show success message (you can implement toast notification here)
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setImagePreview(prev => [...prev, ...newPreviews]);
     } catch (error) {
-      console.error('Error adding product:', error);
-      // Show error message
+      console.error('Error uploading images:', error);
+      setFormErrors(prev => ({
+        ...prev,
+        images: 'Failed to upload images'
+      }));
     }
-    setModalLoading(false);
+    
+    setImageUploading(false);
   };
 
-  // Submit edit product
-  const submitEditProduct = async () => {
-    if (!validateForm()) return;
-
-    setModalLoading(true);
-    try {
-      const productData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        salePrice: formData.salePrice ? parseFloat(formData.salePrice) : null,
-        stock: parseInt(formData.stock),
-        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
-      };
-
-      const response = await adminService.updateProduct(editingProduct._id || editingProduct.id, productData);
-      setProducts(prev => prev.map(p => 
-        (p._id || p.id) === (editingProduct._id || editingProduct.id) ? response.data : p
-      ));
-      setShowEditModal(false);
-      setEditingProduct(null);
-      resetForm();
-      // Show success message
-    } catch (error) {
-      console.error('Error updating product:', error);
-      // Show error message
-    }
-    setModalLoading(false);
-  };
-
-  // Request sort
-  const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  // Change page
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-  // Delete product
-  const handleDelete = (id) => {
-    setProductToDelete(id);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      await adminService.deleteProduct(productToDelete);
-      setProducts(products.filter(product => (product._id || product.id) !== productToDelete));
-    } catch (error) {
-      console.error('Error deleting product:', error);
-    }
-    setShowDeleteModal(false);
-    setProductToDelete(null);
-  };
-
-  // Export products to Excel
-  const handleExportProducts = () => {
-    const columns = [
-      'ID',
-      'Name',
-      'SKU',
-      'Category',
-      'Price',
-      'Stock',
-      'Status',
-      'Created'
-    ];
-
-    const exportData = filteredProducts.map(product => ({
-      ID: product._id || product.id || 'N/A',
-      Name: product.title || product.name || 'N/A',
-      SKU: product.sku || 'N/A',
-      Category: product.category?.name || product.category || 'N/A',
-      Price: product.salePrice != null
-        ? product.salePrice.toFixed(2)
-        : (product.price != null ? product.price.toFixed(2) : 'N/A'),
-      Stock: product.stock != null ? product.stock : 'N/A',
-      Status: product.status || (product.isActive === false ? 'Draft' : 'Active'),
-      Created: product.createdAt ? new Date(product.createdAt).toLocaleString() : 'N/A'
+  const removeImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
     }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData, { header: columns });
-    XLSX.utils.sheet_add_aoa(worksheet, [columns], { origin: "A1" });
-
-    worksheet['!cols'] = [
-      { wch: 28 }, { wch: 22 }, { wch: 18 }, { wch: 22 },
-      { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 28 }
-    ];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
-    XLSX.writeFile(workbook, 'products.xlsx');
+    
+    // Revoke the URL to avoid memory leaks
+    URL.revokeObjectURL(imagePreview[index]);
+    setImagePreview(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Get status color and text
-  const getStatusInfo = (status) => {
-    switch (status) {
-      case 'active':
-        return { color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', text: 'Active' };
-      case 'out-of-stock':
-        return { color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400', text: 'Out of Stock' };
-      case 'low-stock':
-        return { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400', text: 'Low Stock' };
-      case 'draft':
-        return { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', text: 'Draft' };
-      default:
-        return { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', text: status };
-    }
-  };
+  // Clean up preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      imagePreview.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   // Modal Form Component
   const ProductModal = ({ isEdit = false }) => {
+    const renderCategoryOptions = () => {
+      if (!Array.isArray(categories)) {
+        console.error('Categories is not an array:', categories);
+        return <option value="">No categories available</option>;
+      }
+
+      return [
+        <option key="empty" value="">Select Category</option>,
+        ...categories.map(cat => (
+          <option key={cat._id} value={cat._id}>
+            {cat.name}
+          </option>
+        ))
+      ];
+    };
+
+    const renderBrandOptions = () => {
+      if (!Array.isArray(brands)) {
+        console.error('Brands is not an array:', brands);
+        return <option value="">No brands available</option>;
+      }
+
+      return [
+        <option key="empty" value="">Select Brand</option>,
+        ...brands.map(brand => (
+          <option key={brand._id} value={brand._id}>
+            {brand.name}
+          </option>
+        ))
+      ];
+    };
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -398,30 +427,6 @@ const ProductsManagement = () => {
                     <p className="mt-1 text-sm text-red-600 flex items-center">
                       <AlertCircle className="h-4 w-4 mr-1" />
                       {formErrors.sku}
-                    </p>
-                  )}
-                </div>
-
-                {/* Category */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Category *
-                  </label>
-                  <input
-                    type="text"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleFormChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                      formErrors.category ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter category"
-                    disabled={modalLoading}
-                  />
-                  {formErrors.category && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {formErrors.category}
                     </p>
                   )}
                 </div>
@@ -550,6 +555,103 @@ const ProductsManagement = () => {
               </div>
             </div>
 
+            {/* Category Hierarchy */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category *
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 border rounded-lg ${
+                    formErrors.category ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  disabled={categoriesLoading}
+                >
+                  {categoriesLoading ? (
+                    <option value="">Loading categories...</option>
+                  ) : (
+                    renderCategoryOptions()
+                  )}
+                </select>
+                {formErrors.category && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.category}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Subcategory *
+                </label>
+                <select
+                  name="subcategory"
+                  value={formData.subcategory}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 border rounded-lg ${
+                    formErrors.subcategory ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  disabled={!formData.category}
+                >
+                  <option value="">Select Subcategory</option>
+                  {subcategories.map(sub => (
+                    <option key={sub._id} value={sub._id}>{sub.name}</option>
+                  ))}
+                </select>
+                {formErrors.subcategory && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.subcategory}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Item *
+                </label>
+                <select
+                  name="item"
+                  value={formData.item}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 border rounded-lg ${
+                    formErrors.item ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  disabled={!formData.subcategory}
+                >
+                  <option value="">Select Item</option>
+                  {items.map(item => (
+                    <option key={item._id} value={item._id}>{item.name}</option>
+                  ))}
+                </select>
+                {formErrors.item && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.item}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Brand *
+                </label>
+                <select
+                  name="brand"
+                  value={formData.brand}
+                  onChange={handleFormChange}
+                  className={`w-full px-3 py-2 border rounded-lg ${
+                    formErrors.brand ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  disabled={brandsLoading}
+                >
+                  {brandsLoading ? (
+                    <option value="">Loading brands...</option>
+                  ) : (
+                    renderBrandOptions()
+                  )}
+                </select>
+                {formErrors.brand && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.brand}</p>
+                )}
+              </div>
+            </div>
+
             {/* Additional Details */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -580,6 +682,88 @@ const ProductsManagement = () => {
                   placeholder="L x W x H (cm)"
                   disabled={modalLoading}
                 />
+              </div>
+            </div>
+
+            {/* Featured and Trending Toggles */}
+            <div className="flex space-x-4 mt-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  checked={formData.featured}
+                  onChange={(e) => handleFormChange({
+                    target: { name: 'featured', value: e.target.checked }
+                  })}
+                  className="rounded border-gray-300"
+                />
+                <span className="ml-2">Featured</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="trending"
+                  checked={formData.trending}
+                  onChange={(e) => handleFormChange({
+                    target: { name: 'trending', value: e.target.checked }
+                  })}
+                  className="rounded border-gray-300"
+                />
+                <span className="ml-2">Trending</span>
+              </label>
+            </div>
+
+            {/* Product Images */}
+            <div className="space-y-4 mb-6">
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white">Product Images</h4>
+              
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Product Images (Max 5)
+                </label>
+                
+                {/* Image Preview Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {imagePreview.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Upload Button */}
+                {formData.images.length < 5 && (
+                  <div className="flex items-center justify-center w-full">
+                    <label className="w-full flex flex-col items-center px-4 py-6 bg-white dark:bg-gray-700 text-gray-400 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:border-gray-400 transition-colors">
+                      <Upload className="h-8 w-8 mb-2" />
+                      <span className="text-sm">Click to upload images</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        disabled={formData.images.length >= 5}
+                      />
+                    </label>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Supported formats: JPG, PNG, WEBP. Max 5 images.
+                </p>
               </div>
             </div>
 
@@ -624,6 +808,160 @@ const ProductsManagement = () => {
         </div>
       </div>
     );
+  };
+
+  // Submit add product
+  const submitAddProduct = async () => {
+    if (!validateForm()) return;
+
+    setModalLoading(true);
+    try {
+      const productData = {
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        salePrice: formData.salePrice ? parseFloat(formData.salePrice) : null,
+        stock: parseInt(formData.stock),
+        category: formData.category,
+        subcategory: formData.subcategory,
+        item: formData.item,
+        brand: formData.brand,
+        sku: formData.sku,
+        images: formData.images,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+        featured: formData.featured,
+        trending: formData.trending,
+        status: formData.status || 'active'
+      };
+
+      const response = await adminService.createProduct(productData);
+      setProducts(prev => [response.data.product || response.data, ...prev]);
+      setShowAddModal(false);
+      resetForm();
+      setImagePreview([]);
+    } catch (error) {
+      console.error('Error adding product:', error);
+      if (error.response?.data?.message) {
+        setFormErrors(prev => ({
+          ...prev,
+          submitError: error.response.data.message
+        }));
+      }
+    }
+    setModalLoading(false);
+  };
+
+  // Submit edit product
+  const submitEditProduct = async () => {
+    if (!validateForm()) return;
+
+    setModalLoading(true);
+    try {
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        salePrice: formData.salePrice ? parseFloat(formData.salePrice) : null,
+        stock: parseInt(formData.stock),
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
+      };
+
+      const response = await adminService.updateProduct(editingProduct._id || editingProduct.id, productData);
+      setProducts(prev => prev.map(p => 
+        (p._id || p.id) === (editingProduct._id || editingProduct.id) ? response.data : p
+      ));
+      setShowEditModal(false);
+      setEditingProduct(null);
+      resetForm();
+      // Show success message
+    } catch (error) {
+      console.error('Error updating product:', error);
+      // Show error message
+    }
+    setModalLoading(false);
+  };
+
+  // Request sort
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Delete product
+  const handleDelete = (id) => {
+    setProductToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await adminService.deleteProduct(productToDelete);
+      setProducts(products.filter(product => (product._id || product.id) !== productToDelete));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+    setShowDeleteModal(false);
+    setProductToDelete(null);
+  };
+
+  // Export products to Excel
+  const handleExportProducts = () => {
+    const columns = [
+      'ID',
+      'Name',
+      'SKU',
+      'Category',
+      'Price',
+      'Stock',
+      'Status',
+      'Created'
+    ];
+
+    const exportData = filteredProducts.map(product => ({
+      ID: product._id || product.id || 'N/A',
+      Name: product.title || product.name || 'N/A',
+      SKU: product.sku || 'N/A',
+      Category: product.category?.name || product.category || 'N/A',
+      Price: product.salePrice != null
+        ? product.salePrice.toFixed(2)
+        : (product.price != null ? product.price.toFixed(2) : 'N/A'),
+      Stock: product.stock != null ? product.stock : 'N/A',
+      Status: product.status || (product.isActive === false ? 'Draft' : 'Active'),
+      Created: product.createdAt ? new Date(product.createdAt).toLocaleString() : 'N/A'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData, { header: columns });
+    XLSX.utils.sheet_add_aoa(worksheet, [columns], { origin: "A1" });
+
+    worksheet['!cols'] = [
+      { wch: 28 }, { wch: 22 }, { wch: 18 }, { wch: 22 },
+      { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 28 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    XLSX.writeFile(workbook, 'products.xlsx');
+  };
+
+  // Get status color and text
+  const getStatusInfo = (status) => {
+    switch (status) {
+      case 'active':
+        return { color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', text: 'Active' };
+      case 'out-of-stock':
+        return { color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400', text: 'Out of Stock' };
+      case 'low-stock':
+        return { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400', text: 'Low Stock' };
+      case 'draft':
+        return { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', text: 'Draft' };
+      default:
+        return { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', text: status };
+    }
   };
 
   return (
@@ -690,7 +1028,7 @@ const ProductsManagement = () => {
                   className="appearance-none pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="all">All Categories</option>
-                  {categories.filter(cat => cat !== 'all').map(category => (
+                  {categoryOptions.filter(cat => cat !== 'all').map(category => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
@@ -709,7 +1047,7 @@ const ProductsManagement = () => {
                   className="appearance-none pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="all">All Statuses</option>
-                  {statuses.filter(status => status !== 'all').map(status => (
+                  {statusOptions.filter(status => status !== 'all').map(status => (
                     <option key={status} value={status}>
                       {getStatusInfo(status).text}
                     </option>
@@ -744,7 +1082,7 @@ const ProductsManagement = () => {
                   className="w-full pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="all">All Categories</option>
-                  {categories.filter(cat => cat !== 'all').map(category => (
+                  {categoryOptions.filter(cat => cat !== 'all').map(category => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
@@ -761,7 +1099,7 @@ const ProductsManagement = () => {
                   className="w-full pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="all">All Statuses</option>
-                  {statuses.filter(status => status !== 'all').map(status => (
+                  {statusOptions.filter(status => status !== 'all').map(status => (
                     <option key={status} value={status}>
                       {getStatusInfo(status).text}
                     </option>

@@ -8,11 +8,6 @@ import NotificationService from '../middleware/NotificationService.js';
 // @desc    Get all products
 // @route   GET /api/products
 // @access  Public
-
-
-// @desc    Get all products (public or admin with includeInactive)
-// @route   GET /api/products
-// @access  Public | Admin (when includeInactive=true)
 export const getProducts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -131,10 +126,6 @@ export const getProduct = async (req, res, next) => {
     next(error);
   }
 };
-
-// Keep the rest of your functions (createProduct, updateProduct, etc.) unchanged.
-
-
 
 // @desc    Create product
 // @route   POST /api/products
@@ -464,64 +455,310 @@ export const deleteProduct = async (req, res, next) => {
   }
 };
 
-// @desc    Search products
+// @desc    Enhanced search products with filters and pagination
 // @route   GET /api/products/search
 // @access  Public
 export const searchProducts = async (req, res, next) => {
   try {
-    const { q } = req.query;
+    const { q, page = 1, limit = 12, type = 'all', sortBy = 'relevance', sortOrder = 'desc' } = req.query;
 
-    if (!q) {
+    if (!q || q.trim().length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Search query is required',
       });
     }
 
-    const products = await Product.find({
-      $text: { $search: q },
+    const searchQuery = q.trim();
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build base query
+    let query = {
       isActive: true,
-    })
-      .populate('category', 'name slug')
+      $text: { $search: searchQuery }
+    };
+
+    // Apply additional filters from req.query (same as getProducts)
+    if (req.query.categories) {
+      const categoriesRaw = req.query.categories.split(',');
+      const categoryIds = [];
+      for (const cat of categoriesRaw) {
+        if (/^[a-f\d]{24}$/i.test(cat)) {
+          categoryIds.push(new mongoose.Types.ObjectId(cat));
+        } else {
+          const found = await Category.findOne({
+            $or: [{ slug: cat }, { name: cat }]
+          }).select('_id');
+          if (found) categoryIds.push(found._id);
+        }
+      }
+      if (categoryIds.length > 0) {
+        query.category = { $in: categoryIds };
+      }
+    }
+
+    if (req.query.brands) {
+      const brandIds = req.query.brands.split(',').map(id => {
+        return /^[a-f\d]{24}$/i.test(id) ? new mongoose.Types.ObjectId(id) : null;
+      }).filter(Boolean);
+      if (brandIds.length > 0) {
+        query.brand = { $in: brandIds };
+      }
+    }
+
+    if (req.query.minPrice || req.query.maxPrice) {
+      query.price = {};
+      if (req.query.minPrice) query.price.$gte = parseFloat(req.query.minPrice);
+      if (req.query.maxPrice) query.price.$lte = parseFloat(req.query.maxPrice);
+    }
+
+    if (req.query.rating) query.rating = { $gte: parseFloat(req.query.rating) };
+    if (req.query.inStock === 'true') query.stock = { $gt: 0 };
+    if (req.query.onSale === 'true') query.salePrice = { $exists: true, $ne: null };
+
+    // Determine sort criteria
+    let sortCriteria = {};
+    switch (sortBy) {
+      case 'relevance':
+        sortCriteria = { score: { $meta: 'textScore' } };
+        break;
+      case 'price':
+        sortCriteria = { price: sortOrder === 'asc' ? 1 : -1 };
+        break;
+      case 'rating':
+        sortCriteria = { rating: sortOrder === 'asc' ? 1 : -1 };
+        break;
+      case 'date':
+        sortCriteria = { createdAt: sortOrder === 'asc' ? 1 : -1 };
+        break;
+      case 'popularity':
+        sortCriteria = { viewCount: sortOrder === 'asc' ? 1 : -1 };
+        break;
+      case 'name':
+        sortCriteria = { title: sortOrder === 'asc' ? 1 : -1 };
+        break;
+      default:
+        sortCriteria = { score: { $meta: 'textScore' } };
+    }
+
+    // Execute search
+    const products = await Product.find(query)
       .populate('brand', 'name logo')
-      .limit(20)
-      .sort({ score: { $meta: 'textScore' } });
+      .populate('category', 'name slug')
+      .sort(sortCriteria)
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    const total = await Product.countDocuments(query);
+    const totalPages = Math.ceil(total / limitNum);
+
+    // Track search for analytics
+    if (req.user) {
+      await trackSearchQuery(req.user.id, searchQuery, total);
+    }
 
     res.status(200).json({
       success: true,
       products,
+      categories: [], // Could include matching categories
+      brands: [], // Could include matching brands
+      pagination: {
+        page: pageNum,
+        totalPages,
+        total,
+        limit: limitNum,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1
+      },
+      searchQuery,
+      resultsFound: products.length > 0
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get product suggestions
-// @route   GET /api/products/suggestions
+// @desc    Get product suggestions for autocomplete
+// @route   GET /api/search/suggestions
 // @access  Public
 export const getProductSuggestions = async (req, res, next) => {
   try {
-    const { q } = req.query;
+    const { q, limit = 8 } = req.query;
 
-    if (!q) {
-      return res.status(400).json({
-        success: false,
-        message: 'Query is required',
+    if (!q || q.trim().length < 2) {
+      return res.status(200).json({
+        success: true,
+        suggestions: []
       });
     }
 
-    const suggestions = await Product.find({
-      title: { $regex: q, $options: 'i' },
-      isActive: true,
+    const searchQuery = q.trim();
+    const limitNum = parseInt(limit);
+
+    // Get product suggestions
+    const productSuggestions = await Product.find({
+      $or: [
+        { title: { $regex: searchQuery, $options: 'i' } },
+        { tags: { $regex: searchQuery, $options: 'i' } }
+      ],
+      isActive: true
     })
-      .select('title')
-      .limit(5);
+      .select('title _id category brand images')
+      .populate('category', 'name slug')
+      .populate('brand', 'name')
+      .limit(Math.floor(limitNum * 0.6)) // 60% for products
+      .lean();
+
+    // Get category suggestions
+    const categorySuggestions = await Category.find({
+      name: { $regex: searchQuery, $options: 'i' },
+      isActive: true
+    })
+      .select('name slug _id')
+      .limit(Math.floor(limitNum * 0.3)) // 30% for categories
+      .lean();
+
+    // Format suggestions according to frontend expectations
+    const suggestions = [];
+
+    // Add product suggestions
+    productSuggestions.forEach(product => {
+      suggestions.push({
+        id: product._id,
+        name: product.title,
+        type: 'product',
+        slug: product._id, // or product.slug if you have it
+        image: product.images?.[0]?.url || null,
+        category: product.category?.name || '',
+        price: product.price?.toString() || ''
+      });
+    });
+
+    // Add category suggestions
+    categorySuggestions.forEach(category => {
+      suggestions.push({
+        id: category._id,
+        name: category.name,
+        type: 'category',
+        slug: category.slug,
+        image: null,
+        category: '',
+        price: ''
+      });
+    });
 
     res.status(200).json({
       success: true,
-      suggestions: suggestions.map(p => p.title),
+      suggestions: suggestions.slice(0, limitNum)
     });
   } catch (error) {
     next(error);
   }
 };
+
+// @desc    Get popular searches
+// @route   GET /api/products/search/popular
+// @access  Public
+export const getPopularSearches = async (req, res, next) => {
+  try {
+    const { limit = 10 } = req.query;
+    
+    // This would require a SearchLog model to track search queries
+    // For now, return mock data or implement based on your analytics
+    const popularSearches = [
+      'smartphones',
+      'laptops',
+      'headphones',
+      'clothing',
+      'books',
+      'shoes',
+      'watches',
+      'cameras',
+      'tablets',
+      'furniture'
+    ].slice(0, parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      searches: popularSearches
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get user search history
+// @route   GET /api/products/search/history
+// @access  Private
+export const getSearchHistory = async (req, res, next) => {
+  try {
+    const { limit = 10 } = req.query;
+    
+    // This would require a SearchHistory model
+    // For now, return empty array
+    res.status(200).json({
+      success: true,
+      searches: []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Clear user search history
+// @route   DELETE /api/products/search/history
+// @access  Private
+export const clearSearchHistory = async (req, res, next) => {
+  try {
+    // Implementation would clear user's search history
+    res.status(200).json({
+      success: true,
+      message: 'Search history cleared'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Track search query
+// @route   POST /api/products/search/track
+// @access  Public
+export const trackSearch = async (req, res, next) => {
+  try {
+    const { query, resultCount } = req.body;
+    
+    // Implementation would save search query to analytics
+    await trackSearchQuery(req.user?.id || null, query, resultCount);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Search tracked'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get search analytics (Admin)
+// @route   GET /api/products/search/analytics
+// @access  Private/Admin
+export const getSearchAnalytics = async (req, res, next) => {
+  try {
+    // Implementation would return search analytics
+    res.status(200).json({
+      success: true,
+      data: {
+        totalSearches: 0,
+        uniqueQueries: 0,
+        topQueries: [],
+        searchTrends: []
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

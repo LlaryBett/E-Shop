@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet, Sun, Moon, ChefHat, Milk } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, User, Menu, X, ChevronDown, Sparkles, Grid3X3, Package, Apple, Home, Shirt, Smartphone, Gift, Star, Wallet, Sun, Moon, ChefHat, Milk, Clock, TrendingUp, Tag } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useCategories } from '../../contexts/CategoryContext'; // Add this import
+import { useCategories } from '../../contexts/CategoryContext';
 import userService from '../../services/userService';
+import productService from '../../services/productService'; // Add this import
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,13 +15,25 @@ const Header = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showCategoriesMenu, setShowCategoriesMenu] = useState(false);
-  const [activeTab, setActiveTab] = useState(null); // Changed to null initially
+  const [activeTab, setActiveTab] = useState(null);
   const [activeNavTab, setActiveNavTab] = useState(null);
   const [mouseInsideNavDropdown, setMouseInsideNavDropdown] = useState(false);
+  
+  // Search autocomplete states
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  
+  // Refs
+  const searchInputRef = useRef(null);
+  const searchDropdownRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
+  const mobileSearchDropdownRef = useRef(null);
+
   const { user, logout, isAuthenticated } = useAuth();
   const { getTotalItems } = useCart();
   const { isDark, toggleTheme } = useTheme();
-  const { categories, loading: categoriesLoading } = useCategories(); // Use categories context
+  const { categories, loading: categoriesLoading } = useCategories();
   const navigate = useNavigate();
   const [defaultAddress, setDefaultAddress] = useState(null);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
@@ -41,8 +54,103 @@ const Header = () => {
 
   // Helper function to get icon component
   const getIconComponent = (iconName) => {
-    return iconMap[iconName] || Package; // Default to Package if icon not found
+    return iconMap[iconName] || Package;
   };
+
+  // Fetch search suggestions from backend
+  const fetchSearchSuggestions = async (query) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchSuggestions([]);
+      setShowSearchSuggestions(false);
+      return;
+    }
+
+    try {
+      const data = await productService.getSearchSuggestions(query, 8);
+      setSearchSuggestions(data.suggestions || []);
+      setShowSearchSuggestions(true);
+    } catch (error) {
+      console.error('Error fetching search suggestions:', error);
+      setSearchSuggestions([]);
+      setShowSearchSuggestions(false);
+    }
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery) {
+        fetchSearchSuggestions(searchQuery);
+      } else {
+        setShowSearchSuggestions(false);
+        setSearchSuggestions([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Handle keyboard navigation in suggestions
+  const handleSearchKeyDown = (e) => {
+    if (!showSearchSuggestions || searchSuggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < searchSuggestions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev > 0 ? prev - 1 : searchSuggestions.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0 && searchSuggestions[selectedSuggestionIndex]) {
+          handleSuggestionClick(searchSuggestions[selectedSuggestionIndex]);
+        } else {
+          handleSearch(e);
+        }
+        break;
+      case 'Escape':
+        setShowSearchSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
+  };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (suggestion) => {
+    setSearchQuery(suggestion.name || suggestion.title || suggestion.query);
+    setShowSearchSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    // Navigate based on suggestion type
+    if (suggestion.type === 'product') {
+      navigate(`/product/${suggestion.slug || suggestion.id}`);
+    } else if (suggestion.type === 'category') {
+      navigate(`/shop?category=${suggestion.slug}`);
+    } else {
+      navigate(`/search?query=${encodeURIComponent(suggestion.name || suggestion.query)}`);
+    }
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target) &&
+          mobileSearchDropdownRef.current && !mobileSearchDropdownRef.current.contains(event.target)) {
+        setShowSearchSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Transform API categories to match your existing structure
   const transformedCategories = React.useMemo(() => {
@@ -50,10 +158,9 @@ const Header = () => {
     
     const transformed = {};
     categories.forEach((category, index) => {
-      // Use a consistent key - prefer _id, then id, then slug, then index
       const key = category._id || category.id || category.slug || index;
       transformed[key] = {
-        ...category, // Keep all original properties
+        ...category,
         name: category.name,
         icon: getIconComponent(category.icon),
         count: category.count || 0,
@@ -116,6 +223,8 @@ const Header = () => {
         setShowCategoriesMenu(false);
         setActiveNavTab(null);
         setMouseInsideNavDropdown(false);
+        setShowSearchSuggestions(false);
+        setSelectedSuggestionIndex(-1);
       }
     };
 
@@ -138,6 +247,7 @@ const Header = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setSearchLoading(true);
+      setShowSearchSuggestions(false);
       try {
         navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
       } catch (err) {
@@ -266,16 +376,46 @@ const Header = () => {
           </div>
 
           {/* Search Row */}
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700" ref={mobileSearchDropdownRef}>
             <form onSubmit={handleSearch} className="relative">
               <input
+                ref={mobileSearchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                onFocus={() => {
+                  if (searchQuery.length >= 2) {
+                    setShowSearchSuggestions(true);
+                  }
+                }}
                 placeholder="Search for products..."
                 className="w-full px-3 py-2 pl-9 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
+                autoComplete="off"
               />
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              
+              {/* Mobile Search Suggestions */}
+              {showSearchSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                  <div className="p-1">
+                    {searchSuggestions.slice(0, 5).map((suggestion, index) => (
+                      <button
+                        key={suggestion.id || index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className={`w-full flex items-center space-x-2 px-3 py-2 text-left rounded-md transition-all duration-200 text-sm ${
+                          selectedSuggestionIndex === index
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{suggestion.name || suggestion.title || suggestion.query}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </form>
           </div>
 
@@ -328,15 +468,23 @@ const Header = () => {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-2xl mx-4 lg:mx-8 hidden md:block">
+                <div className="flex-1 max-w-2xl mx-4 lg:mx-8 hidden md:block" ref={searchDropdownRef}>
                   <form onSubmit={handleSearch} className="relative group">
                     <input
+                      ref={searchInputRef}
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={handleSearchKeyDown}
+                      onFocus={() => {
+                        if (searchQuery.length >= 2) {
+                          setShowSearchSuggestions(true);
+                        }
+                      }}
                       placeholder="Search products..."
                       className="w-full px-6 py-3 pl-12 pr-24 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 hover:shadow-md focus:shadow-lg text-base"
                       aria-label="Search products"
+                      autoComplete="off"
                     />
                     <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
                     <button
@@ -347,6 +495,75 @@ const Header = () => {
                     >
                       {searchLoading ? 'Searching...' : 'Search'}
                     </button>
+
+                    {/* Desktop Search Suggestions Dropdown */}
+                    {showSearchSuggestions && searchSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto">
+                        <div className="p-2">
+                          {searchSuggestions.map((suggestion, index) => (
+                            <button
+                              key={suggestion.id || index}
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                                selectedSuggestionIndex === index
+                                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                  : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {/* Suggestion Icon */}
+                              <div className="flex-shrink-0">
+                                {suggestion.type === 'product' && suggestion.image ? (
+                                  <img 
+                                    src={suggestion.image} 
+                                    alt={suggestion.name}
+                                    className="w-10 h-10 rounded-lg object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 bg-gray-100 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                                    {suggestion.type === 'product' && <Package className="h-5 w-5 text-gray-500" />}
+                                    {suggestion.type === 'category' && <Tag className="h-5 w-5 text-gray-500" />}
+                                    {suggestion.type === 'search' && <Search className="h-5 w-5 text-gray-500" />}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Suggestion Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {suggestion.name || suggestion.title || suggestion.query}
+                                </div>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  {suggestion.category && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      in {suggestion.category}
+                                    </span>
+                                  )}
+                                  {suggestion.price && (
+                                    <span className="text-xs font-semibold text-green-600 dark:text-green-400">
+                                      ${suggestion.price}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Suggestion Type Badge */}
+                              <div className="flex-shrink-0">
+                                {suggestion.type === 'product' && (
+                                  <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+                                    Product
+                                  </span>
+                                )}
+                                {suggestion.type === 'category' && (
+                                  <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
+                                    Category
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </form>
                 </div>
 
@@ -598,13 +815,13 @@ const Header = () => {
               {/* Categories Mega Menu Dropdown */}
               {showCategoriesMenu && !categoriesLoading && transformedCategories && Object.keys(transformedCategories).length > 0 && (
                 <div 
-                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-96"
                   style={{ marginTop: '-1px' }}
                   onMouseEnter={() => setShowCategoriesMenu(true)}
                   onMouseLeave={() => setShowCategoriesMenu(false)}
                 >
-                  <div className="flex">
-                    <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4">
+                  <div className="flex h-full">
+                    <div className="w-1/5 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
                       <div className="space-y-2">
                         {categories.map((category, index) => {
                           const key = category._id || category.id || category.slug || index;
@@ -628,7 +845,7 @@ const Header = () => {
                         })}
                       </div>
                     </div>
-                    <div className="flex-1 p-6">
+                    <div className="flex-1 p-6 overflow-y-auto">
                       {categories.map((category, index) => {
                         const key = category._id || category.id || category.slug || index;
                         const isActive = activeTab === key;
@@ -690,12 +907,12 @@ const Header = () => {
               {/* Nav Items Mega Menu Dropdowns */}
               {activeNavTab && (
                 <div 
-                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-80"
                   style={{ marginTop: '-1px' }}
                   onMouseEnter={() => handleDropdownMouseEnter(activeNavTab)}
                   onMouseLeave={handleDropdownMouseLeave}
                 >
-                  <div className="p-6">
+                  <div className="p-6 overflow-y-auto h-full">
                     {(() => {
                       const categoryData = getCategoryDataForNav(activeNavTab);
                       
@@ -826,7 +1043,6 @@ const Header = () => {
                                         <li key={item._id || item.id || itemIdx}>
                                           <Link
                                             to={`/shop?category=${category.slug}&subcategory=${item.slug}&name=${encodeURIComponent(item.name)}`}
-                                            
                                             className="block py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                                             onClick={() => {
                                               setIsMobileMenuOpen(false);
