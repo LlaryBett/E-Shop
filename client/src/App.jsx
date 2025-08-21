@@ -32,8 +32,8 @@ import FAQ from './pages/FAQ';
 import VerifyEmailPrompt from './pages/VerifyEmailPrompt';
 import VerifyEmail from './pages/VerifyEmail';
 import NotificationsPage from './pages/NotificationsPage';
-import PromoModalManager from './components/common/PromoModalManager';
-import ExitIntentModal from './components/common/ExitIntentModal';
+// import PromoModalManager from './components/common/PromoModalManager';
+// import ExitIntentModal from './components/common/ExitIntentModal';
 import Categories from './pages/Categories';
 import Shipping from './pages/Shipping';
 import SearchResults from './pages/SearchResults'; // Add this import
@@ -52,8 +52,7 @@ function App() {
                 <CategoryProvider>
                   <Router>
                     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-                      <PromoModalManager />
-                      <ExitIntentModal />
+                    
                       <Routes>
                         {/* Admin routes: no Header/Footer */}
                         <Route path="/admin/*" element={<AdminDashboard />} />
