@@ -51,7 +51,7 @@ function App() {
               <NotificationsProvider>
                 <CategoryProvider>
                   <Router>
-                    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+                    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
                       <PromoModalManager />
                       <ExitIntentModal />
                       <Routes>
@@ -63,7 +63,7 @@ function App() {
                           element={
                             <>
                               <Header />
-                              <main className="pt-16">
+                              <main className="pt-16 flex-grow">
                                 <Routes>
                                   {/* ...existing code for all non-admin routes... */}
                                   <Route path="/" element={<Home />} />

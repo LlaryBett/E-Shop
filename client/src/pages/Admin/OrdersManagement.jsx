@@ -149,39 +149,41 @@ const OrdersManagement = () => {
     }));
   };
 
-  const handleUpdateOrder = async () => {
-    if (!orderToEdit) return;
+  // Replace the existing handleUpdateOrder and confirmDelete functions with these:
+
+const handleUpdateOrder = async () => {
+  if (!orderToEdit) return;
+  
+  setIsUpdating(true);
+  try {
+    // Call the backend API to update the order
+    const updatedOrder = await orderService.updateOrder(orderToEdit._id, {
+      status: editFormData.status,
+      paymentStatus: editFormData.paymentStatus,
+      trackingNumber: editFormData.trackingNumber,
+      notes: editFormData.notes
+    });
+
+    // Update the local state with the response from backend
+    setOrders(orders.map(order => 
+      order._id === orderToEdit._id ? updatedOrder : order
+    ));
+
+    setShowEditModal(false);
+    setOrderToEdit(null);
     
-    setIsUpdating(true);
-    try {
-      // Call your API to update the order
-      const updatedOrder = {
-        ...orderToEdit,
-        status: editFormData.status,
-        paymentInfo: {
-          ...orderToEdit.paymentInfo,
-          status: editFormData.paymentStatus
-        },
-        trackingNumber: editFormData.trackingNumber,
-        notes: editFormData.notes,
-        updatedAt: new Date().toISOString()
-      };
+    // You can add a success toast notification here
+    console.log('Order updated successfully');
+  } catch (error) {
+    console.error('Error updating order:', error);
+    // Handle error - show error toast notification
+    alert('Failed to update order. Please try again.');
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
-      // Update the orders list
-      setOrders(orders.map(order => 
-        order._id === orderToEdit._id ? updatedOrder : order
-      ));
 
-      setShowEditModal(false);
-      setOrderToEdit(null);
-      // You can add a toast notification here
-    } catch (error) {
-      console.error('Error updating order:', error);
-      // Handle error - show toast notification
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   // Export orders to Excel (with N/A for missing and wide columns)
   const handleExportOrders = () => {

@@ -9,6 +9,7 @@ import {
   cancelOrder,
   getOrderInvoice,
   reorderOrder,
+  updateOrder,
   checkPaymentStatus // Add this import
 } from '../controllers/orderController.js';
 import { protect, authorize } from '../middleware/auth.js';
@@ -60,6 +61,7 @@ router.put('/:id/cancel', cancelOrder);
 
 // Admin routes at the end
 router.put('/:id/status', authorize('admin'), updateOrderStatus);
+router.put('/:id', authorize('admin'), updateOrder);
 
 export default router;
 

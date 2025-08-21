@@ -10,7 +10,6 @@ import {
   Settings, 
   Plus,
   TrendingUp,
-  DollarSign,
   Eye,
   Edit,
   Trash2,
@@ -30,6 +29,12 @@ import SettingsPage from './SettingsPage';
 import ProductsManagement from './ProductsManagement';
 import adminService from '../../services/adminService';
 import { useAuth } from '../../contexts/AuthContext';
+
+const KshIcon = ({ className = "w-4 h-4" }) => (
+  <span className={`inline-flex items-center justify-center font-bold text-sm ${className}`}>
+    KSh
+  </span>
+);
 
 const RevenueChart = ({ data }) => {
   const months = [
@@ -147,13 +152,13 @@ const AdminDashboard = () => {
   }, []);
 
   const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '.' },
-    { id: 'products', label: 'Products', icon: Package, path: 'products' },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart, path: 'orders' },
-    { id: 'customers', label: 'Customers', icon: Users, path: 'customers' },
-    { id: 'categories', label: 'Categories', icon: Package, path: 'categories' },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, path: 'analytics' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: 'settings' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/admin' },
+    { id: 'products', label: 'Products', icon: Package, path: '/admin/products' },
+    { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
+    { id: 'customers', label: 'Customers', icon: Users, path: '/admin/customers' },
+    { id: 'categories', label: 'Categories', icon: Package, path: '/admin/categories' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+    { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
 
   const getStatusColor = (status) => {
@@ -189,7 +194,7 @@ const AdminDashboard = () => {
               </p>
             </div>
             <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-              <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+              <KshIcon className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
             </div>
           </div>
           <div className="mt-2 md:mt-4 flex items-center">

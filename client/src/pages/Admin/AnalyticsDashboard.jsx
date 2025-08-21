@@ -20,13 +20,18 @@ import {
   TrendingUp,
   ShoppingCart,
   Users,
-  DollarSign,
   Package,
   RefreshCw,
   Calendar,
   Filter,
   Download
 } from 'lucide-react';
+
+const KshIcon = ({ className = "w-4 h-4" }) => (
+  <span className={`inline-flex items-center justify-center font-bold text-sm ${className}`}>
+    KSh
+  </span>
+);
 
 const AnalyticsDashboard = () => {
   // Date range selection
@@ -80,9 +85,9 @@ const AnalyticsDashboard = () => {
   const stats = [
     { 
       title: 'Total Revenue', 
-      value: '$48,568', 
+      value: 'KSh 48,568', 
       change: '+12.5%', 
-      icon: <DollarSign className="h-6 w-6 text-green-500" />,
+      icon: <KshIcon className="h-6 w-6 text-green-500" />,
       chart: (
         <ResponsiveContainer width="100%" height={60}>
           <AreaChart data={revenueData}>

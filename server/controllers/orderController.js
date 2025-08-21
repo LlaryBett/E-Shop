@@ -803,6 +803,37 @@ export const checkPaymentStatus = async (req, res) => {
     });
   }
 };
+ 
+// @desc    Update an order (status, paymentStatus, trackingNumber, notes)
+// @route   PUT /orders/:id
+// @access  Admin
+export const updateOrder = async (req, res) => {
+  try {
+    const { status, paymentStatus, trackingNumber, notes } = req.body;
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (status) order.status = status;
+    if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (trackingNumber) order.trackingNumber = trackingNumber;
+    if (notes) order.notes = notes;
+
+    await order.save();
+
+    // 🔑 Re-fetch with population so frontend always gets consistent data
+    const populatedOrder = await Order.findById(order._id)
+      .populate('user', 'name email')
+      .populate('items.product', 'title price images');
+
+    return res.json({ order: populatedOrder });
+  } catch (error) {
+    console.error('Update order error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
 
 
 

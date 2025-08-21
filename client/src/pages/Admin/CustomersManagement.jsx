@@ -189,38 +189,42 @@ const CustomersManagement = () => {
     }));
   };
 
-  const handleUpdateCustomer = async () => {
-    if (!customerToEdit) return;
-    
-    setIsUpdating(true);
-    try {
-      // Call your API to update the customer
-      const updatedCustomer = {
-        ...customerToEdit,
+  // Update customer
+const handleUpdateCustomer = async () => {
+  if (!customerToEdit) return;
+  
+  setIsUpdating(true);
+  try {
+    // Call API to update the customer using userService
+    const updatedCustomer = await userService.updateCustomer(
+      customerToEdit._id || customerToEdit.id,
+      {
         name: editFormData.name,
         email: editFormData.email,
         phone: editFormData.phone,
         status: editFormData.status,
         loyalty: editFormData.loyalty,
-        notes: editFormData.notes,
-        updatedAt: new Date().toISOString()
-      };
+        notes: editFormData.notes
+      }
+    );
 
-      // Update the customers list
-      setCustomers(customers.map(customer => 
-        customer._id === customerToEdit._id ? updatedCustomer : customer
-      ));
+    // Update the customers list with the response from the API
+    setCustomers(customers.map(customer => 
+      customer._id === customerToEdit._id ? updatedCustomer : customer
+    ));
 
-      setShowEditModal(false);
-      setCustomerToEdit(null);
-      // You can add a toast notification here
-    } catch (error) {
-      console.error('Error updating customer:', error);
-      // Handle error - show toast notification
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    setShowEditModal(false);
+    setCustomerToEdit(null);
+    // You can add a toast notification here
+  } catch (error) {
+    console.error('Error updating customer:', error);
+    // Handle error - show toast notification
+  } finally {
+    setIsUpdating(false);
+  }
+};
+
+
 
   // Message actions
   const handleReply = async () => {

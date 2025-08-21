@@ -51,6 +51,15 @@ const userSchema = new mongoose.Schema({
     enum: ['bronze', 'silver', 'gold', 'platinum'],
     default: 'bronze',
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'banned'],
+    default: 'active'
+  },
+  notes: {
+    type: String,
+    default: ''
+  },
   addresses: [{
     type: {
       type: String,
@@ -120,6 +129,14 @@ userSchema.pre('save', async function(next) {
   
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Sync status with isActive before saving
+userSchema.pre('save', function(next) {
+  if (this.isModified('status')) {
+    this.isActive = this.status === 'active';
+  }
   next();
 });
 

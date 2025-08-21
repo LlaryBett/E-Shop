@@ -91,7 +91,7 @@ export const login = async (req, res, next) => {
 
     // Find user with password (explicitly selected)
     const user = await User.findOne({ email })
-      .select('+password +loginAttempts +lockUntil');
+      .select('+password +loginAttempts +lockUntil +status +isActive');
 
     // Account lock check (brute force protection)
     if (user?.lockUntil && user.lockUntil > Date.now()) {
@@ -120,11 +120,11 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // Account status checks
-    if (!user.isActive) {
+    // Account status checks - unified message for all non-active states
+    if (user.status === 'banned' || user.status === 'inactive' || !user.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Account deactivated. Contact support.',
+        message: 'Account banned or deactivated. Contact support.',
       });
     }
 

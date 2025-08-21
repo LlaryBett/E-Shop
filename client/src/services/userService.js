@@ -57,6 +57,18 @@ class UserService {
     return response.data.users;
   }
 
+  // 🧑‍💼 Admin: Update customer
+  async updateCustomer(id, customerData) {
+    const response = await api.put(`/users/${id}`, customerData);
+    return response.data.user;
+  }
+
+  // 🧑‍💼 Admin: Delete customer
+  async deleteCustomer(id) {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  }
+
   // 🔐 Account: Update password
   async updatePassword(passwordData) {
     await api.put('/users/password', passwordData); // Expects { currentPassword, newPassword }

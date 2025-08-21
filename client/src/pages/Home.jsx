@@ -7,8 +7,8 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import ProductService from '../services/productService';
-import PromoModalManager from '../components/common/PromoModalManager';
-import ExitIntentModal from '../components/common/ExitIntentModal';
+
+;
 import { useAuth } from '../contexts/AuthContext';
 import { useCategories } from '../contexts/CategoryContext';
 import { useCart } from '../contexts/CartContext';
@@ -183,10 +183,6 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-36 lg:pt-24">
       <VisaPromoBanner />
-
-      {/* Promo Modals */}
-      <PromoModalManager />
-      <ExitIntentModal />
 
       {/* Banner Display Section */}
       <section className="relative overflow-hidden mt-4">

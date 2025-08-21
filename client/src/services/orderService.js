@@ -74,6 +74,17 @@ async createOrder(orderData) {
     const response = await api.get(`/admin/orders?${params}`);
     return response.data;
   },
+//  update order 
+  async updateOrder(id, updateData) {
+  try {
+    const response = await api.put(`/orders/${id}`, updateData);
+    return response.data.order; // assuming backend returns { order: {...} }
+  } catch (error) {
+    console.error('Update order error:', error);
+    throw error;
+  }
+},
+
 
   // Proceed to checkout (place an order)
   async proceedToCheckout(checkoutPayload) {

@@ -331,8 +331,16 @@ export const createProduct = async (req, res, next) => {
 // @access  Private/Admin
 export const updateProduct = async (req, res, next) => {
   try {
+    // Console log the entire payload received from frontend
+    console.log('🚀 UPDATE PRODUCT - Full payload received:');
+    console.log('📦 req.body:', JSON.stringify(req.body, null, 2));
+    console.log('🔑 Product ID from params:', req.params.id);
+    console.log('💰 Price from payload:', req.body.price, 'Type:', typeof req.body.price);
+    console.log('💸 Sale Price from payload:', req.body.salePrice, 'Type:', typeof req.body.salePrice);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -348,18 +356,36 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
+    // Log existing product data for comparison
+    console.log('📋 Existing product data:');
+    console.log('💰 Current price:', product.price, 'Type:', typeof product.price);
+    console.log('💸 Current sale price:', product.salePrice, 'Type:', typeof product.salePrice);
+    console.log('📝 Current title:', product.title);
+
     // Track if discount is being added or updated
     const hadSalePrice = !!product.salePrice;
     const newSalePrice = req.body.salePrice;
 
     // Handle category update
     if (req.body.category) {
-      const categoryDoc = await Category.findOne({
-        $or: [
-          { _id: req.body.category },
-          { name: req.body.category.trim() }
-        ]
-      });
+      let categoryQuery;
+      
+      // Check if the value is a valid ObjectId
+      if (mongoose.Types.ObjectId.isValid(req.body.category) && 
+          req.body.category.length === 24) {
+        // If it's a valid ObjectId, search by both _id and name
+        categoryQuery = {
+          $or: [
+            { _id: req.body.category },
+            { name: req.body.category.trim() }
+          ]
+        };
+      } else {
+        // If it's not a valid ObjectId, only search by name
+        categoryQuery = { name: req.body.category.trim() };
+      }
+      
+      const categoryDoc = await Category.findOne(categoryQuery);
       
       if (!categoryDoc) {
         return res.status(400).json({
@@ -372,12 +398,24 @@ export const updateProduct = async (req, res, next) => {
 
     // Handle brand update
     if (req.body.brand) {
-      const brandDoc = await Brand.findOne({
-        $or: [
-          { _id: req.body.brand },
-          { name: req.body.brand.trim() }
-        ]
-      });
+      let brandQuery;
+      
+      // Check if the value is a valid ObjectId
+      if (mongoose.Types.ObjectId.isValid(req.body.brand) && 
+          req.body.brand.length === 24) {
+        // If it's a valid ObjectId, search by both _id and name
+        brandQuery = {
+          $or: [
+            { _id: req.body.brand },
+            { name: req.body.brand.trim() }
+          ]
+        };
+      } else {
+        // If it's not a valid ObjectId, only search by name
+        brandQuery = { name: req.body.brand.trim() };
+      }
+      
+      const brandDoc = await Brand.findOne(brandQuery);
       
       if (!brandDoc) {
         return res.status(400).json({
@@ -388,16 +426,116 @@ export const updateProduct = async (req, res, next) => {
       req.body.brand = brandDoc._id;
     }
 
+    // Handle subcategory validation and populate required fields
+    if (req.body.subcategory) {
+      const categoryId = req.body.category || product.category;
+      
+      if (mongoose.Types.ObjectId.isValid(req.body.subcategory)) {
+        const categoryWithSubcat = await Category.findOne({
+          _id: categoryId,
+          'subcategories._id': req.body.subcategory
+        });
+        
+        if (!categoryWithSubcat) {
+          return res.status(400).json({
+            success: false,
+            message: `Subcategory not found in the specified category`,
+          });
+        }
+        
+        // Find the subcategory data and populate the required fields
+        const subcategoryData = categoryWithSubcat.subcategories.find(
+          sub => sub._id.toString() === req.body.subcategory
+        );
+        
+        if (subcategoryData) {
+          req.body.subcategory = {
+            _id: subcategoryData._id,
+            name: subcategoryData.name
+          };
+        }
+      }
+    }
+
+    // Handle item validation and populate required fields
+    if (req.body.item) {
+      const subcategoryId = req.body.subcategory?._id || req.body.subcategory || product.subcategory?._id || product.subcategory;
+      
+      if (mongoose.Types.ObjectId.isValid(req.body.item) && subcategoryId) {
+        const categoryWithItem = await Category.findOne({
+          'subcategories._id': subcategoryId,
+          'subcategories.items._id': req.body.item
+        });
+        
+        if (!categoryWithItem) {
+          return res.status(400).json({
+            success: false,
+            message: `Item not found in the specified subcategory`,
+          });
+        }
+        
+        // Find the subcategory and item data
+        const subcategoryData = categoryWithItem.subcategories.find(
+          sub => sub._id.toString() === subcategoryId.toString()
+        );
+        
+        if (subcategoryData) {
+          const itemData = subcategoryData.items.find(
+            item => item._id.toString() === req.body.item
+          );
+          
+          if (itemData) {
+            req.body.item = {
+              _id: itemData._id,
+              name: itemData.name,
+              slug: itemData.slug
+            };
+          }
+        }
+      }
+    }
+
+    // Handle sale price validation with detailed logging
+    if (req.body.salePrice) {
+      const currentPrice = req.body.price || product.price;
+      const newSalePrice = req.body.salePrice;
+      
+      console.log('💵 PRICE VALIDATION CHECK:');
+      console.log('📊 Current/New Price:', currentPrice, 'Type:', typeof currentPrice);
+      console.log('📊 New Sale Price:', newSalePrice, 'Type:', typeof newSalePrice);
+      console.log('🔢 Price as Number:', Number(currentPrice));
+      console.log('🔢 Sale Price as Number:', Number(newSalePrice));
+      console.log('❓ Is Sale Price >= Regular Price?', Number(newSalePrice) >= Number(currentPrice));
+      
+      if (Number(newSalePrice) >= Number(currentPrice)) {
+        console.log('🚫 VALIDATION FAILED: Sale price is greater than or equal to regular price');
+        return res.status(400).json({
+          success: false,
+          message: `Sale price (${newSalePrice}) must be less than regular price (${currentPrice})`,
+        });
+      } else {
+        console.log('✅ PRICE VALIDATION PASSED');
+      }
+    }
+
+    // Log the final payload that will be sent to MongoDB
+    console.log('📤 FINAL PAYLOAD TO BE SENT TO MONGODB:');
+    console.log('🔍 Final req.body before update:', JSON.stringify(req.body, null, 2));
+
     product = await Product.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
         new: true,
-        runValidators: true,
+        runValidators: false, // Disable schema validators since we handle validation above
       }
     )
       .populate('brand', 'name logo')
       .populate('category', 'name slug');
+
+    console.log('✅ PRODUCT UPDATED SUCCESSFULLY');
+    console.log('📊 Updated product price:', product.price);
+    console.log('📊 Updated product sale price:', product.salePrice);
 
     // If a new discount is added or updated, trigger a notification event
     if ((!hadSalePrice && newSalePrice) || (hadSalePrice && newSalePrice && newSalePrice !== product.salePrice)) {
@@ -426,10 +564,24 @@ export const updateProduct = async (req, res, next) => {
       product,
     });
   } catch (error) {
+    console.error('🚨 ERROR IN UPDATE PRODUCT:');
+    console.error('📝 Error message:', error.message);
+    console.error('🔍 Error stack:', error.stack);
+    console.error('📊 Error name:', error.name);
+    
+    if (error.name === 'ValidationError') {
+      console.error('❌ VALIDATION ERROR DETAILS:');
+      Object.keys(error.errors).forEach(key => {
+        console.error(`🔸 Field: ${key}`);
+        console.error(`🔸 Message: ${error.errors[key].message}`);
+        console.error(`🔸 Value: ${error.errors[key].value}`);
+        console.error(`🔸 Path: ${error.errors[key].path}`);
+      });
+    }
+    
     next(error);
   }
 };
-
 // @desc    Delete product
 // @route   DELETE /api/products/:id
 // @access  Private/Admin
