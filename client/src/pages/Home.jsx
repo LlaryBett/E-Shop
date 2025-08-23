@@ -7,6 +7,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import ProductService from '../services/productService';
+import adminService from '../services/adminService';
 
 ;
 import { useAuth } from '../contexts/AuthContext';
@@ -37,6 +38,7 @@ const Home = () => {
   const [trendingProducts, setTrendingProducts] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [banners, setBanners] = useState([]);
   const swiperRef = useRef(null);
   const { categories } = useCategories();
   const [newArrivalProducts, setNewArrivalProducts] = useState([]);
@@ -45,30 +47,6 @@ const Home = () => {
   const checkThisOutSwiperRef = useRef(null);
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-
-  // Banner data
-  const banners = [
-    {
-      id: 1,
-      image: "/assets/Banner ecommerce smartwatch electronics store product promotion dropshipping offer instagram stories (1).mp4",
-      ctaLink: "/shop/new-arrivals"
-    },
-    {
-      id: 2,
-      image: "/assets/22af748c6ba4975c1ba122c769ba8ed99f3ade899c16be44a3c4e849924d9a08.jpg",
-      ctaLink: "/shop/audio"
-    },
-    {
-      id: 3,
-      image: "/assets/Blue Photo Beauty Skincare Blog Banner (2).jpg",
-      ctaLink: "/shop/organic"
-    },
-    {
-      id: 4,
-      image: "/assets/Purple Green  Colorful Organic Illustrative Online Shop Banner.png",
-      ctaLink: "/shop/outdoor"
-    }
-  ];
 
   // Banner carousel state
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -127,6 +105,25 @@ const Home = () => {
         setCheckThisOutProducts(sortedCheckThisOut);
       })
       .finally(() => setLoading(false));
+  }, []);
+
+  // Fetch banners
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+        const response = await adminService.getBanners();
+        // Handle the nested data structure and ensure it's an array
+        const bannerData = response?.data?.data || [];
+        // Sort banners by position
+        const sortedBanners = bannerData.sort((a, b) => a.position - b.position);
+        setBanners(sortedBanners);
+      } catch (error) {
+        console.error('Error loading banners:', error);
+        setBanners([]);
+      }
+    };
+
+    loadBanners();
   }, []);
 
   const { subscribeNewsletter } = useAuth();
@@ -196,14 +193,14 @@ const Home = () => {
               className="flex h-full transition-transform duration-700 ease-in-out"
               style={{ transform: `translateX(-${currentBanner * 100}%)` }}
             >
-              {banners.map((banner, index) => (
+              {Array.isArray(banners) && banners.map((banner) => (
                 <div
-                  key={banner.id}
+                  key={banner._id}
                   className="w-full h-full flex-shrink-0 relative"
                 >
-                  {banner.image.endsWith('.mp4') ? (
+                  {banner.type === 'video' ? (
                     <video
-                      src={banner.image}
+                      src={banner.url}
                       autoPlay
                       loop
                       muted
@@ -212,8 +209,8 @@ const Home = () => {
                     />
                   ) : (
                     <img
-                      src={banner.image}
-                      alt={`Banner ${banner.id}`}
+                      src={banner.url}
+                      alt={banner.name}
                       className="w-full h-full object-cover object-center"
                       loading="lazy"
                       onError={(e) => {
@@ -221,46 +218,47 @@ const Home = () => {
                       }}
                     />
                   )}
-                  {/* Shop Now button removed */}
                 </div>
               ))}
             </div>
 
-            {/* Navigation Arrows */}
-            <button
-              onClick={prevBanner}
-              aria-label="Previous banner"
-              className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-900 p-1 md:p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 border border-white/20"
-            >
-              <ChevronLeft className="h-4 w-4 md:h-6 md:w-6" />
-            </button>
-            <button
-              onClick={nextBanner}
-              aria-label="Next banner"
-              className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-900 p-1 md:p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 border border-white/20"
-            >
-              <ChevronRight className="h-4 w-4 md:h-6 md:w-6" />
-            </button>
-
-            {/* Indicators */}
-            <div
-              className="absolute bottom-2 md:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1 md:space-x-2 bg-black/20 backdrop-blur-sm rounded-full px-2 py-1"
-              role="group"
-              aria-label="Banner indicators"
-            >
-              {banners.map((_, index) => (
+            {/* Navigation Arrows - Only show if there are banners */}
+            {Array.isArray(banners) && banners.length > 1 && (
+              <>
                 <button
-                  key={index}
-                  onClick={() => goToBanner(index)}
-                  aria-label={`Go to banner ${index + 1}`}
-                  className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
-                    index === currentBanner
-                      ? 'bg-white scale-125 shadow-sm'
-                      : 'bg-white/50 hover:bg-white/75 hover:scale-110'
-                  }`}
-                />
-              ))}
-            </div>
+                  onClick={prevBanner}
+                  aria-label="Previous banner"
+                  className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-900 p-1 md:p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 border border-white/20"
+                >
+                  <ChevronLeft className="h-4 w-4 md:h-6 md:w-6" />
+                </button>
+                <button
+                  onClick={nextBanner}
+                  aria-label="Next banner"
+                  className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-900 p-1 md:p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 border border-white/20"
+                >
+                  <ChevronRight className="h-4 w-4 md:h-6 md:w-6" />
+                </button>
+              </>
+            )}
+
+            {/* Indicators - Only show if there are multiple banners */}
+            {Array.isArray(banners) && banners.length > 1 && (
+              <div className="absolute bottom-2 md:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1 md:space-x-2 bg-black/20 backdrop-blur-sm rounded-full px-2 py-1">
+                {banners.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToBanner(index)}
+                    aria-label={`Go to banner ${index + 1}`}
+                    className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
+                      index === currentBanner
+                        ? 'bg-white scale-125 shadow-sm'
+                        : 'bg-white/50 hover:bg-white/75 hover:scale-110'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>

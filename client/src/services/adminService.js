@@ -1,12 +1,21 @@
 import api from './api';
 
+// Banner Management
+const getBanners = () => api.get('/admin/banners');
+const uploadBanners = (formData) => api.post('/admin/banners', formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  }
+});
+const deleteBanner = (id) => api.delete(`/admin/banners/${id}`);
+
 // ✅ Fetch full dashboard stats
 const getDashboardStats = () => api.get('/admin/stats');
 
 // ✅ Fetch paginated orders
 const getAllOrders = (params = {}) => api.get('/admin/orders', { params });
 
-// ✅ ✅ Fetch paginated products from correct route (/api/products)
+// ✅ Fetch paginated products
 const getAllProducts = (params = {}) => api.get('/products', { params });
 
 // ✅ Fetch sales analytics data
@@ -33,13 +42,13 @@ const createBrand = (data) => api.post('/brands', data);
 const updateBrand = (id, data) => api.put(`/brands/${id}`, data);
 const deleteBrand = (id) => api.delete(`/brands/${id}`);
 
-// Add these to adminService
+// Image Upload
 const uploadProductImages = (files) => {
   const formData = new FormData();
   files.forEach(file => {
     formData.append('images', file);
   });
-  return api.post('/upload/images', formData, {  // '/upload/images' not '/uploads/images'
+  return api.post('/upload/images', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     }
@@ -47,6 +56,9 @@ const uploadProductImages = (files) => {
 };
 
 const adminService = {
+  getBanners,
+  uploadBanners,
+  deleteBanner,
   getDashboardStats,
   getAllOrders,
   getAllProducts,

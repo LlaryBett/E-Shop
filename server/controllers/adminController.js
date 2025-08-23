@@ -1,7 +1,10 @@
 import User from '../models/User.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
+import Banner from '../models/Banner.js';
 import Category from '../models/Category.js';
+import { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl, isCloudinaryVideo } from '../utils/cloudinary.js';
+
  // Get admin dashboard stats 
 
 
@@ -320,6 +323,174 @@ export const getSalesAnalytics = async (req, res, next) => {
         dailySales,
         categorySales,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all banners
+// @route   GET /api/admin/banners
+// @access  Private/Admin
+export const getBanners = async (req, res, next) => {
+  try {
+    const banners = await Banner.find().sort({ position: 1, createdAt: -1 });
+    
+    res.status(200).json({
+      success: true,
+      data: banners
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Upload new banners
+// @route   POST /api/admin/banners
+// @access  Private/Admin
+export const uploadBanners = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No files uploaded'
+      });
+    }
+
+    // Parse positions and isActive values from request body
+    let positions = [];
+    let isActiveValues = [];
+    
+    if (req.body.positions) {
+      try {
+        positions = JSON.parse(req.body.positions);
+      } catch (e) {
+        positions = [];
+      }
+    }
+    
+    if (req.body.isActive) {
+      try {
+        isActiveValues = JSON.parse(req.body.isActive);
+      } catch (e) {
+        isActiveValues = [];
+      }
+    }
+
+    const uploadedBanners = [];
+
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
+      try {
+        // Upload to Cloudinary
+        const uploadResult = await uploadToCloudinary(file.buffer, file.originalname, 'banners');
+        
+        // Determine file type
+        const isVideo = isCloudinaryVideo(uploadResult.secure_url);
+        const fileType = isVideo ? 'video' : 'image';
+        
+        // Create banner record with optional position and isActive
+        const bannerData = {
+          name: file.originalname,
+          url: uploadResult.secure_url,
+          type: fileType,
+          publicId: uploadResult.public_id
+        };
+        
+        // Add position if provided
+        if (positions[i] !== undefined) {
+          bannerData.position = positions[i];
+        }
+        
+        // Add isActive if provided
+        if (isActiveValues[i] !== undefined) {
+          bannerData.isActive = isActiveValues[i];
+        }
+        
+        const banner = new Banner(bannerData);
+        await banner.save();
+        uploadedBanners.push(banner);
+      } catch (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        // Continue with other files even if one fails
+        continue;
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      data: uploadedBanners
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete a banner
+// @route   DELETE /api/admin/banners/:id
+// @access  Private/Admin
+export const deleteBanner = async (req, res, next) => {
+  try {
+    const banner = await Banner.findById(req.params.id);
+    
+    if (!banner) {
+      return res.status(404).json({
+        success: false,
+        message: 'Banner not found'
+      });
+    }
+
+    // Delete from Cloudinary if we have the publicId
+    if (banner.publicId) {
+      const resourceType = banner.type === 'video' ? 'video' : 'image';
+      await deleteFromCloudinary(banner.publicId, resourceType);
+    }
+
+    await Banner.findByIdAndDelete(req.params.id);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Banner deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update banner properties
+// @route   PUT /api/admin/banners/:id
+// @access  Private/Admin
+export const updateBanner = async (req, res, next) => {
+  try {
+    const { name, position, isActive } = req.body;
+    
+    // Find the banner first
+    const banner = await Banner.findById(req.params.id);
+    
+    if (!banner) {
+      return res.status(404).json({
+        success: false,
+        message: 'Banner not found'
+      });
+    }
+
+    // Prepare update object
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (position !== undefined) updates.position = position;
+    if (isActive !== undefined) updates.isActive = isActive;
+
+    // Update the banner
+    const updatedBanner = await Banner.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Banner updated successfully',
+      data: updatedBanner
     });
   } catch (error) {
     next(error);

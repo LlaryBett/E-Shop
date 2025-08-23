@@ -19,7 +19,8 @@ import {
   Menu,
   X,
   Home,
-  LogOut // Add this import
+  LogOut,
+  Image as ImageIcon // Import ImageIcon instead of Image
 } from 'lucide-react';
 import OrdersManagement from './OrdersManagement';
 import CustomersManagement from './CustomersManagement';
@@ -27,6 +28,7 @@ import CategoryManagement from './CategoryManagement';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import SettingsPage from './SettingsPage';
 import ProductsManagement from './ProductsManagement';
+import LeafletManagement from './LeafletManagement';
 import adminService from '../../services/adminService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -157,6 +159,7 @@ const AdminDashboard = () => {
     { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
     { id: 'customers', label: 'Customers', icon: Users, path: '/admin/customers' },
     { id: 'categories', label: 'Categories', icon: Package, path: '/admin/categories' },
+    { id: 'leaflets', label: 'Banners', icon: ImageIcon, path: '/admin/leaflets' }, // Use ImageIcon here
     { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
@@ -469,12 +472,14 @@ const AdminDashboard = () => {
 
         {/* Main Content */}
         <div className="flex-1 lg:ml-64 p-4 md:p-6 lg:p-8">
+          {/* Update Routes */}
           <Routes>
             <Route path="/" element={<DashboardOverview />} />
             <Route path="products" element={<ProductsManagement />} />
             <Route path="orders" element={<OrdersManagement />} />
             <Route path="customers" element={<CustomersManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
+            <Route path="leaflets" element={<LeafletManagement />} />
             <Route path="analytics" element={<AnalyticsDashboard />} />
             <Route path="settings" element={<SettingsPage/>} />
           </Routes>
