@@ -350,6 +350,14 @@ export const getBanners = async (req, res, next) => {
 // @access  Private/Admin
 export const uploadBanners = async (req, res, next) => {
   try {
+    console.log("🟢 Incoming Upload Request");
+    console.log("➡️ req.body:", req.body);
+    console.log("➡️ req.files:", req.files?.map(f => ({
+      originalname: f.originalname,
+      mimetype: f.mimetype,
+      size: f.size
+    })));
+
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
@@ -364,7 +372,9 @@ export const uploadBanners = async (req, res, next) => {
     if (req.body.positions) {
       try {
         positions = JSON.parse(req.body.positions);
+        console.log("✅ Parsed positions:", positions);
       } catch (e) {
+        console.log("❌ Failed to parse positions:", req.body.positions);
         positions = [];
       }
     }
@@ -372,7 +382,9 @@ export const uploadBanners = async (req, res, next) => {
     if (req.body.isActive) {
       try {
         isActiveValues = JSON.parse(req.body.isActive);
+        console.log("✅ Parsed isActive:", isActiveValues);
       } catch (e) {
+        console.log("❌ Failed to parse isActive:", req.body.isActive);
         isActiveValues = [];
       }
     }
@@ -407,11 +419,13 @@ export const uploadBanners = async (req, res, next) => {
           bannerData.isActive = isActiveValues[i];
         }
         
+        console.log("📌 Final bannerData before save:", bannerData);
+
         const banner = new Banner(bannerData);
         await banner.save();
         uploadedBanners.push(banner);
       } catch (uploadError) {
-        console.error('Error uploading file:', uploadError);
+        console.error('❌ Error uploading file:', uploadError);
         // Continue with other files even if one fails
         continue;
       }
@@ -425,6 +439,7 @@ export const uploadBanners = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // @desc    Delete a banner
 // @route   DELETE /api/admin/banners/:id

@@ -473,7 +473,7 @@ const Home = () => {
       </section>
 
       {/* Shop by Category */}
-      <section className="py-1">
+      {/* <section className="py-1">
         <div className="max-w-[1320px] mx-auto px-3 sm:px-4 lg:px-6">
           <div className="flex items-center justify-between gap-3 sm:gap-6 md:gap-7 mb-3 sm:mb-5 md:mb-6">
             <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
@@ -555,7 +555,7 @@ const Home = () => {
             ))}
           </Swiper>
         </div>
-      </section>
+      </section> */}
 
       
 
